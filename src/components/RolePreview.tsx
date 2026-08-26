@@ -1,6 +1,5 @@
 import Icon from '@/components/ui/icon';
-import { useAppState } from '@/hooks/use-app-state';
-import { Role } from '@/data/mock';
+import { useAppState, Role } from '@/hooks/use-app-state';
 
 const cards: {
   role: Role;

@@ -1,36 +1,46 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
-import { CATEGORIES, findCustomer, Job, money } from '@/data/mock';
+import { CATEGORIES, money } from '@/data/mock';
 import CreateJobDialog from '@/components/CreateJobDialog';
-import JobDialog from '@/components/JobDialog';
 
 const Feed = () => {
-  const { jobs, session, openLogin } = useAppState();
+  const { feed, stats, user, openLogin } = useAppState();
+  const navigate = useNavigate();
   const [category, setCategory] = useState('Все');
   const [query, setQuery] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
-  const [active, setActive] = useState<Job | null>(null);
 
   const filtered = useMemo(
     () =>
-      jobs.filter(
+      feed.filter(
         (j) =>
           (category === 'Все' || j.category === category) &&
           (query.trim() === '' ||
             `${j.title} ${j.description} ${j.city}`.toLowerCase().includes(query.toLowerCase())),
       ),
-    [jobs, category, query],
+    [feed, category, query],
   );
 
-  const activeJob = active ? jobs.find((j) => j.id === active.id) ?? null : null;
-
   const onCreate = () => {
-    if (!session) {
+    if (!user) {
       openLogin('customer');
       return;
     }
+    if (user.role === 'executor') {
+      navigate('/dashboard');
+      return;
+    }
     setCreateOpen(true);
+  };
+
+  const onCard = () => {
+    if (!user) {
+      openLogin('executor');
+      return;
+    }
+    navigate('/dashboard');
   };
 
   return (
@@ -38,13 +48,13 @@ const Feed = () => {
       <div className="mx-auto max-w-[1400px] px-6 md:px-16">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-foreground/60">Лента</p>
+            <p className="text-sm uppercase tracking-[0.2em] text-foreground/60">Радар</p>
             <h2 className="mt-4 font-head text-3xl font-normal leading-tight tracking-tight md:text-5xl">
-              Заказы в Ярославской области
+              Радар Доделай
             </h2>
             <p className="mt-3 max-w-[520px] text-base text-muted-foreground/85">
-              Всё, что опубликовали заказчики Ярославля, Рыбинска, Тутаева и других городов области.
-              Оплата — от 500 до 1500 ₽. Откликнуться можно в один клик.
+              Живая лента открытых заказов Ярославской области — обновляется в реальном времени, без
+              перезагрузки страницы. Оплата от 500 до 1500 ₽.
             </p>
           </div>
           <button
@@ -52,8 +62,33 @@ const Feed = () => {
             className="flex items-center gap-2 rounded-full bg-primary px-7 py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.03]"
           >
             <Icon name="Plus" size={18} />
-            Разместить объявление
+            Выставить задачу
           </button>
+        </div>
+
+        <div className="mt-10 grid gap-4 sm:grid-cols-3">
+          {[
+            { label: 'открытых заказов', value: stats.openJobs, icon: 'Radar' },
+            { label: 'исполнителей в области', value: stats.executors, icon: 'Users' },
+            {
+              label: 'средний чек',
+              value: stats.avgCheck ? money(stats.avgCheck) : '—',
+              icon: 'Wallet',
+            },
+          ].map((s) => (
+            <div
+              key={s.label}
+              className="flex items-center gap-4 rounded-3xl border border-line bg-surface p-5"
+            >
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+                <Icon name={s.icon} size={20} />
+              </span>
+              <div>
+                <p className="font-head text-2xl font-medium">{s.value}</p>
+                <p className="text-sm text-chip">{s.label}</p>
+              </div>
+            </div>
+          ))}
         </div>
 
         <div className="mt-10 flex flex-col gap-4 md:flex-row md:items-center">
@@ -84,15 +119,35 @@ const Feed = () => {
         </div>
 
         {filtered.length === 0 ? (
-          <p className="mt-16 text-center text-base text-foreground/70">
-            Ничего не нашлось. Попробуйте другую категорию.
-          </p>
+          <div className="mt-12 rounded-3xl border border-line bg-surface p-12 text-center">
+            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+              <Icon name="Radar" size={26} />
+            </span>
+            <p className="mt-5 font-head text-xl font-medium">
+              {feed.length === 0
+                ? 'Пока заказов нет — станьте первым заказчиком'
+                : 'Ничего не нашлось'}
+            </p>
+            <p className="mt-2 text-sm text-chip">
+              {feed.length === 0
+                ? 'Выставите задачу — исполнители области увидят её в радаре сразу.'
+                : 'Попробуйте другую категорию или запрос.'}
+            </p>
+            {feed.length === 0 && (
+              <button
+                onClick={onCreate}
+                className="mt-6 rounded-full bg-primary px-7 py-3.5 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.03]"
+              >
+                Выставить задачу
+              </button>
+            )}
+          </div>
         ) : (
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((job) => (
               <button
                 key={job.id}
-                onClick={() => setActive(job)}
+                onClick={onCard}
                 className="group flex animate-fade-in flex-col overflow-hidden rounded-3xl border border-line bg-surface text-left transition-all hover:-translate-y-1 hover:border-primary/50"
               >
                 {job.photo ? (
@@ -129,15 +184,9 @@ const Feed = () => {
 
                   <div className="mt-5 flex items-center justify-between border-t border-line pt-4 text-sm">
                     <span className="text-muted-foreground/80">
-                      {job.responses.length} откликов
+                      {(job.responses || []).length} откликов
                     </span>
-                    {job.confirmed ? (
-                      <span className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
-                        Исполнитель выбран
-                      </span>
-                    ) : (
-                      <span className="text-chip">{findCustomer(job.ownerId)?.name}</span>
-                    )}
+                    <span className="text-chip">{job.ownerName}</span>
                   </div>
                 </div>
               </button>
@@ -147,7 +196,6 @@ const Feed = () => {
       </div>
 
       <CreateJobDialog open={createOpen} onOpenChange={setCreateOpen} />
-      <JobDialog job={activeJob} onOpenChange={() => setActive(null)} />
     </section>
   );
 };

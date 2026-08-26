@@ -6,6 +6,7 @@ import Feed from '@/components/Feed';
 import HowItWorks from '@/components/HowItWorks';
 import ExecutorsCta from '@/components/ExecutorsCta';
 import People from '@/components/People';
+import CompletedFeed from '@/components/CompletedFeed';
 import Faq from '@/components/Faq';
 import Footer from '@/components/Footer';
 import LoginDialog from '@/components/LoginDialog';
@@ -21,6 +22,7 @@ const Index = () => (
         <HowItWorks />
         <ExecutorsCta />
         <People />
+        <CompletedFeed />
         <Faq />
       </main>
       <Footer />

@@ -1,0 +1,22 @@
+{
+  "tests": [
+    {
+      "name": "Списки людей",
+      "method": "GET",
+      "path": "/?action=people",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Без токена профиль недоступен",
+      "method": "GET",
+      "path": "/?action=me",
+      "expectedStatus": 401
+    },
+    {
+      "name": "Неизвестное действие",
+      "method": "GET",
+      "path": "/?action=nope",
+      "expectedStatus": 404
+    }
+  ]
+}

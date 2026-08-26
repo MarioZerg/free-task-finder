@@ -1,10 +1,24 @@
 import { useAppState } from '@/hooks/use-app-state';
-import { initialJobs, money } from '@/data/mock';
+import { money } from '@/data/mock';
 
-const preview = initialJobs.slice(0, 5);
+const fallback = [
+  { id: -1, title: 'Перевезти диван', price: 1400, when: 'Сегодня до 19:00', responses: 0 },
+  { id: -2, title: 'Собрать шкаф', price: 1200, when: 'Завтра, утро', responses: 0 },
+  { id: -3, title: 'Убрать участок', price: 1500, when: 'Суббота', responses: 0 },
+];
 
 const Hero = () => {
-  const { openLogin } = useAppState();
+  const { openLogin, feed } = useAppState();
+
+  const preview = feed.length
+    ? feed.slice(0, 5).map((j) => ({
+        id: j.id,
+        title: j.title,
+        price: j.price,
+        when: j.when,
+        responses: (j.responses || []).length,
+      }))
+    : fallback;
 
   return (
     <section id="top" className="relative overflow-hidden bg-background pb-4">
@@ -35,7 +49,7 @@ const Hero = () => {
             <div className="relative h-[604px] w-[322px] max-w-full animate-rise rounded-[34px] bg-[linear-gradient(150deg,hsl(var(--tile))_0%,hsl(var(--surface))_46%,hsl(var(--screen))_100%)] p-3 shadow-[0_60px_90px_-40px_rgba(0,0,0,.5),0_2px_0_rgba(255,255,255,.12)_inset]">
               <div className="flex h-full flex-col gap-3 overflow-hidden rounded-3xl bg-screen px-4 py-5">
                 <div className="mb-1 flex items-center justify-between">
-                  <div className="text-[0.72em] font-medium">Лента заказов</div>
+                  <div className="text-[0.72em] font-medium">Радар Доделай</div>
                   <div className="text-[0.6em] text-chip">Ярославль · 5 км</div>
                 </div>
 
@@ -53,7 +67,7 @@ const Hero = () => {
                         </div>
                       </div>
                       <div className="mt-1.5 text-[0.58em] text-chip">
-                        {job.when} · {job.responses.length} откл.
+                        {job.when} · {job.responses} откл.
                       </div>
                     </div>
                   </div>

@@ -1,0 +1,28 @@
+{
+  "tests": [
+    {
+      "name": "Радар открытых заказов",
+      "method": "GET",
+      "path": "/?action=feed",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Лента завершённых заказов",
+      "method": "GET",
+      "path": "/?action=completed",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Статистика сервиса",
+      "method": "GET",
+      "path": "/?action=stats",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Мои заказы без токена",
+      "method": "GET",
+      "path": "/?action=mine",
+      "expectedStatus": 401
+    }
+  ]
+}

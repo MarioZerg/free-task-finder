@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Icon from '@/components/ui/icon';
-import { Role } from '@/data/mock';
+import { Role } from '@/hooks/use-app-state';
 
 const steps: Record<Role, { icon: string; title: string; text: string }[]> = {
   customer: [

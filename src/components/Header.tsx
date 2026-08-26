@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
 import { initials } from '@/data/mock';
@@ -11,7 +12,7 @@ const links = [
 ];
 
 const Header = () => {
-  const { session, openLogin, logout } = useAppState();
+  const { user, openLogin, logout } = useAppState();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -37,11 +38,18 @@ const Header = () => {
         </nav>
 
         <div className="hidden lg:block">
-          {session ? (
+          {user ? (
             <div className="flex items-center gap-3">
               <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary font-head text-sm font-semibold text-primary-foreground">
-                {initials(session.name)}
+                {initials(user.name)}
               </span>
+              <span className="text-sm font-medium">{user.name}</span>
+              <Link
+                to="/dashboard"
+                className="rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03]"
+              >
+                Дашборд
+              </Link>
               <button
                 onClick={logout}
                 className="rounded-full border border-foreground/40 px-6 py-3 text-sm font-medium transition-colors hover:bg-foreground/10"
@@ -93,16 +101,25 @@ const Header = () => {
             ))}
           </nav>
           <div className="mt-auto">
-            {session ? (
-              <button
-                onClick={() => {
-                  logout();
-                  setOpen(false);
-                }}
-                className="w-full rounded-full border border-foreground/40 py-4 text-base font-medium"
-              >
-                Выйти
-              </button>
+            {user ? (
+              <div className="space-y-3">
+                <Link
+                  to="/dashboard"
+                  onClick={() => setOpen(false)}
+                  className="block w-full rounded-full bg-primary py-4 text-center text-base font-medium text-primary-foreground"
+                >
+                  Дашборд
+                </Link>
+                <button
+                  onClick={() => {
+                    logout();
+                    setOpen(false);
+                  }}
+                  className="w-full rounded-full border border-foreground/40 py-4 text-base font-medium"
+                >
+                  Выйти
+                </button>
+              </div>
             ) : (
               <button
                 onClick={() => {

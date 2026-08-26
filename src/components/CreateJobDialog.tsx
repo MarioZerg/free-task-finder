@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
-import { CATEGORIES, PHOTO_FURNITURE, PHOTO_GARDEN, PHOTO_MOVE } from '@/data/mock';
+import { CATEGORIES, CITIES, PHOTO_FURNITURE, PHOTO_GARDEN, PHOTO_MOVE } from '@/data/mock';
 import { toast } from '@/hooks/use-toast';
 
 const photoOptions = [
@@ -24,7 +24,7 @@ interface Props {
 }
 
 const CreateJobDialog = ({ open, onOpenChange }: Props) => {
-  const { addJob } = useAppState();
+  const { createJob } = useAppState();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
@@ -33,8 +33,9 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
   const [category, setCategory] = useState(CATEGORIES[1]);
   const [photo, setPhoto] = useState('none');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false);
 
-  const submit = () => {
+  const submit = async () => {
     const next: Record<string, string> = {};
     if (title.trim().length < 3) next.title = 'Коротко назовите задачу';
     if (description.trim().length < 10) next.description = 'Опишите подробнее — минимум 10 символов';
@@ -44,25 +45,34 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
     setErrors(next);
     if (Object.keys(next).length) return;
 
-    addJob({
-      title: title.trim(),
-      description: description.trim(),
-      price: Number(price),
-      city: city.trim(),
-      when: when.trim() || 'Дата не указана',
-      category,
-      photo: photoOptions.find((p) => p.id === photo)?.url,
-    });
-
-    toast({
-      title: 'Объявление в ленте',
-      description: 'Исполнители из Ярославля и области уже видят его — ждите откликов.',
-    });
-    setTitle('');
-    setDescription('');
-    setPrice('');
-    setPhoto('none');
-    onOpenChange(false);
+    setBusy(true);
+    try {
+      await createJob({
+        title: title.trim(),
+        description: description.trim(),
+        price: Number(price),
+        city: city.trim(),
+        when: when.trim() || 'Дата не указана',
+        category,
+        photo: photoOptions.find((p) => p.id === photo)?.url,
+      });
+      toast({
+        title: 'Задача в радаре',
+        description: 'Исполнители из Ярославля и области уже видят её — ждите откликов.',
+      });
+      setTitle('');
+      setDescription('');
+      setPrice('');
+      setPhoto('none');
+      onOpenChange(false);
+    } catch {
+      toast({
+        title: 'Не удалось опубликовать',
+        description: 'Проверьте поля и попробуйте ещё раз.',
+      });
+    } finally {
+      setBusy(false);
+    }
   };
 
   const field =
@@ -119,9 +129,15 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
               <input
                 className={field}
                 placeholder="Город или район Ярославской области"
+                list="job-cities"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
               />
+              <datalist id="job-cities">
+                {CITIES.map((c) => (
+                  <option key={c} value={c} />
+                ))}
+              </datalist>
               {errors.city && <p className="mt-1 text-sm text-destructive-foreground/90">{errors.city}</p>}
             </div>
           </div>
@@ -177,10 +193,11 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
 
           <button
             onClick={submit}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02]"
+            disabled={busy}
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-60"
           >
             <Icon name="Send" size={18} />
-            Опубликовать бесплатно
+            {busy ? 'Публикуем…' : 'Опубликовать бесплатно'}
           </button>
         </div>
       </DialogContent>
