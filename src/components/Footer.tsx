@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
 
@@ -28,12 +29,23 @@ const Footer = () => {
           </div>
         </div>
 
+        <div className="border-b border-line py-10">
+          <p className="flex max-w-[860px] items-start gap-3 text-sm text-muted-foreground/85">
+            <Icon name="ShieldAlert" size={18} className="mt-0.5 shrink-0 text-primary" />
+            Сервис бесплатный и является только доской объявлений. Он не участвует в расчётах и не
+            проверяет исполнителей: всю ответственность за условия, оплату, качество и безопасность
+            работ несут заказчики и исполнители самостоятельно.
+          </p>
+        </div>
+
         <div className="flex flex-wrap items-center justify-between gap-6 py-10 text-sm text-chip">
           <p>Бесплатный сервис поиска подработки. Вход через MAX.</p>
           <nav className="flex flex-wrap gap-6">
             <a href="#feed" className="story-link">Лента</a>
             <a href="#how" className="story-link">Как это работает</a>
             <a href="#people" className="story-link">Люди</a>
+            <Link to="/privacy" className="story-link">Конфиденциальность</Link>
+            <Link to="/terms" className="story-link">Условия (оферта)</Link>
             <a href="#top" className="story-link">Наверх</a>
           </nav>
         </div>

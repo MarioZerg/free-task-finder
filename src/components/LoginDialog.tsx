@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
@@ -90,7 +91,15 @@ const LoginDialog = () => {
         </button>
 
         <p className="text-center text-xs text-chip">
-          Демо-вход: подтверждение из MAX здесь не запрашивается. Сервис бесплатный, комиссий нет.
+          Продолжая, вы принимаете{' '}
+          <Link to="/terms" className="underline underline-offset-2 hover:text-foreground">
+            условия оферты
+          </Link>{' '}
+          и{' '}
+          <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">
+            политику конфиденциальности
+          </Link>
+          . Сервис бесплатный, комиссий нет, ответственность за сделки — на пользователях.
         </p>
       </DialogContent>
     </Dialog>
