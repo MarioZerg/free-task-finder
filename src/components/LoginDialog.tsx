@@ -14,7 +14,7 @@ const roleCopy: Record<Role, { title: string; hint: string; icon: string }> = {
   },
   executor: {
     title: 'Вход для исполнителя',
-    hint: 'Смотрите общую ленту заказов рядом и откликайтесь в один клик.',
+    hint: 'Смотрите ленту заказов Ярославской области и откликайтесь в один клик.',
     icon: 'Hammer',
   },
 };

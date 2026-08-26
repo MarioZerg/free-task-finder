@@ -30,6 +30,15 @@ const Footer = () => {
         </div>
 
         <div className="border-b border-line py-10">
+          <h3 className="font-head text-base font-medium">Шабашка в городах Ярославской области</h3>
+          <p className="mt-3 max-w-[860px] text-sm text-chip">
+            Подработка и разовые заказы: Ярославль (Кировский, Заволжский, Дзержинский, Фрунзенский,
+            Ленинский, Красноперекопский районы), Рыбинск, Тутаев, Переславль-Залесский, Углич,
+            Ростов Великий, Гаврилов-Ям, Данилов, Пошехонье, Мышкин, Некрасовское.
+          </p>
+        </div>
+
+        <div className="border-b border-line py-10">
           <p className="flex max-w-[860px] items-start gap-3 text-sm text-muted-foreground/85">
             <Icon name="ShieldAlert" size={18} className="mt-0.5 shrink-0 text-primary" />
             Сервис бесплатный и является только доской объявлений. Он не участвует в расчётах и не
@@ -39,7 +48,7 @@ const Footer = () => {
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-6 py-10 text-sm text-chip">
-          <p>Бесплатный сервис поиска подработки. Вход через MAX.</p>
+          <p>Бесплатный сервис поиска подработки в Ярославской области. Вход через MAX.</p>
           <nav className="flex flex-wrap gap-6">
             <a href="#feed" className="story-link">Лента</a>
             <a href="#how" className="story-link">Как это работает</a>

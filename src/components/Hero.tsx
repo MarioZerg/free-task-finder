@@ -12,7 +12,7 @@ const Hero = () => {
         <div className="grid items-start gap-12 lg:grid-cols-2">
           <div className="animate-fade-plain [animation-delay:.12s]">
             <h1 className="hero-head font-head font-normal leading-[1.18] tracking-[-0.02em]">
-              Работа рядом с домом.
+              Шабашка в Ярославле.
               <br />
               Руки — на сегодня.
             </h1>
@@ -26,8 +26,8 @@ const Hero = () => {
             </button>
 
             <p className="mt-8 max-w-[420px] text-base text-muted-foreground/90">
-              Бесплатно, без комиссий и подписок. Вход через MAX — и вы сразу в общей ленте
-              заказов своего района.
+              Разовые заказы от 500 до 1500 ₽ в Ярославле, Рыбинске, Тутаеве, Переславле, Угличе и
+              Ростове. Бесплатно, без комиссий и подписок. Вход через MAX.
             </p>
           </div>
 
@@ -36,7 +36,7 @@ const Hero = () => {
               <div className="flex h-full flex-col gap-3 overflow-hidden rounded-3xl bg-screen px-4 py-5">
                 <div className="mb-1 flex items-center justify-between">
                   <div className="text-[0.72em] font-medium">Лента заказов</div>
-                  <div className="text-[0.6em] text-chip">Химки · 5 км</div>
+                  <div className="text-[0.6em] text-chip">Ярославль · 5 км</div>
                 </div>
 
                 {preview.map((job, i) => (

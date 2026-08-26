@@ -40,10 +40,11 @@ const Feed = () => {
           <div>
             <p className="text-sm uppercase tracking-[0.2em] text-foreground/60">Лента</p>
             <h2 className="mt-4 font-head text-3xl font-normal leading-tight tracking-tight md:text-5xl">
-              Общая лента заказов
+              Заказы в Ярославской области
             </h2>
             <p className="mt-3 max-w-[520px] text-base text-muted-foreground/85">
-              Всё, что опубликовали заказчики рядом. Откликнуться можно в один клик.
+              Всё, что опубликовали заказчики Ярославля, Рыбинска, Тутаева и других городов области.
+              Оплата — от 500 до 1500 ₽. Откликнуться можно в один клик.
             </p>
           </div>
           <button

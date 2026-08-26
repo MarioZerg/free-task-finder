@@ -27,11 +27,11 @@ const ExecutorsCta = () => {
           <div>
             <p className="text-sm uppercase tracking-[0.2em] text-chip">Исполнителям</p>
             <h2 className="mt-4 font-head text-3xl font-normal leading-tight tracking-tight md:text-5xl">
-              Работа рядом — без посредников
+              Подработка в Ярославской области — без посредников
             </h2>
             <p className="mt-4 max-w-[520px] text-base text-muted-foreground/85">
-              Заказы соседей и небольших фирм в вашем районе. Откликайтесь на то, что по силам,
-              и договаривайтесь напрямую.
+              Разовые заказы от соседей и небольших фирм: Ярославль, Рыбинск, Тутаев,
+              Переславль-Залесский, Углич, Ростов. Оплата от 500 до 1500 ₽ напрямую от заказчика.
             </p>
 
             <ul className="mt-10 space-y-6">

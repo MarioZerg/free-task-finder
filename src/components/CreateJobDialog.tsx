@@ -28,7 +28,7 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
-  const [city, setCity] = useState('Химки');
+  const [city, setCity] = useState('Ярославль, Кировский район');
   const [when, setWhen] = useState('Сегодня до 19:00');
   const [category, setCategory] = useState(CATEGORIES[1]);
   const [photo, setPhoto] = useState('none');
@@ -38,8 +38,9 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
     const next: Record<string, string> = {};
     if (title.trim().length < 3) next.title = 'Коротко назовите задачу';
     if (description.trim().length < 10) next.description = 'Опишите подробнее — минимум 10 символов';
-    if (!price || Number(price) < 100) next.price = 'Укажите сумму от 100 ₽';
-    if (!city.trim()) next.city = 'Укажите город или район';
+    if (!price || Number(price) < 500 || Number(price) > 1500)
+      next.price = 'Оплата на сервисе — от 500 до 1500 ₽';
+    if (!city.trim()) next.city = 'Укажите город или район области';
     setErrors(next);
     if (Object.keys(next).length) return;
 
@@ -55,7 +56,7 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
 
     toast({
       title: 'Объявление в ленте',
-      description: 'Исполнители рядом уже видят его — ждите откликов.',
+      description: 'Исполнители из Ярославля и области уже видят его — ждите откликов.',
     });
     setTitle('');
     setDescription('');
@@ -75,7 +76,8 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
             Новое объявление
           </DialogTitle>
           <DialogDescription className="text-muted-foreground/80">
-            Публикация бесплатна. Объявление появится в общей ленте исполнителей.
+            Публикация бесплатна. Объявление появится в общей ленте исполнителей Ярославской
+            области.
           </DialogDescription>
         </DialogHeader>
 
@@ -107,7 +109,7 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
               <input
                 className={field}
                 inputMode="numeric"
-                placeholder="Оплата, ₽"
+                placeholder="Оплата, 500–1500 ₽"
                 value={price}
                 onChange={(e) => setPrice(e.target.value.replace(/\D/g, ''))}
               />
@@ -116,7 +118,7 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
             <div>
               <input
                 className={field}
-                placeholder="Город, район"
+                placeholder="Город или район Ярославской области"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
               />

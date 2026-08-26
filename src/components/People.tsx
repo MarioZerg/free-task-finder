@@ -17,8 +17,8 @@ const People = () => {
               Списки для контроля
             </h2>
             <p className="mt-3 max-w-[520px] text-base text-muted-foreground/85">
-              Открытые списки исполнителей и заказчиков: видно, кто рядом, сколько работ за
-              плечами и как давно человек в сервисе.
+              Открытые списки исполнителей и заказчиков Ярославской области: видно, кто из какого
+              города, сколько работ за плечами и как давно человек в сервисе.
             </p>
           </div>
 
@@ -72,9 +72,11 @@ const People = () => {
                     <p className="font-head text-lg">{e.done}</p>
                     <p className="text-xs text-chip">работ</p>
                   </div>
-                  <div>
-                    <p className="font-head text-lg">{e.city}</p>
-                    <p className="text-xs text-chip">район</p>
+                  <div className="min-w-0">
+                    <p className="truncate font-head text-base" title={e.city}>
+                      {e.city.replace('Ярославль, ', '').replace(' район', '')}
+                    </p>
+                    <p className="text-xs text-chip">город</p>
                   </div>
                 </div>
 
