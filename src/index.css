@@ -4,33 +4,42 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 99 9% 37%;
+    --foreground: 0 0% 100%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 100 12% 10%;
+    --card-foreground: 0 0% 100%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 103 11% 13%;
+    --popover-foreground: 0 0% 100%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 97 17% 85%;
+    --primary-foreground: 94 15% 9%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 100 12% 10%;
+    --secondary-foreground: 96 18% 89%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 99 9% 30%;
+    --muted-foreground: 96 18% 89%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 97 17% 85%;
+    --accent-foreground: 94 15% 9%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 8 55% 48%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 96 8% 54%;
+    --input: 96 8% 54%;
+    --ring: 97 17% 85%;
+
+    --surface: 100 12% 10%;
+    --line: 102 10% 19%;
+    --chip: 95 8% 54%;
+    --screen: 105 14% 5%;
+    --tile: 103 11% 13%;
+
+    --hero-size-head: 34px;
+    --hero-size-body: 17px;
 
     --radius: 0.5rem;
 
@@ -91,11 +100,70 @@
 }
 
 @layer base {
+  @media (min-width: 768px) {
+    :root {
+      --hero-size-head: 49px;
+    }
+  }
+
   * {
     @apply border-border;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-body antialiased;
+    font-size: 17px;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  .hero-head {
+    font-size: var(--hero-size-head);
+  }
+
+  .wordmark-fill {
+    font-size: min(calc(var(--hero-size-head) * 3.35), 15vw);
+    line-height: 0.78;
+    letter-spacing: -0.045em;
+  }
+
+  .story-link {
+    position: relative;
+  }
+
+  .story-link::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -4px;
+    height: 1px;
+    width: 100%;
+    transform: scaleX(0);
+    transform-origin: right;
+    background: currentColor;
+    transition: transform 0.3s ease;
+  }
+
+  .story-link:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  .photo-stub {
+    background:
+      radial-gradient(
+        120% 90% at 20% 20%,
+        hsl(var(--chip) / 0.6),
+        transparent 60%
+      ),
+      repeating-linear-gradient(
+        115deg,
+        hsl(var(--line)) 0 14px,
+        hsl(var(--tile)) 14px 28px
+      );
   }
 }
