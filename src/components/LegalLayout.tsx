@@ -13,7 +13,7 @@ const LegalLayout = ({ title, updated, intro, children }: Props) => (
   <div className="min-h-screen overflow-x-hidden bg-background font-body text-foreground">
     <header className="mx-auto flex max-w-[900px] items-center justify-between px-6 py-8 md:px-10">
       <Link to="/" className="font-head text-lg font-bold tracking-tight">
-        ШАБАШКА
+        ДОДЕЛАЙ.РУ
       </Link>
       <Link
         to="/"

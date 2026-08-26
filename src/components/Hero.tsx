@@ -14,7 +14,7 @@ const Hero = () => {
             <h1 className="hero-head font-head font-normal leading-[1.18] tracking-[-0.02em]">
               Шабашка в Ярославле.
               <br />
-              Руки — на сегодня.
+              Доделай.ру — руки на сегодня.
             </h1>
 
             <button
@@ -65,8 +65,8 @@ const Hero = () => {
         </div>
 
         <div className="pointer-events-none relative mt-10 flex select-none items-end justify-between overflow-hidden animate-fade-plain [animation-delay:.2s]">
-          <b className="wordmark-fill block font-head font-bold">ШАБАШКА</b>
-          <i className="mb-[1.55em] font-head text-[1.15em] not-italic leading-none">®</i>
+          <b className="wordmark-fill block font-head font-bold">ДОДЕЛАЙ</b>
+          <i className="mb-[1.55em] font-head text-[1.15em] not-italic leading-none">.РУ</i>
         </div>
       </div>
     </section>

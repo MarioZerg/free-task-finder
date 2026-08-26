@@ -30,7 +30,9 @@ const Footer = () => {
         </div>
 
         <div className="border-b border-line py-10">
-          <h3 className="font-head text-base font-medium">Шабашка в городах Ярославской области</h3>
+          <h3 className="font-head text-base font-medium">
+            Доделай.ру — шабашка в городах Ярославской области
+          </h3>
           <p className="mt-3 max-w-[860px] text-sm text-chip">
             Подработка и разовые заказы: Ярославль (Кировский, Заволжский, Дзержинский, Фрунзенский,
             Ленинский, Красноперекопский районы), Рыбинск, Тутаев, Переславль-Залесский, Углич,
@@ -59,12 +61,12 @@ const Footer = () => {
           </nav>
         </div>
 
-        <div className="pointer-events-none flex select-none items-end justify-between">
-          <b className="wordmark-fill block translate-y-[0.16em] font-head font-bold text-foreground/90">
-            ШАБАШКА
+        <div className="pointer-events-none mt-6 flex select-none items-end justify-between pb-10 md:pb-14">
+          <b className="wordmark-fill block pt-[0.12em] font-head font-bold leading-[1.02] text-foreground/90">
+            ДОДЕЛАЙ
           </b>
-          <i className="mb-[1.55em] font-head text-[1.15em] not-italic leading-none text-foreground/90">
-            ®
+          <i className="mb-[0.15em] font-head text-[1.15em] not-italic leading-none text-foreground/90">
+            .РУ
           </i>
         </div>
       </div>

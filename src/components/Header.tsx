@@ -25,7 +25,7 @@ const Header = () => {
     <header className="absolute inset-x-0 top-0 z-40 animate-fade-plain">
       <div className="flex items-center justify-between px-6 py-7 md:px-16 md:py-11">
         <a href="#top" className="font-head text-xl font-bold leading-none tracking-tight md:text-2xl">
-          ШАБАШКА<sup className="align-super text-[0.42em] font-normal">®</sup>
+          ДОДЕЛАЙ<sup className="align-super text-[0.42em] font-normal">.РУ</sup>
         </a>
 
         <nav className="hidden items-center gap-11 lg:flex">
@@ -71,7 +71,7 @@ const Header = () => {
       {open && (
         <div className="fixed inset-0 z-50 flex flex-col bg-screen/95 px-6 py-7 animate-fade-plain backdrop-blur lg:hidden">
           <div className="flex items-center justify-between">
-            <span className="font-head text-xl font-bold">ШАБАШКА</span>
+            <span className="font-head text-xl font-bold">ДОДЕЛАЙ.РУ</span>
             <button
               className="flex h-11 w-11 items-center justify-center rounded-full border border-foreground/35"
               onClick={() => setOpen(false)}
