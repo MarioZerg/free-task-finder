@@ -1,4 +1,5 @@
 import base64
+import datetime as dt
 import json
 import os
 import random
@@ -61,6 +62,8 @@ def _user_row(row: Dict[str, Any], private: bool = False) -> Dict[str, Any]:
         'verified': bool(row.get('verified')),
         'online': _online(row.get('last_seen')),
         'lastSeen': row.get('last_seen'),
+        'subscriptionUntil': row.get('subscription_until'),
+        'isPro': _is_pro(row.get('subscription_until')),
         'blocked': bool(row.get('blocked')),
         'createdAt': row['created_at'],
     }
@@ -72,11 +75,19 @@ def _user_row(row: Dict[str, Any], private: bool = False) -> Dict[str, Any]:
     return data
 
 
+def _is_pro(until) -> bool:
+    return bool(until and until > dt.datetime.now())
+
+
+def _int_safe(v) -> int:
+    digits = re.sub(r'\D', '', str(v or ''))
+    return int(digits) if digits else 0
+
+
 def _online(seen) -> bool:
     if not seen:
         return False
-    from datetime import datetime, timedelta
-    return datetime.now() - seen < timedelta(minutes=3)
+    return dt.datetime.now() - seen < dt.timedelta(minutes=3)
 
 
 def _me(cur, token: str) -> Optional[Dict[str, Any]]:
@@ -317,6 +328,44 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         )
         return _resp(200, {'user': _user_row(cur.fetchone(), True), 'created': True})
 
+    if method == 'POST' and action == 'support_create':
+        me = _me(cur, token)
+        if not me:
+            return _resp(401, {'error': 'no_token'})
+        text = str(body.get('text', '')).strip()[:2000]
+        topic = str(body.get('topic', 'other')).strip()[:60] or 'other'
+        if len(text) < 10:
+            return _resp(400, {'error': 'text_too_short'})
+        cur.execute(
+            f"""INSERT INTO {SCHEMA}.support_tickets (user_id, topic, text)
+                VALUES ({me['id']}, '{_esc(topic)}', '{_esc(text)}') RETURNING id"""
+        )
+        return _resp(200, {'id': cur.fetchone()['id']})
+
+    if method == 'POST' and action == 'support_my':
+        me = _me(cur, token)
+        if not me:
+            return _resp(401, {'error': 'no_token'})
+        cur.execute(
+            f"""SELECT id, topic, text, status, answer, created_at, answered_at
+                FROM {SCHEMA}.support_tickets WHERE user_id = {me['id']}
+                ORDER BY created_at DESC LIMIT 30"""
+        )
+        return _resp(200, {'tickets': [dict(r) for r in cur.fetchall()]})
+
+    if method == 'POST' and action == 'subscribe':
+        me = _me(cur, token)
+        if not me:
+            return _resp(401, {'error': 'no_token'})
+        months = 1 if _int_safe(body.get('months')) < 1 else min(12, _int_safe(body.get('months')))
+        cur.execute(
+            f"""UPDATE {SCHEMA}.users
+                SET subscription_until = GREATEST(COALESCE(subscription_until, NOW()), NOW())
+                                         + INTERVAL '{months} months'
+                WHERE id = {me['id']} RETURNING *"""
+        )
+        return _resp(200, {'user': _user_row(cur.fetchone(), True)})
+
     if method == 'PUT' and action == 'profile':
         row = _me(cur, token)
         if not row:
@@ -344,6 +393,60 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         me = _me(cur, token)
         if not me or not me.get('is_admin'):
             return _resp(403, {'error': 'not_admin'})
+
+        if method == 'POST' and action == 'admin_support':
+            status = str(body.get('status', ''))
+            where = ''
+            if status in ('new', 'answered', 'closed'):
+                where = f"WHERE t.status = '{status}'"
+            cur.execute(
+                f"""SELECT t.*, u.name, u.role, u.avatar, u.max_id, u.phone, u.contact
+                    FROM {SCHEMA}.support_tickets t
+                    JOIN {SCHEMA}.users u ON u.id = t.user_id
+                    {where}
+                    ORDER BY t.created_at DESC LIMIT 200"""
+            )
+            return _resp(200, {'tickets': [dict(r) for r in cur.fetchall()]})
+
+        if method == 'POST' and action == 'admin_support_action':
+            tid = _int_safe(body.get('ticketId'))
+            act_type = str(body.get('act', ''))
+            if not tid:
+                return _resp(400, {'error': 'no_ticket'})
+            if act_type == 'answer':
+                answer = str(body.get('answer', '')).strip()[:2000]
+                cur.execute(
+                    f"""UPDATE {SCHEMA}.support_tickets
+                        SET answer = '{_esc(answer)}', status = 'answered', answered_at = NOW()
+                        WHERE id = {tid}"""
+                )
+            elif act_type == 'close':
+                cur.execute(
+                    f"UPDATE {SCHEMA}.support_tickets SET status = 'closed' WHERE id = {tid}"
+                )
+            elif act_type == 'delete':
+                cur.execute(f'DELETE FROM {SCHEMA}.support_tickets WHERE id = {tid}')
+            else:
+                return _resp(400, {'error': 'bad_act'})
+            return _resp(200, {'ok': True})
+
+        if method == 'POST' and action == 'admin_grant_pro':
+            uid = _int_safe(body.get('userId'))
+            months = _int_safe(body.get('months')) or 1
+            if not uid:
+                return _resp(400, {'error': 'no_user'})
+            if body.get('revoke'):
+                cur.execute(
+                    f'UPDATE {SCHEMA}.users SET subscription_until = NULL WHERE id = {uid}'
+                )
+            else:
+                cur.execute(
+                    f"""UPDATE {SCHEMA}.users
+                        SET subscription_until = GREATEST(COALESCE(subscription_until, NOW()), NOW())
+                                                 + INTERVAL '{min(12, months)} months'
+                        WHERE id = {uid}"""
+                )
+            return _resp(200, {'ok': True})
 
         if method == 'POST' and action == 'admin_users':
             role = body.get('role')

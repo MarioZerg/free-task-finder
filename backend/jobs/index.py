@@ -1,3 +1,4 @@
+import datetime as dt
 import json
 import os
 import re
@@ -77,8 +78,7 @@ LEFT JOIN {SCHEMA}.users e ON e.id = j.assigned_executor_id
 def _online(seen) -> bool:
     if not seen:
         return False
-    from datetime import datetime, timedelta
-    return datetime.now() - seen < timedelta(minutes=3)
+    return dt.datetime.now() - seen < dt.timedelta(minutes=3)
 
 
 def _job(row: Dict[str, Any], viewer: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -214,6 +214,11 @@ def _expire(cur):
     )
 
 
+def _is_pro(user: Dict[str, Any]) -> bool:
+    until = user.get('subscription_until')
+    return bool(until and until > dt.datetime.now())
+
+
 def _busy_executor(cur, user_id: int) -> bool:
     cur.execute(
         f"""SELECT 1 FROM {SCHEMA}.jobs
@@ -222,12 +227,20 @@ def _busy_executor(cur, user_id: int) -> bool:
     return cur.fetchone() is not None
 
 
-def _active_customer_job(cur, user_id: int):
-    cur.execute(
-        f"""SELECT id, title, expires_at, status FROM {SCHEMA}.jobs
-            WHERE owner_id = {user_id} AND status IN ('open', 'assigned', 'expiring')
-            ORDER BY created_at DESC LIMIT 1"""
-    )
+def _active_customer_job(cur, user_id: int, pro: bool = False):
+    if pro:
+        cur.execute(
+            f"""SELECT id, title, expires_at, status FROM {SCHEMA}.jobs
+                WHERE owner_id = {user_id} AND status IN ('open', 'assigned', 'expiring')
+                  AND created_at > NOW() - INTERVAL '1 hour'
+                ORDER BY created_at DESC LIMIT 1"""
+        )
+    else:
+        cur.execute(
+            f"""SELECT id, title, expires_at, status FROM {SCHEMA}.jobs
+                WHERE owner_id = {user_id} AND status IN ('open', 'assigned', 'expiring')
+                ORDER BY created_at DESC LIMIT 1"""
+        )
     return cur.fetchone()
 
 
@@ -303,9 +316,10 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             )
             item['myReviewDone'] = cur.fetchone()['c'] > 0
             jobs.append(item)
-        limits = {'busy': _busy_executor(cur, me['id'])}
+        pro = _is_pro(me)
+        limits = {'busy': _busy_executor(cur, me['id']), 'pro': pro}
         if me['role'] == 'customer':
-            active = _active_customer_job(cur, me['id'])
+            active = None if pro else _active_customer_job(cur, me['id'])
             limits['canCreate'] = active is None
             limits['activeJobId'] = active['id'] if active else None
             limits['activeExpiresAt'] = (
@@ -517,7 +531,8 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
     if method == 'POST' and action == 'create':
         if me['role'] != 'customer':
             return _resp(403, {'error': 'only_customer'})
-        active = _active_customer_job(cur, me['id'])
+        pro = _is_pro(me)
+        active = _active_customer_job(cur, me['id'], pro) if not pro else None
         if active:
             return _resp(400, {
                 'error': 'active_job_exists',
@@ -552,6 +567,49 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 RETURNING id"""
         )
         return _resp(200, {'id': cur.fetchone()['id']})
+
+    if method == 'POST' and action == 'invite':
+        if me['role'] != 'customer':
+            return _resp(403, {'error': 'only_customer'})
+        if not _is_pro(me):
+            return _resp(403, {'error': 'pro_required'})
+        executor_id = _int(body.get('executorId'))
+        jid = _int(body.get('jobId'))
+        cur.execute(
+            f"""SELECT * FROM {SCHEMA}.jobs
+                WHERE id = {jid} AND owner_id = {me['id']} AND status = 'open'"""
+        )
+        target_job = cur.fetchone()
+        if not target_job:
+            return _resp(400, {'error': 'no_open_job'})
+        if _busy_executor(cur, executor_id):
+            return _resp(400, {'error': 'executor_busy'})
+        cur.execute(
+            f"""SELECT name, max_user_id FROM {SCHEMA}.users
+                WHERE id = {executor_id} AND role = 'executor'"""
+        )
+        ex = cur.fetchone()
+        if not ex:
+            return _resp(404, {'error': 'executor_not_found'})
+        note = str(body.get('note', '')).strip()[:500] or 'Заказчик приглашает вас на заказ.'
+        cur.execute(
+            f"""INSERT INTO {SCHEMA}.job_messages (job_id, author_id, text)
+                VALUES ({jid}, {me['id']}, '{_esc(note)}')"""
+        )
+        _notify(
+            ex['max_user_id'],
+            f"{me['name']} приглашает вас на заказ «{target_job['title']}» "
+            f"за {target_job['price']} ₽. Откройте ленту Доделай.ру и откликнитесь.",
+        )
+        return _resp(200, {'ok': True})
+
+    if method == 'POST' and action == 'my_open_jobs':
+        cur.execute(
+            f"""SELECT id, title, price FROM {SCHEMA}.jobs
+                WHERE owner_id = {me['id']} AND status = 'open'
+                ORDER BY created_at DESC LIMIT 20"""
+        )
+        return _resp(200, {'jobs': [dict(r) for r in cur.fetchall()]})
 
     job_id = _int(body.get('jobId'))
     if not job_id:

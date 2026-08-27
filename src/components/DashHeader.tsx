@@ -3,11 +3,15 @@ import { Link } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import Avatar from '@/components/Avatar';
 import EditProfileDialog from '@/components/EditProfileDialog';
+import SupportDialog from '@/components/SupportDialog';
+import SubscriptionDialog from '@/components/SubscriptionDialog';
 import { useAppState } from '@/hooks/use-app-state';
 
 const DashHeader = () => {
   const { user, logout } = useAppState();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
+  const [proOpen, setProOpen] = useState(false);
   const [menu, setMenu] = useState(false);
   if (!user) return null;
 
@@ -32,6 +36,30 @@ const DashHeader = () => {
         Мой профиль
       </button>
       <button
+        onClick={() => {
+          setSupportOpen(true);
+          setMenu(false);
+        }}
+        className="flex items-center justify-center gap-2 rounded-full border border-line px-5 py-2.5 text-sm transition-colors hover:border-primary/60"
+      >
+        <Icon name="LifeBuoy" size={16} />
+        Техподдержка
+      </button>
+      <button
+        onClick={() => {
+          setProOpen(true);
+          setMenu(false);
+        }}
+        className={`flex items-center justify-center gap-2 rounded-full border px-5 py-2.5 text-sm transition-colors ${
+          user.isPro
+            ? 'border-amber-500/50 bg-amber-500/10 text-amber-600'
+            : 'border-line hover:border-primary/60'
+        }`}
+      >
+        <Icon name="Crown" size={16} />
+        PRO
+      </button>
+      <button
         onClick={logout}
         className="rounded-full border border-line px-5 py-2.5 text-sm transition-colors hover:border-primary/60"
       >
@@ -54,7 +82,15 @@ const DashHeader = () => {
           >
             <Avatar src={user.avatar} name={user.name} size={38} />
             <span className="hidden leading-tight sm:block">
-              <span className="block text-sm font-medium">{user.name}</span>
+              <span className="flex items-center gap-1.5 text-sm font-medium">
+                {user.name}
+                {user.isPro && (
+                  <span className="flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-600">
+                    <Icon name="Crown" size={11} />
+                    PRO
+                  </span>
+                )}
+              </span>
               <span className="block text-xs text-chip">
                 ★ {user.rating.toFixed(1)} ·{' '}
                 {user.role === 'customer' ? 'заказчик' : `${user.doneCount} работ`}
@@ -79,6 +115,8 @@ const DashHeader = () => {
       )}
 
       <EditProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
+      <SupportDialog open={supportOpen} onOpenChange={setSupportOpen} />
+      <SubscriptionDialog open={proOpen} onOpenChange={setProOpen} />
     </header>
   );
 };

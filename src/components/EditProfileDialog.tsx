@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
 import Avatar from '@/components/Avatar';
+import SubscriptionDialog from '@/components/SubscriptionDialog';
 import { useAppState } from '@/hooks/use-app-state';
 import { CITIES } from '@/data/mock';
 import { toast } from '@/hooks/use-toast';
@@ -65,6 +66,7 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
   const [skill, setSkill] = useState('');
   const [about, setAbout] = useState('');
   const [busy, setBusy] = useState(false);
+  const [proOpen, setProOpen] = useState(false);
 
   useEffect(() => {
     if (!open || !user) return;
@@ -206,6 +208,24 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
           )}
         </div>
 
+        <div className="rounded-3xl border border-line bg-tile p-4">
+          <p className="flex items-center gap-2 font-head text-base font-medium">
+            <Icon name="Crown" size={16} className="text-amber-600" />
+            Подписка
+          </p>
+          <p className="mt-1 text-sm text-chip">
+            {user.isPro
+              ? `Доделай PRO активен до ${new Date(user.subscriptionUntil || '').toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}`
+              : 'Доделай PRO — больше заданий, быстрое поднятие и приглашения исполнителей.'}
+          </p>
+          <button
+            onClick={() => setProOpen(true)}
+            className="mt-3 w-full rounded-full border border-amber-500/50 bg-amber-500/10 px-5 py-2.5 text-sm font-medium text-amber-600 transition-colors hover:bg-amber-500/20"
+          >
+            {user.isPro ? 'Управлять подпиской' : 'Подключить PRO'}
+          </button>
+        </div>
+
         <button
           onClick={save}
           disabled={busy}
@@ -214,6 +234,8 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
           <Icon name="Check" size={18} />
           {busy ? 'Сохраняем…' : 'Сохранить'}
         </button>
+
+        <SubscriptionDialog open={proOpen} onOpenChange={setProOpen} />
       </DialogContent>
     </Dialog>
   );

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Icon from '@/components/ui/icon';
 import JobFeedCard from '@/components/JobFeedCard';
 import { useAppState } from '@/hooks/use-app-state';
@@ -32,6 +32,41 @@ const LiveFeed = ({ readOnly }: { readOnly?: boolean }) => {
     () => (city ? feed.filter((j) => cityOf(j.city) === city) : feed),
     [feed, city],
   );
+
+  const knownIds = useRef<Set<number> | null>(null);
+  const [freshIds, setFreshIds] = useState<number[]>([]);
+  const [banner, setBanner] = useState(0);
+
+  useEffect(() => {
+    if (!feed.length && knownIds.current === null) return;
+    if (knownIds.current === null) {
+      knownIds.current = new Set(feed.map((j) => j.id));
+      return;
+    }
+    const known = knownIds.current;
+    const added = feed.filter((j) => !known.has(j.id)).map((j) => j.id);
+    feed.forEach((j) => known.add(j.id));
+    if (!added.length) return;
+    setFreshIds((prev) => [...prev, ...added]);
+    setBanner(added.length);
+    const t1 = window.setTimeout(
+      () => setFreshIds((prev) => prev.filter((id) => !added.includes(id))),
+      2500,
+    );
+    const t2 = window.setTimeout(() => setBanner(0), 4000);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [feed]);
+
+  const plural = (n: number) => {
+    const d = n % 10;
+    const h = n % 100;
+    if (d === 1 && h !== 11) return 'новый заказ';
+    if (d >= 2 && d <= 4 && (h < 12 || h > 14)) return 'новых заказа';
+    return 'новых заказов';
+  };
 
   const pick = (value: string) => {
     setCity(value);
@@ -95,6 +130,12 @@ const LiveFeed = ({ readOnly }: { readOnly?: boolean }) => {
         </p>
       )}
 
+      {banner > 0 && (
+        <p className="mt-5 flex animate-bubble-in items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-5 py-3 text-sm font-medium text-primary">
+          <Icon name="Sparkles" size={16} />+{banner} {plural(banner)}
+        </p>
+      )}
+
       {visible.length === 0 ? (
         <div className="mt-6 rounded-3xl border border-line bg-surface p-10 text-center">
           <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -120,13 +161,21 @@ const LiveFeed = ({ readOnly }: { readOnly?: boolean }) => {
       ) : (
         <div className="mt-6 grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
           {visible.map((j) => (
-            <JobFeedCard
+            <div
               key={j.id}
-              job={j}
-              readOnly={readOnly}
-              responded={(j.responses || []).some((r) => r.executorId === user?.id)}
-              canRespond={canRespond}
-            />
+              className={
+                freshIds.includes(j.id)
+                  ? 'animate-slide-up-in rounded-3xl ring-2 ring-primary/40 transition-shadow'
+                  : ''
+              }
+            >
+              <JobFeedCard
+                job={j}
+                readOnly={readOnly}
+                responded={(j.responses || []).some((r) => r.executorId === user?.id)}
+                canRespond={canRespond}
+              />
+            </div>
           ))}
         </div>
       )}

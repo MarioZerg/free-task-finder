@@ -66,14 +66,16 @@ const Tabs = ({
 );
 
 const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: number) => void }) => {
-  const { assign, removeJob, bumpJob } = useAppState();
+  const { assign, removeJob, bumpJob, limits } = useAppState();
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const responses = job.responses || [];
+  const pro = !!limits.pro;
+  const bumpHours = pro ? 1 : 5;
 
   const bumpAvailableIn = (() => {
     const base = job.bumpedAt || job.createdAt;
-    const ms = new Date(base).getTime() + 5 * 3600000 - Date.now();
+    const ms = new Date(base).getTime() + bumpHours * 3600000 - Date.now();
     if (ms <= 0) return null;
     const h = Math.floor(ms / 3600000);
     const m = Math.floor((ms % 3600000) / 60000);
@@ -91,7 +93,7 @@ const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: num
     } catch {
       toast({
         title: 'Пока рано',
-        description: 'Поднимать объявление можно раз в 5 часов.',
+        description: `Поднимать объявление можно раз в ${pro ? 'час' : '5 часов'}.`,
       });
     } finally {
       setBusy(false);
@@ -191,7 +193,7 @@ const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: num
             Удалить задание
           </button>
           <span className="flex items-center text-xs text-chip">
-            Поднимать объявление можно раз в 5 часов
+            {pro ? 'Поднимать объявление можно раз в час' : 'Поднимать объявление можно раз в 5 часов'}
           </span>
         </div>
       )}
@@ -241,6 +243,9 @@ const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: num
                         ★ {r.rating.toFixed(1)} · {r.doneCount} работ · {r.reviewsCount} отзывов
                       </p>
                       {r.skill && <p className="mt-0.5 text-xs text-chip">{r.skill}</p>}
+                      {r.about && (
+                        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{r.about}</p>
+                      )}
                       <p className="mt-1.5 text-sm text-muted-foreground">{r.note}</p>
                     </div>
                   </div>
@@ -313,7 +318,7 @@ const CustomerDashboard = () => {
         </div>
         <button
           onClick={() => {
-            if (!limits.canCreate) {
+            if (!limits.canCreate && !limits.pro) {
               toast({
                 title: 'Уже есть активное задание',
                 description: 'Новое можно выставить после завершения текущего или через 24 часа.',
@@ -330,12 +335,19 @@ const CustomerDashboard = () => {
         </button>
       </div>
 
-      {!limits.canCreate && (
-        <p className="mt-5 flex items-start gap-2.5 rounded-2xl border border-line bg-tile px-5 py-4 text-sm text-muted-foreground">
-          <Icon name="Info" size={18} className="mt-0.5 shrink-0 text-primary" />
-          Одновременно можно вести одно задание. Новое станет доступно после завершения текущего
-          {left ? ` или через ${left}` : ''}.
+      {limits.pro ? (
+        <p className="mt-5 flex items-start gap-2.5 rounded-2xl border border-primary/40 bg-primary/5 px-5 py-4 text-sm text-muted-foreground">
+          <Icon name="Crown" size={18} className="mt-0.5 shrink-0 text-primary" />
+          PRO: публикуйте новое задание каждый час
         </p>
+      ) : (
+        !limits.canCreate && (
+          <p className="mt-5 flex items-start gap-2.5 rounded-2xl border border-line bg-tile px-5 py-4 text-sm text-muted-foreground">
+            <Icon name="Info" size={18} className="mt-0.5 shrink-0 text-primary" />
+            Одновременно можно вести одно задание. Новое станет доступно после завершения текущего
+            {left ? ` или через ${left}` : ''}.
+          </p>
+        )
       )}
 
       <div className="mt-7">
@@ -376,7 +388,7 @@ const CustomerDashboard = () => {
       </div>
 
       <CreateJobDialog open={createOpen} onOpenChange={setCreateOpen} />
-      <ProfileDialog userId={profileId} onOpenChange={() => setProfileId(null)} />
+      <ProfileDialog userId={profileId} showDetails onOpenChange={() => setProfileId(null)} />
     </div>
   );
 };

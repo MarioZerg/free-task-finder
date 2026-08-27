@@ -58,6 +58,18 @@ export interface User {
   contact?: string | null;
   token?: string;
   isAdmin?: boolean;
+  subscriptionUntil?: string | null;
+  isPro?: boolean;
+}
+
+export interface SupportTicket {
+  id: number;
+  topic: string;
+  text: string;
+  status: 'new' | 'answered' | 'closed';
+  answer?: string | null;
+  created_at: string;
+  answered_at?: string | null;
 }
 
 export interface ReviewItem {

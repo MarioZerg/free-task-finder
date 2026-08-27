@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -45,6 +45,39 @@ const JobFeedCard = ({ job, responded, canRespond, readOnly }: Props) => {
   }, []);
 
   const posted = since(job.bumpedAt || job.createdAt);
+
+  const responses = job.responses || [];
+  const knownResponders = useRef<Set<number> | null>(null);
+  const [freshResponders, setFreshResponders] = useState<number[]>([]);
+
+  useEffect(() => {
+    const ids = responses.map((r) => r.executorId);
+    if (knownResponders.current === null) {
+      knownResponders.current = new Set(ids);
+      return;
+    }
+    const known = knownResponders.current;
+    const added = ids.filter((id) => !known.has(id));
+    ids.forEach((id) => known.add(id));
+    if (!added.length) return;
+    setFreshResponders((prev) => [...prev, ...added]);
+    const t = window.setTimeout(
+      () => setFreshResponders((prev) => prev.filter((id) => !added.includes(id))),
+      3000,
+    );
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [responses.map((r) => r.executorId).join(',')]);
+
+  const shown = responses.slice(0, 4);
+  const rest = responses.length - shown.length;
+  const respWord = (n: number) => {
+    const d = n % 10;
+    const h = n % 100;
+    if (d === 1 && h !== 11) return 'отклик';
+    if (d >= 2 && d <= 4 && (h < 12 || h > 14)) return 'отклика';
+    return 'откликов';
+  };
 
   const send = async () => {
     setBusy(true);
@@ -113,8 +146,37 @@ const JobFeedCard = ({ job, responded, canRespond, readOnly }: Props) => {
             <Icon name="Tag" size={14} />
             {job.category}
           </span>
-
         </div>
+
+        {responses.length > 0 && (
+          <div className="mt-4 flex items-center gap-3">
+            <div className="flex items-center">
+              {shown.map((r, i) => (
+                <span
+                  key={r.executorId}
+                  style={
+                    freshResponders.includes(r.executorId)
+                      ? { animationDelay: `${i * 80}ms` }
+                      : undefined
+                  }
+                  className={`${i > 0 ? '-ml-2 sm:-ml-3' : ''} rounded-full border-2 border-surface ${
+                    freshResponders.includes(r.executorId) ? 'animate-pop-in' : ''
+                  }`}
+                >
+                  <Avatar src={r.avatar} name={r.name} size={28} />
+                </span>
+              ))}
+              {rest > 0 && (
+                <span className="-ml-2 flex h-7 w-7 items-center justify-center rounded-full border-2 border-surface bg-primary/15 text-[10px] font-semibold text-primary sm:-ml-3">
+                  +{rest}
+                </span>
+              )}
+            </div>
+            <span className="text-xs text-chip">
+              {responses.length} {respWord(responses.length)}
+            </span>
+          </div>
+        )}
 
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
           <span className="flex items-center gap-2 text-sm text-chip">

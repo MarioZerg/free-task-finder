@@ -13,6 +13,7 @@ import AdminRoleView from '@/components/admin/AdminRoleView';
 import AdminModeration from '@/components/admin/AdminModeration';
 import AdminDemoAccess from '@/components/admin/AdminDemoAccess';
 import AdminReviews from '@/components/admin/AdminReviews';
+import AdminSupport from '@/components/admin/AdminSupport';
 import ProfileDialog from '@/components/ProfileDialog';
 
 type Mode = 'customer' | 'executor' | 'admin';
@@ -59,6 +60,7 @@ const AdminInner = () => {
   const [stats, setStats] = useState<Stats | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [viewProfile, setViewProfile] = useState<number | null>(null);
+  const [newTickets, setNewTickets] = useState(0);
 
   useEffect(() => {
     if (!user?.isAdmin) return;
@@ -66,6 +68,20 @@ const AdminInner = () => {
       .jobs('admin_stats', { method: 'POST', body: {} })
       .then((r) => setStats(r as Stats))
       .catch(() => undefined);
+  }, [user?.isAdmin]);
+
+  useEffect(() => {
+    if (!user?.isAdmin) return;
+    const load = () =>
+      api
+        .auth('admin_support', { method: 'POST', body: { status: 'new' } })
+        .then((r) => setNewTickets((r.tickets || []).length))
+        .catch(() => undefined);
+    load();
+    const id = window.setInterval(() => {
+      if (document.visibilityState === 'visible') load();
+    }, 30000);
+    return () => window.clearInterval(id);
   }, [user?.isAdmin]);
 
   if (loading) {
@@ -166,6 +182,9 @@ const AdminInner = () => {
                 <TabsTrigger value="moderation" className="rounded-full px-6 py-2 text-sm">
                   Модерация
                 </TabsTrigger>
+                <TabsTrigger value="support" className="rounded-full px-6 py-2 text-sm">
+                  Обращения{newTickets > 0 ? ` · ${newTickets}` : ''}
+                </TabsTrigger>
                 <TabsTrigger value="users" className="rounded-full px-6 py-2 text-sm">
                   Пользователи
                 </TabsTrigger>
@@ -178,6 +197,9 @@ const AdminInner = () => {
               </TabsList>
               <TabsContent value="moderation" className="mt-6">
                 <AdminModeration />
+              </TabsContent>
+              <TabsContent value="support" className="mt-6">
+                <AdminSupport onProfile={setViewProfile} />
               </TabsContent>
               <TabsContent value="users" className="mt-6">
                 <AdminUsers onProfile={setViewProfile} />
@@ -196,7 +218,11 @@ const AdminInner = () => {
       </main>
 
       <EditProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
-      <ProfileDialog userId={viewProfile} onOpenChange={() => setViewProfile(null)} />
+      <ProfileDialog
+        userId={viewProfile}
+        showDetails
+        onOpenChange={() => setViewProfile(null)}
+      />
     </div>
   );
 };

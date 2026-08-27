@@ -27,6 +27,7 @@ export interface Limits {
   canCreate: boolean;
   activeJobId: number | null;
   activeExpiresAt: string | null;
+  pro?: boolean;
 }
 
 interface AppState {
@@ -55,6 +56,7 @@ interface AppState {
   }) => Promise<User>;
   startMaxLogin: () => Promise<{ code: string; botLink: string; botName: string }>;
   updateProfile: (payload: ProfilePayload) => Promise<void>;
+  subscribe: (months: number) => Promise<void>;
   logout: () => void;
   refresh: () => Promise<void>;
   createJob: (job: {
@@ -86,6 +88,7 @@ const emptyLimits: Limits = {
   canCreate: true,
   activeJobId: null,
   activeExpiresAt: null,
+  pro: false,
 };
 
 export const AppStateProvider = ({ children }: { children: ReactNode }) => {
@@ -195,6 +198,15 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     setUser(r.user);
   }, []);
 
+  const subscribe = useCallback<AppState['subscribe']>(
+    async (months) => {
+      const r = await api.auth('subscribe', { method: 'POST', body: { months } });
+      setUser(r.user);
+      await refresh();
+    },
+    [refresh],
+  );
+
   const logout = useCallback(() => {
     clearToken();
     setUser(null);
@@ -226,6 +238,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       signIn,
       startMaxLogin,
       updateProfile,
+      subscribe,
       logout,
       refresh,
       createJob: (job) => act('create', job),
@@ -253,6 +266,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       signIn,
       startMaxLogin,
       updateProfile,
+      subscribe,
       logout,
       refresh,
       act,

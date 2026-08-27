@@ -14,6 +14,7 @@ import Avatar from '@/components/Avatar';
 interface Props {
   userId: number | null;
   onOpenChange: (v: boolean) => void;
+  showDetails?: boolean;
 }
 
 const seenText = (u: User) => {
@@ -31,7 +32,7 @@ const seenText = (u: User) => {
 const dateRu = (v: string) =>
   new Date(v).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
 
-const ProfileDialog = ({ userId, onOpenChange }: Props) => {
+const ProfileDialog = ({ userId, onOpenChange, showDetails = false }: Props) => {
   const [profile, setProfile] = useState<User | null>(null);
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -112,6 +113,33 @@ const ProfileDialog = ({ userId, onOpenChange }: Props) => {
                 <p className="text-xs text-chip">отзывов</p>
               </div>
             </div>
+
+            {showDetails && (profile.about || profile.city || profile.skill) && (
+              <div className="rounded-3xl border border-line bg-tile p-5">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-chip">
+                  {profile.city && (
+                    <span className="flex items-center gap-1.5">
+                      <Icon name="MapPin" size={14} />
+                      {profile.city}
+                    </span>
+                  )}
+                  {profile.skill && (
+                    <span className="flex items-center gap-1.5">
+                      <Icon name="Hammer" size={14} />
+                      {profile.skill}
+                    </span>
+                  )}
+                </div>
+                {profile.about && (
+                  <>
+                    <h4 className="mt-3 font-head text-base font-medium">О себе</h4>
+                    <p className="mt-1 whitespace-pre-line text-sm text-muted-foreground">
+                      {profile.about}
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
 
             <div className="border-t border-line pt-4">
               <h4 className="font-head text-lg font-medium">Отзывы</h4>

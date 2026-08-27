@@ -2,6 +2,9 @@ import { memo, useEffect, useState } from 'react';
 import Icon from '@/components/ui/icon';
 import Avatar from '@/components/Avatar';
 import ProfileDialog from '@/components/ProfileDialog';
+import InviteDialog from '@/components/InviteDialog';
+import SubscriptionDialog from '@/components/SubscriptionDialog';
+import { useAppState } from '@/hooks/use-app-state';
 import { api, User } from '@/lib/api';
 
 const lastSeenText = (u: User) => {
@@ -22,28 +25,48 @@ interface Counts {
   online: number;
 }
 
-const PersonCard = memo(({ user, onOpen }: { user: User; onOpen: (id: number) => void }) => (
-  <button
-    onClick={() => onOpen(user.id)}
-    className="flex w-full items-center gap-3 rounded-3xl border border-line bg-surface p-4 text-left transition-colors hover:border-primary/50"
-  >
-    <Avatar src={user.avatar} name={user.name} size={46} online={user.online} />
-    <div className="min-w-0 flex-1">
-      <p className="flex items-center gap-1.5 truncate font-medium">
-        {user.name}
-        {user.verified && <Icon name="BadgeCheck" size={15} className="shrink-0 text-primary" />}
-      </p>
-      <p className={`mt-0.5 text-xs ${user.online ? 'text-emerald-600' : 'text-chip'}`}>
-        {lastSeenText(user)}
-      </p>
-      <p className="mt-1 text-xs text-chip">
-        ★ {user.rating.toFixed(1)} · {user.reviewsCount} отзывов
-        {user.role === 'executor' ? ` · ${user.doneCount} работ` : ''}
-      </p>
+const PersonCard = memo(
+  ({
+    user,
+    onOpen,
+    onInvite,
+  }: {
+    user: User;
+    onOpen: (id: number) => void;
+    onInvite?: (u: User) => void;
+  }) => (
+    <div className="rounded-3xl border border-line bg-surface p-4 transition-colors hover:border-primary/50">
+      <button onClick={() => onOpen(user.id)} className="flex w-full items-center gap-3 text-left">
+        <Avatar src={user.avatar} name={user.name} size={46} online={user.online} />
+        <div className="min-w-0 flex-1">
+          <p className="flex items-center gap-1.5 truncate font-medium">
+            {user.name}
+            {user.verified && (
+              <Icon name="BadgeCheck" size={15} className="shrink-0 text-primary" />
+            )}
+          </p>
+          <p className={`mt-0.5 text-xs ${user.online ? 'text-emerald-600' : 'text-chip'}`}>
+            {lastSeenText(user)}
+          </p>
+          <p className="mt-1 text-xs text-chip">
+            ★ {user.rating.toFixed(1)} · {user.reviewsCount} отзывов
+            {user.role === 'executor' ? ` · ${user.doneCount} работ` : ''}
+          </p>
+        </div>
+        <Icon name="ChevronRight" size={18} className="shrink-0 text-chip" />
+      </button>
+      {onInvite && (
+        <button
+          onClick={() => onInvite(user)}
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-line bg-tile px-4 py-2.5 text-sm transition-colors hover:border-primary/60 hover:text-primary"
+        >
+          <Icon name="UserPlus" size={16} />
+          Пригласить на заказ
+        </button>
+      )}
     </div>
-    <Icon name="ChevronRight" size={18} className="shrink-0 text-chip" />
-  </button>
-));
+  ),
+);
 PersonCard.displayName = 'PersonCard';
 
 const PER_PAGE = 15;
@@ -51,7 +74,10 @@ const PER_PAGE = 15;
 let cache: { executors: User[]; customers: User[]; counts: Counts; at: number } | null = null;
 
 const PeopleList = () => {
+  const { user } = useAppState();
   const [tab, setTab] = useState<'executor' | 'customer'>('executor');
+  const [invite, setInvite] = useState<User | null>(null);
+  const [proOpen, setProOpen] = useState(false);
   const [executors, setExecutors] = useState<User[]>([]);
   const [customers, setCustomers] = useState<User[]>([]);
   const [counts, setCounts] = useState<Counts>(
@@ -99,6 +125,11 @@ const PeopleList = () => {
   const pages = Math.max(1, Math.ceil(list.length / PER_PAGE));
   const current = Math.min(page, pages);
   const shown = list.slice((current - 1) * PER_PAGE, current * PER_PAGE);
+  const canInvite = user?.role === 'customer' && tab === 'executor';
+  const handleInvite = (u: User) => {
+    if (user?.isPro) setInvite(u);
+    else setProOpen(true);
+  };
 
   return (
     <section>
@@ -139,7 +170,12 @@ const PeopleList = () => {
         <>
           <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {shown.map((u) => (
-              <PersonCard key={`${u.role}-${u.id}`} user={u} onOpen={setProfileId} />
+              <PersonCard
+                key={`${u.role}-${u.id}`}
+                user={u}
+                onOpen={setProfileId}
+                onInvite={canInvite ? handleInvite : undefined}
+              />
             ))}
           </div>
 
@@ -190,6 +226,12 @@ const PeopleList = () => {
       )}
 
       <ProfileDialog userId={profileId} onOpenChange={() => setProfileId(null)} />
+      <InviteDialog executor={invite} onOpenChange={() => setInvite(null)} />
+      <SubscriptionDialog
+        open={proOpen}
+        onOpenChange={setProOpen}
+        hint="Приглашение исполнителей доступно по подписке PRO"
+      />
     </section>
   );
 };
