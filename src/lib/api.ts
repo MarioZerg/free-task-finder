@@ -45,17 +45,31 @@ export interface User {
   city: string;
   skill?: string | null;
   about?: string | null;
+  avatar?: string | null;
   rating: number;
   reviewsCount: number;
   doneCount: number;
+  verified?: boolean;
+  blocked?: boolean;
   createdAt: string;
   phone?: string | null;
   contact?: string | null;
   token?: string;
+  isAdmin?: boolean;
+}
+
+export interface ReviewItem {
+  rating: number;
+  text: string;
+  created_at: string;
+  author_name: string;
+  job_title: string;
+  final_price: number | null;
 }
 
 export interface JobResponseItem {
   executorId: number;
+  avatar?: string | null;
   note: string;
   createdAt: string;
   name: string;
@@ -83,6 +97,8 @@ export interface JobItem {
   ownerName: string;
   ownerCity: string;
   ownerRating: number;
+  ownerAvatar?: string | null;
+  executorAvatar?: string | null;
   assignedExecutorId?: number | null;
   executorName?: string | null;
   executorRating?: number | null;

@@ -12,9 +12,20 @@ import { api, clearToken, getToken, JobItem, setToken, User } from '@/lib/api';
 
 export type Role = 'customer' | 'executor';
 
+export interface ProfilePayload {
+  name?: string;
+  city?: string;
+  phone?: string;
+  contact?: string;
+  skill?: string;
+  about?: string;
+  avatar?: string;
+}
+
 interface AppState {
   user: User | null;
   loading: boolean;
+  maxEnabled: boolean;
   feed: JobItem[];
   myJobs: JobItem[];
   completed: JobItem[];
@@ -24,7 +35,8 @@ interface AppState {
   openLogin: (role: Role) => void;
   setLoginOpen: (v: boolean) => void;
   signIn: (payload: {
-    maxId: string;
+    maxId?: string;
+    code?: string;
     role: Role;
     name?: string;
     city?: string;
@@ -33,7 +45,9 @@ interface AppState {
     skill?: string;
     about?: string;
     acceptedTerms?: boolean;
-  }) => Promise<void>;
+  }) => Promise<User>;
+  startMaxLogin: () => Promise<{ code: string; botLink: string; botName: string }>;
+  updateProfile: (payload: ProfilePayload) => Promise<void>;
   logout: () => void;
   refresh: () => Promise<void>;
   createJob: (job: {
@@ -66,6 +80,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [stats, setStats] = useState(emptyStats);
   const [loginOpen, setLoginOpen] = useState(false);
   const [loginRole, setLoginRole] = useState<Role>('customer');
+  const [maxEnabled, setMaxEnabled] = useState(false);
   const userRef = useRef<User | null>(null);
   userRef.current = user;
 
@@ -95,6 +110,10 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const init = async () => {
+      api
+        .auth('config')
+        .then((r) => setMaxEnabled(!!r.maxEnabled))
+        .catch(() => undefined);
       if (getToken()) {
         try {
           const r = await api.auth('me');
@@ -128,9 +147,21 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       setUser(r.user);
       setLoginOpen(false);
       await refresh();
+      return r.user as User;
     },
     [refresh],
   );
+
+  const startMaxLogin = useCallback<AppState['startMaxLogin']>(async () => {
+    const r = await api.auth('login_start', { method: 'POST', body: {} });
+    setMaxEnabled(!!r.maxEnabled);
+    return { code: r.code, botLink: r.botLink, botName: r.botName };
+  }, []);
+
+  const updateProfile = useCallback<AppState['updateProfile']>(async (payload) => {
+    const r = await api.auth('profile', { method: 'PUT', body: payload });
+    setUser(r.user);
+  }, []);
 
   const logout = useCallback(() => {
     clearToken();
@@ -150,6 +181,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     () => ({
       user,
       loading,
+      maxEnabled,
       feed,
       myJobs,
       completed,
@@ -159,6 +191,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       openLogin,
       setLoginOpen,
       signIn,
+      startMaxLogin,
+      updateProfile,
       logout,
       refresh,
       createJob: (job) => act('create', job),
@@ -169,7 +203,24 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       cancel: (jobId) => act('cancel', { jobId }),
       review: (jobId, rating, text) => act('review', { jobId, rating, text }),
     }),
-    [user, loading, feed, myJobs, completed, stats, loginOpen, loginRole, openLogin, signIn, logout, refresh, act],
+    [
+      user,
+      loading,
+      maxEnabled,
+      feed,
+      myJobs,
+      completed,
+      stats,
+      loginOpen,
+      loginRole,
+      openLogin,
+      signIn,
+      startMaxLogin,
+      updateProfile,
+      logout,
+      refresh,
+      act,
+    ],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

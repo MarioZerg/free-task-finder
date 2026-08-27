@@ -1,0 +1,10 @@
+{
+  "tests": [
+    {
+      "name": "Настройка бота отвечает",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200
+    }
+  ]
+}

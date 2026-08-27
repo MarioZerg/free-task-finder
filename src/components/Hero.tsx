@@ -1,24 +1,15 @@
 import { useAppState } from '@/hooks/use-app-state';
 import { money } from '@/data/mock';
 
-const fallback = [
-  { id: -1, title: 'Перевезти диван', price: 1400, when: 'Сегодня до 19:00', responses: 0 },
-  { id: -2, title: 'Собрать шкаф', price: 1200, when: 'Завтра, утро', responses: 0 },
-  { id: -3, title: 'Убрать участок', price: 1500, when: 'Суббота', responses: 0 },
+const preview = [
+  { id: 1, title: 'Перевезти диван', price: 1400, when: 'Сегодня до 19:00' },
+  { id: 2, title: 'Собрать шкаф', price: 1200, when: 'Завтра, утро' },
+  { id: 3, title: 'Убрать участок', price: 900, when: 'Суббота' },
+  { id: 4, title: 'Помочь с погрузкой', price: 700, when: 'Понедельник' },
 ];
 
 const Hero = () => {
-  const { openLogin, feed } = useAppState();
-
-  const preview = feed.length
-    ? feed.slice(0, 5).map((j) => ({
-        id: j.id,
-        title: j.title,
-        price: j.price,
-        when: j.when,
-        responses: (j.responses || []).length,
-      }))
-    : fallback;
+  const { openLogin } = useAppState();
 
   return (
     <section id="top" className="relative overflow-hidden bg-background pb-4">
@@ -40,8 +31,8 @@ const Hero = () => {
             </button>
 
             <p className="mt-8 max-w-[420px] text-base text-muted-foreground/90">
-              Разовые заказы от 500 до 1500 ₽ в Ярославле, Рыбинске, Тутаеве, Переславле, Угличе и
-              Ростове. Бесплатно, без комиссий и подписок. Вход через MAX.
+              Разовые заказы от частных лиц — до 1500 ₽ за разовую задачу. Ярославль, Рыбинск,
+              Тутаев, Переславль, Углич и Ростов. Бесплатно, без комиссий и подписок. Вход через MAX.
             </p>
           </div>
 
@@ -66,9 +57,7 @@ const Hero = () => {
                           {money(job.price)}
                         </div>
                       </div>
-                      <div className="mt-1.5 text-[0.58em] text-chip">
-                        {job.when} · {job.responses} откл.
-                      </div>
+                      <div className="mt-1.5 text-[0.58em] text-chip">{job.when}</div>
                     </div>
                   </div>
                 ))}

@@ -1,6 +1,6 @@
 import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
-import { initials, money } from '@/data/mock';
+import { money } from '@/data/mock';
 
 const dateRu = (v?: string | null) =>
   v ? new Date(v).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }) : '';
@@ -16,7 +16,7 @@ const CompletedFeed = () => {
           Завершённые заказы
         </h2>
         <p className="mt-3 max-w-[560px] text-base text-muted-foreground/85">
-          Реальные сделки Доделай.ру: кто заказал, кто сделал и на какую сумму договорились.
+          Обезличенная сводка закрытых задач: категория, город и сумма чека. Без имён и профилей.
         </p>
 
         {completed.length === 0 ? (
@@ -30,47 +30,20 @@ const CompletedFeed = () => {
             </p>
           </div>
         ) : (
-          <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-12 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {completed.map((job, i) => (
               <article
                 key={job.id}
-                className="animate-fade-in rounded-3xl border border-line bg-tile p-6"
+                className="flex animate-fade-in items-center gap-3 rounded-3xl border border-line bg-tile px-6 py-5"
                 style={{ animationDelay: `${i * 45}ms` }}
               >
-                <div className="flex items-baseline justify-between gap-3">
-                  <h3 className="font-head text-lg font-medium leading-snug">{job.title}</h3>
-                  <span className="whitespace-nowrap font-head text-lg font-medium text-primary">
-                    {money(job.finalPrice || job.price)}
-                  </span>
-                </div>
-                <p className="mt-2 line-clamp-2 text-sm text-muted-foreground/80">
-                  {job.description}
-                </p>
-
-                <div className="mt-5 space-y-2 border-t border-line pt-4 text-sm">
-                  <p className="flex items-center gap-2.5">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
-                      {initials(job.ownerName)}
-                    </span>
-                    <span className="text-muted-foreground/85">
-                      Заказчик <span className="text-foreground">{job.ownerName}</span>
-                    </span>
-                  </p>
-                  {job.executorName && (
-                    <p className="flex items-center gap-2.5">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
-                        {initials(job.executorName)}
-                      </span>
-                      <span className="text-muted-foreground/85">
-                        Исполнитель <span className="text-foreground">{job.executorName}</span>
-                      </span>
-                    </p>
-                  )}
-                </div>
-
-                <p className="mt-4 flex items-center gap-1.5 text-xs text-chip">
-                  <Icon name="CalendarCheck" size={14} />
-                  {job.city} · {dateRu(job.completedAt)}
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+                  <Icon name="CircleCheck" size={18} />
+                </span>
+                <p className="min-w-0 text-sm text-muted-foreground/85">
+                  <span className="text-foreground">{job.category}</span> · {job.city} ·{' '}
+                  <span className="font-head text-primary">{money(job.finalPrice || job.price)}</span>{' '}
+                  · {dateRu(job.completedAt)}
                 </p>
               </article>
             ))}

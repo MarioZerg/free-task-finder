@@ -10,10 +10,12 @@ import {
 import Icon from '@/components/ui/icon';
 import { AppStateProvider, useAppState } from '@/hooks/use-app-state';
 import { JobItem } from '@/lib/api';
-import { CATEGORIES, initials, money } from '@/data/mock';
+import { CATEGORIES, money } from '@/data/mock';
 import CreateJobDialog from '@/components/CreateJobDialog';
 import ActiveJobCard from '@/components/ActiveJobCard';
 import ProfileDialog from '@/components/ProfileDialog';
+import EditProfileDialog from '@/components/EditProfileDialog';
+import Avatar from '@/components/Avatar';
 import { toast } from '@/hooks/use-toast';
 
 const statusLabel: Record<string, string> = {
@@ -26,6 +28,7 @@ const statusLabel: Record<string, string> = {
 
 const DashHeader = () => {
   const { user, logout } = useAppState();
+  const [profileOpen, setProfileOpen] = useState(false);
   if (!user) return null;
   return (
     <header className="border-b border-line bg-surface">
@@ -33,10 +36,8 @@ const DashHeader = () => {
         <Link to="/" className="font-head text-xl font-bold leading-none tracking-tight">
           ДОДЕЛАЙ<sup className="align-super text-[0.42em] font-normal">.РУ</sup>
         </Link>
-        <div className="flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary font-head text-sm font-semibold text-primary-foreground">
-            {initials(user.name)}
-          </span>
+        <div className="flex flex-wrap items-center gap-3">
+          <Avatar src={user.avatar} name={user.name} size={44} />
           <div className="leading-tight">
             <p className="text-sm font-medium">{user.name}</p>
             <p className="text-xs text-chip">
@@ -44,6 +45,21 @@ const DashHeader = () => {
               {user.role === 'customer' ? 'заказчик' : `${user.doneCount} работ`}
             </p>
           </div>
+          {user.isAdmin && (
+            <Link
+              to="/admin"
+              className="rounded-full border border-line px-5 py-2.5 text-sm transition-colors hover:border-primary/50"
+            >
+              Админка
+            </Link>
+          )}
+          <button
+            onClick={() => setProfileOpen(true)}
+            className="flex items-center gap-2 rounded-full border border-line px-5 py-2.5 text-sm transition-colors hover:border-primary/50"
+          >
+            <Icon name="UserRound" size={16} />
+            Мой профиль
+          </button>
           <button
             onClick={logout}
             className="rounded-full border border-line px-5 py-2.5 text-sm transition-colors hover:border-primary/50"
@@ -52,6 +68,7 @@ const DashHeader = () => {
           </button>
         </div>
       </div>
+      <EditProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
     </header>
   );
 };
@@ -109,9 +126,7 @@ const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: num
               {responses.map((r) => (
                 <div key={r.executorId} className="rounded-2xl border border-line bg-tile p-4">
                   <div className="flex items-start gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary">
-                      {initials(r.name)}
-                    </span>
+                    <Avatar src={r.avatar} name={r.name} size={40} />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                         <span className="font-medium">{r.name}</span>
@@ -267,7 +282,8 @@ const RadarCard = ({ job, mine }: { job: JobItem; mine: boolean }) => {
         </div>
         <p className="mt-2 line-clamp-3 text-sm text-muted-foreground/85">{job.description}</p>
         <JobMeta job={job} />
-        <p className="mt-3 text-xs text-chip">
+        <p className="mt-3 flex items-center gap-2 text-xs text-chip">
+          <Avatar src={job.ownerAvatar} name={job.ownerName} size={24} />
           Заказчик: {job.ownerName} · ★ {job.ownerRating.toFixed(1)}
         </p>
 

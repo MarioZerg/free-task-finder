@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
-import { initials } from '@/data/mock';
+import Avatar from '@/components/Avatar';
 
 const links = [
-  { href: '#feed', label: 'Лента заказов' },
+  { href: '#roles', label: 'Роли' },
   { href: '#how', label: 'Как это работает' },
   { href: '#executors', label: 'Исполнителям' },
-  { href: '#people', label: 'О сервисе' },
+  { href: '#completed', label: 'Завершённые заказы' },
 ];
 
 const Header = () => {
@@ -40,9 +40,7 @@ const Header = () => {
         <div className="hidden lg:block">
           {user ? (
             <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary font-head text-sm font-semibold text-primary-foreground">
-                {initials(user.name)}
-              </span>
+              <Avatar src={user.avatar} name={user.name} size={44} />
               <span className="text-sm font-medium">{user.name}</span>
               <Link
                 to="/dashboard"

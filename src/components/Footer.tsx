@@ -52,9 +52,9 @@ const Footer = () => {
         <div className="flex flex-wrap items-center justify-between gap-6 py-10 text-sm text-chip">
           <p>Бесплатный сервис поиска подработки в Ярославской области. Вход через MAX.</p>
           <nav className="flex flex-wrap gap-6">
-            <a href="#feed" className="story-link">Лента</a>
+            <a href="#roles" className="story-link">Роли</a>
             <a href="#how" className="story-link">Как это работает</a>
-            <a href="#people" className="story-link">Люди</a>
+            <a href="#completed" className="story-link">Завершённые заказы</a>
             <Link to="/privacy" className="story-link">Конфиденциальность</Link>
             <Link to="/terms" className="story-link">Условия (оферта)</Link>
             <a href="#top" className="story-link">Наверх</a>

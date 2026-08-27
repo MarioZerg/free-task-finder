@@ -39,8 +39,7 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
     const next: Record<string, string> = {};
     if (title.trim().length < 3) next.title = 'Коротко назовите задачу';
     if (description.trim().length < 10) next.description = 'Опишите подробнее — минимум 10 символов';
-    if (!price || Number(price) < 500 || Number(price) > 1500)
-      next.price = 'Оплата на сервисе — от 500 до 1500 ₽';
+    if (price && Number(price) > 1500) next.price = 'Сумма не должна превышать 1500 ₽';
     if (!city.trim()) next.city = 'Укажите город или район области';
     setErrors(next);
     if (Object.keys(next).length) return;
@@ -119,10 +118,13 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
               <input
                 className={field}
                 inputMode="numeric"
-                placeholder="Оплата, 500–1500 ₽"
+                placeholder="Сколько готовы заплатить, ₽"
                 value={price}
                 onChange={(e) => setPrice(e.target.value.replace(/\D/g, ''))}
               />
+              <p className="mt-1 text-xs text-chip">
+                Максимум 1500 ₽ — сервис для небольших разовых задач.
+              </p>
               {errors.price && <p className="mt-1 text-sm text-destructive-foreground/90">{errors.price}</p>}
             </div>
             <div>

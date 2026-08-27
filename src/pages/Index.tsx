@@ -2,10 +2,8 @@ import { AppStateProvider } from '@/hooks/use-app-state';
 import Header from '@/components/Header';
 import Hero from '@/components/Hero';
 import RolePreview from '@/components/RolePreview';
-import Feed from '@/components/Feed';
 import HowItWorks from '@/components/HowItWorks';
 import ExecutorsCta from '@/components/ExecutorsCta';
-import People from '@/components/People';
 import CompletedFeed from '@/components/CompletedFeed';
 import Faq from '@/components/Faq';
 import Footer from '@/components/Footer';
@@ -18,10 +16,8 @@ const Index = () => (
       <main>
         <Hero />
         <RolePreview />
-        <Feed />
         <HowItWorks />
         <ExecutorsCta />
-        <People />
         <CompletedFeed />
         <Faq />
       </main>

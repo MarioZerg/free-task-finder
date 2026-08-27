@@ -7,17 +7,9 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
-import { api, User } from '@/lib/api';
-import { initials, money } from '@/data/mock';
-
-interface ReviewItem {
-  rating: number;
-  text: string;
-  created_at: string;
-  author_name: string;
-  job_title: string;
-  final_price: number | null;
-}
+import { api, ReviewItem, User } from '@/lib/api';
+import { money } from '@/data/mock';
+import Avatar from '@/components/Avatar';
 
 interface Props {
   userId: number | null;
@@ -73,9 +65,7 @@ const ProfileDialog = ({ userId, onOpenChange }: Props) => {
         {profile && (
           <>
             <div className="flex items-center gap-4">
-              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/20 font-head text-base font-semibold text-primary">
-                {initials(profile.name)}
-              </span>
+              <Avatar src={profile.avatar} name={profile.name} size={56} />
               <div className="min-w-0">
                 <p className="truncate font-head text-lg font-medium">{profile.name}</p>
                 <p className="truncate text-sm text-chip">

@@ -13,7 +13,7 @@ CORS = {
     'Access-Control-Max-Age': '86400',
 }
 
-MIN_PRICE = 500
+MIN_PRICE = 1
 MAX_PRICE = 1500
 
 
@@ -47,7 +47,8 @@ SELECT j.*,
        o.name AS owner_name, o.city AS owner_city, o.rating AS owner_rating,
        o.contact AS owner_contact, o.phone AS owner_phone,
        e.name AS executor_name, e.rating AS executor_rating, e.skill AS executor_skill,
-       e.contact AS executor_contact, e.phone AS executor_phone, e.done_count AS executor_done
+       e.contact AS executor_contact, e.phone AS executor_phone, e.done_count AS executor_done,
+       e.avatar AS executor_avatar, o.avatar AS owner_avatar
 FROM {SCHEMA}.jobs j
 JOIN {SCHEMA}.users o ON o.id = j.owner_id
 LEFT JOIN {SCHEMA}.users e ON e.id = j.assigned_executor_id
@@ -72,6 +73,8 @@ def _job(row: Dict[str, Any], viewer: Optional[Dict[str, Any]]) -> Dict[str, Any
         'ownerName': row['owner_name'],
         'ownerCity': row['owner_city'],
         'ownerRating': float(row['owner_rating'] or 0),
+        'ownerAvatar': row['owner_avatar'],
+        'executorAvatar': row['executor_avatar'],
         'assignedExecutorId': row['assigned_executor_id'],
         'executorName': row['executor_name'],
         'executorRating': float(row['executor_rating'] or 0) if row['executor_rating'] is not None else None,
@@ -109,7 +112,7 @@ def _viewer(cur, token: str) -> Optional[Dict[str, Any]]:
 def _responses(cur, job_id: int) -> list:
     cur.execute(
         f"""SELECT r.executor_id, r.note, r.created_at,
-                   u.name, u.city, u.skill, u.about, u.rating, u.done_count, u.reviews_count
+                   u.name, u.city, u.skill, u.about, u.rating, u.done_count, u.reviews_count, u.avatar
             FROM {SCHEMA}.job_responses r JOIN {SCHEMA}.users u ON u.id = r.executor_id
             WHERE r.job_id = {job_id}
             ORDER BY u.rating DESC, r.created_at ASC"""
@@ -127,6 +130,7 @@ def _responses(cur, job_id: int) -> list:
             'rating': float(r['rating'] or 0),
             'doneCount': r['done_count'],
             'reviewsCount': r['reviews_count'],
+            'avatar': r['avatar'],
         })
     return out
 
@@ -223,6 +227,56 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
 
     if not me:
         return _resp(401, {'error': 'no_token'})
+
+    if action.startswith('admin_'):
+        if not me.get('is_admin'):
+            return _resp(403, {'error': 'not_admin'})
+
+        if method == 'POST' and action == 'admin_jobs':
+            status = str(body.get('status', ''))
+            where = ''
+            if status in ('open', 'assigned', 'expiring', 'done', 'cancelled'):
+                where = f" WHERE j.status = '{status}'"
+            cur.execute(JOB_SELECT + where + ' ORDER BY j.created_at DESC LIMIT 200')
+            jobs = []
+            for row in cur.fetchall():
+                item = _job(row, me)
+                item['responses'] = _responses(cur, row['id'])
+                jobs.append(item)
+            return _resp(200, {'jobs': jobs})
+
+        if method == 'POST' and action == 'admin_update_job':
+            jid = _int(body.get('jobId'))
+            sets = []
+            new_status = str(body.get('status', ''))
+            if new_status in ('open', 'assigned', 'expiring', 'done', 'cancelled'):
+                sets.append(f"status = '{new_status}'")
+            if body.get('title'):
+                sets.append(f"title = '{_esc(str(body['title'])[:200])}'")
+            if body.get('description'):
+                sets.append(f"description = '{_esc(str(body['description'])[:2000])}'")
+            if body.get('price'):
+                sets.append(f'price = {min(_int(body["price"]), MAX_PRICE)}')
+            if not sets or not jid:
+                return _resp(400, {'error': 'nothing_to_update'})
+            cur.execute(f"UPDATE {SCHEMA}.jobs SET {', '.join(sets)} WHERE id = {jid}")
+            return _resp(200, {'ok': True})
+
+        if method == 'POST' and action == 'admin_stats':
+            cur.execute(
+                f"""SELECT
+                     (SELECT COUNT(*) FROM {SCHEMA}.users WHERE role = 'customer') AS customers,
+                     (SELECT COUNT(*) FROM {SCHEMA}.users WHERE role = 'executor') AS executors,
+                     (SELECT COUNT(*) FROM {SCHEMA}.users WHERE blocked) AS blocked,
+                     (SELECT COUNT(*) FROM {SCHEMA}.jobs WHERE status = 'open') AS open_jobs,
+                     (SELECT COUNT(*) FROM {SCHEMA}.jobs WHERE status IN ('assigned','expiring')) AS active_jobs,
+                     (SELECT COUNT(*) FROM {SCHEMA}.jobs WHERE status = 'done') AS done_jobs,
+                     (SELECT COUNT(*) FROM {SCHEMA}.jobs WHERE status = 'cancelled') AS cancelled_jobs,
+                     (SELECT COALESCE(SUM(final_price), 0) FROM {SCHEMA}.jobs WHERE status = 'done') AS turnover,
+                     (SELECT COUNT(*) FROM {SCHEMA}.reviews) AS reviews"""
+            )
+            r = cur.fetchone()
+            return _resp(200, {k: int(v or 0) for k, v in dict(r).items()})
 
     if method == 'POST' and action == 'create':
         if me['role'] != 'customer':

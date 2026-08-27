@@ -13,6 +13,19 @@
       "expectedStatus": 401
     },
     {
+      "name": "Настройки входа",
+      "method": "GET",
+      "path": "/?action=config",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Админка закрыта без прав",
+      "method": "POST",
+      "path": "/?action=admin_users",
+      "body": {"role": "executor"},
+      "expectedStatus": 403
+    },
+    {
       "name": "Неизвестное действие",
       "method": "GET",
       "path": "/?action=nope",

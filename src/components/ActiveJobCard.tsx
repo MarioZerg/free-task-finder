@@ -13,6 +13,7 @@ import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
 import { JobItem } from '@/lib/api';
 import { money } from '@/data/mock';
+import Avatar from '@/components/Avatar';
 import { toast } from '@/hooks/use-toast';
 
 const leftText = (deadline?: string | null) => {
@@ -87,8 +88,8 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
 
   const doComplete = async () => {
     const v = Number(finalPrice);
-    if (!v || v < 500 || v > 1500) {
-      toast({ title: 'Сумма вне диапазона', description: 'Финальная сумма — от 500 до 1500 ₽.' });
+    if (!v || v > 1500) {
+      toast({ title: 'Не больше 1500 ₽', description: 'Укажите сумму до 1500 ₽.' });
       return;
     }
     setCompleteOpen(false);
@@ -103,7 +104,12 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
             {job.status === 'done' ? 'Заказ выполнен' : 'Заказ в работе'}
           </p>
           <h4 className="mt-1 font-head text-xl font-medium">{job.title}</h4>
-          <p className="mt-1 text-sm text-chip">
+          <p className="mt-1.5 flex items-center gap-2 text-sm text-chip">
+            <Avatar
+              src={job.isOwner ? job.executorAvatar : job.ownerAvatar}
+              name={(job.isOwner ? job.executorName : job.ownerName) || '—'}
+              size={26}
+            />
             {job.isOwner ? `Исполнитель: ${job.executorName}` : `Заказчик: ${job.ownerName}`}
           </p>
         </div>
@@ -248,10 +254,10 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
         <AlertDialogContent className="border-line bg-surface text-foreground">
           <AlertDialogHeader>
             <AlertDialogTitle className="font-head text-xl font-medium">
-              Завершение заказа
+              {job.isOwner ? 'Укажите, сколько вы заплатили' : 'Укажите, сколько вы заработали'}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground/80">
-              Укажите финальную сумму, о которой вы договорились — от 500 до 1500 ₽.
+              Не больше 1500 ₽ — сервис для небольших разовых задач.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <input
