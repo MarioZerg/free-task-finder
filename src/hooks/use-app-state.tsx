@@ -57,6 +57,12 @@ interface AppState {
   startMaxLogin: () => Promise<{ code: string; botLink: string; botName: string }>;
   updateProfile: (payload: ProfilePayload) => Promise<void>;
   subscribe: (months: number) => Promise<void>;
+  startPayment: (months: number) => Promise<{
+    paymentsEnabled: boolean;
+    paymentUrl?: string;
+    amount: number;
+  }>;
+  unsubscribe: (immediate: boolean) => Promise<void>;
   logout: () => void;
   refresh: () => Promise<void>;
   createJob: (job: {
@@ -208,6 +214,20 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     [refresh],
   );
 
+  const startPayment = useCallback<AppState['startPayment']>(async (months) => {
+    const r = await api.auth('pay_start', { method: 'POST', body: { months } });
+    return {
+      paymentsEnabled: !!r.paymentsEnabled,
+      paymentUrl: r.paymentUrl,
+      amount: r.amount ?? 0,
+    };
+  }, []);
+
+  const unsubscribe = useCallback<AppState['unsubscribe']>(async (immediate) => {
+    const r = await api.auth('unsubscribe', { method: 'POST', body: { immediate } });
+    setUser(r.user);
+  }, []);
+
   const logout = useCallback(() => {
     clearToken();
     setUser(null);
@@ -240,6 +260,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       startMaxLogin,
       updateProfile,
       subscribe,
+      startPayment,
+      unsubscribe,
       logout,
       refresh,
       createJob: (job) => act('create', job),
@@ -268,6 +290,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       startMaxLogin,
       updateProfile,
       subscribe,
+      startPayment,
+      unsubscribe,
       logout,
       refresh,
       act,

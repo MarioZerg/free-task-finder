@@ -59,6 +59,7 @@ export interface User {
   token?: string;
   isAdmin?: boolean;
   subscriptionUntil?: string | null;
+  autoRenew?: boolean;
   isPro?: boolean;
 }
 

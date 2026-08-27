@@ -22,6 +22,11 @@ CORS = {
 SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 'public')
 BOT_TOKEN = os.environ.get('MAX_BOT_TOKEN', '')
 BOT_NAME = os.environ.get('MAX_BOT_NAME', 'id760218194200_3_bot')
+TOCHKA_TOKEN = os.environ.get('TOCHKA_MERCHANT_TOKEN', '')
+TOCHKA_CUSTOMER_CODE = os.environ.get('TOCHKA_CUSTOMER_CODE', '')
+SITE_URL = os.environ.get('SITE_URL', 'https://dodelay.ru')
+PRO_PRICE = 299
+
 ADMIN_IDS = {
     x.strip().lstrip('@').lower()
     for x in os.environ.get('ADMIN_MAX_IDS', '').split(',')
@@ -63,6 +68,7 @@ def _user_row(row: Dict[str, Any], private: bool = False) -> Dict[str, Any]:
         'online': _online(row.get('last_seen')),
         'lastSeen': row.get('last_seen'),
         'subscriptionUntil': row.get('subscription_until'),
+        'autoRenew': bool(row.get('subscription_auto_renew')),
         'isPro': _is_pro(row.get('subscription_until')),
         'blocked': bool(row.get('blocked')),
         'createdAt': row['created_at'],
@@ -353,6 +359,94 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         )
         return _resp(200, {'tickets': [dict(r) for r in cur.fetchall()]})
 
+    if method == 'GET' and action == 'billing_config':
+        return _resp(200, {'paymentsEnabled': bool(TOCHKA_TOKEN), 'price': PRO_PRICE})
+
+    if method == 'POST' and action == 'pay_start':
+        me = _me(cur, token)
+        if not me:
+            return _resp(401, {'error': 'no_token'})
+        months = max(1, min(12, _int_safe(body.get('months')) or 1))
+        amount = PRO_PRICE * months
+        cur.execute(
+            f"""INSERT INTO {SCHEMA}.payments (user_id, amount, months, status)
+                VALUES ({me['id']}, {amount}, {months}, 'created') RETURNING id"""
+        )
+        payment_id = cur.fetchone()['id']
+
+        if not TOCHKA_TOKEN:
+            return _resp(200, {
+                'paymentsEnabled': False,
+                'paymentId': payment_id,
+                'amount': amount,
+                'months': months,
+            })
+
+        payload = json.dumps({
+            'Data': {
+                'customerCode': TOCHKA_CUSTOMER_CODE,
+                'amount': f'{amount}.00',
+                'purpose': f'Подписка Доделай PRO на {months} мес.',
+                'redirectUrl': f'{SITE_URL}/dashboard?payment=success',
+                'failRedirectUrl': f'{SITE_URL}/dashboard?payment=fail',
+                'paymentMode': ['card', 'sbp'],
+                'merchantId': TOCHKA_CUSTOMER_CODE,
+                'preAuthorization': False,
+                'ttl': 60,
+            }
+        }).encode()
+        try:
+            req = urllib.request.Request(
+                'https://enter.tochka.com/uapi/acquiring/v1.0/payments',
+                data=payload,
+                headers={
+                    'Content-Type': 'application/json',
+                    'Authorization': f'Bearer {TOCHKA_TOKEN}',
+                },
+            )
+            with urllib.request.urlopen(req, timeout=8) as res:
+                data = json.loads(res.read().decode() or '{}')
+            info = (data.get('Data') or {})
+            url = info.get('paymentLink') or info.get('paymentUrl') or ''
+            operation = info.get('operationId') or ''
+            cur.execute(
+                f"""UPDATE {SCHEMA}.payments
+                    SET payment_url = '{_esc(url)}', operation_id = '{_esc(operation)}',
+                        status = 'pending'
+                    WHERE id = {payment_id}"""
+            )
+            return _resp(200, {
+                'paymentsEnabled': True,
+                'paymentId': payment_id,
+                'paymentUrl': url,
+                'amount': amount,
+            })
+        except Exception:
+            cur.execute(
+                f"UPDATE {SCHEMA}.payments SET status = 'failed' WHERE id = {payment_id}"
+            )
+            return _resp(502, {'error': 'payment_provider_error'})
+
+    if method == 'POST' and action == 'unsubscribe':
+        me = _me(cur, token)
+        if not me:
+            return _resp(401, {'error': 'no_token'})
+        immediate = bool(body.get('immediate'))
+        if immediate:
+            cur.execute(
+                f"""UPDATE {SCHEMA}.users
+                    SET subscription_until = NULL, subscription_auto_renew = FALSE,
+                        subscription_cancelled_at = NOW()
+                    WHERE id = {me['id']} RETURNING *"""
+            )
+        else:
+            cur.execute(
+                f"""UPDATE {SCHEMA}.users
+                    SET subscription_auto_renew = FALSE, subscription_cancelled_at = NOW()
+                    WHERE id = {me['id']} RETURNING *"""
+            )
+        return _resp(200, {'user': _user_row(cur.fetchone(), True)})
+
     if method == 'POST' and action == 'subscribe':
         me = _me(cur, token)
         if not me:
@@ -361,7 +455,8 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         cur.execute(
             f"""UPDATE {SCHEMA}.users
                 SET subscription_until = GREATEST(COALESCE(subscription_until, NOW()), NOW())
-                                         + INTERVAL '{months} months'
+                                         + INTERVAL '{months} months',
+                    subscription_auto_renew = TRUE, subscription_cancelled_at = NULL
                 WHERE id = {me['id']} RETURNING *"""
         )
         return _resp(200, {'user': _user_row(cur.fetchone(), True)})
