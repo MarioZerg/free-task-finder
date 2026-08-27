@@ -62,6 +62,16 @@ const Footer = () => {
           </nav>
         </div>
 
+        <div className="border-t border-line/60 pt-6">
+          <p className="text-xs leading-relaxed text-chip/70">
+            ИНН 760218194200 · ОГРНИП 322774600341432
+          </p>
+          <p className="mt-1.5 text-xs leading-relaxed text-chip/70">
+            Оплата подписки Доделай PRO принимается через интернет-эквайринг Точка Банк:
+            банковской картой или по СБП. Платёж проходит на защищённой странице банка.
+          </p>
+        </div>
+
         <div className="pointer-events-none mt-6 flex select-none items-end justify-between pb-10 md:pb-14">
           <b className="wordmark-fill block pt-[0.12em] font-head font-bold leading-[1.02] text-primary/25">
             ДОДЕЛАЙ
