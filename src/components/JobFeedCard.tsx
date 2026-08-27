@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -184,4 +184,4 @@ const JobFeedCard = ({ job, responded, canRespond, readOnly }: Props) => {
   );
 };
 
-export default JobFeedCard;
+export default memo(JobFeedCard);

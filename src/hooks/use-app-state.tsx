@@ -36,7 +36,6 @@ interface AppState {
   maxEnabled: boolean;
   feed: JobItem[];
   myJobs: JobItem[];
-  completed: JobItem[];
   stats: { openJobs: number; doneJobs: number; executors: number; avgCheck: number };
   loginOpen: boolean;
   loginRole: Role;
@@ -94,23 +93,19 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [feed, setFeed] = useState<JobItem[]>([]);
   const [myJobs, setMyJobs] = useState<JobItem[]>([]);
-  const [completed, setCompleted] = useState<JobItem[]>([]);
   const [stats, setStats] = useState(emptyStats);
   const [limits, setLimits] = useState<Limits>(emptyLimits);
   const [loginOpen, setLoginOpen] = useState(false);
   const [loginRole, setLoginRole] = useState<Role>('customer');
   const [maxEnabled, setMaxEnabled] = useState(false);
-  const userRef = useRef<User | null>(null);
-  userRef.current = user;
 
   const loadPublic = useCallback(async () => {
-    const [f, c, s] = await Promise.all([
-      api.jobs('feed').catch(() => ({ jobs: [] })),
-      api.jobs('completed').catch(() => ({ jobs: [] })),
-      api.jobs('stats').catch(() => emptyStats),
-    ]);
+    const f = await api.jobs('feed').catch(() => ({ jobs: [] }));
     setFeed(f.jobs || []);
-    setCompleted(c.jobs || []);
+  }, []);
+
+  const loadStats = useCallback(async () => {
+    const s = await api.jobs('stats').catch(() => emptyStats);
     setStats({ ...emptyStats, ...s });
   }, []);
 
@@ -125,8 +120,16 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     setLimits({ ...emptyLimits, ...(r.limits || {}) });
   }, []);
 
+  const refreshing = useRef(false);
+
   const refresh = useCallback(async () => {
-    await Promise.all([loadPublic(), loadMine()]);
+    if (refreshing.current) return;
+    refreshing.current = true;
+    try {
+      await Promise.all([loadPublic(), loadMine()]);
+    } finally {
+      refreshing.current = false;
+    }
   }, [loadPublic, loadMine]);
 
   useEffect(() => {
@@ -145,15 +148,23 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       }
       await refresh();
       setLoading(false);
+      loadStats();
     };
     init();
-  }, [refresh]);
+  }, [refresh, loadStats]);
 
   useEffect(() => {
     const id = window.setInterval(() => {
-      refresh();
-    }, 7000);
-    return () => window.clearInterval(id);
+      if (document.visibilityState === 'visible') refresh();
+    }, 12000);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') refresh();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [refresh]);
 
   const openLogin = useCallback((role: Role) => {
@@ -207,7 +218,6 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       maxEnabled,
       feed,
       myJobs,
-      completed,
       stats,
       loginOpen,
       loginRole,
@@ -236,7 +246,6 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       maxEnabled,
       feed,
       myJobs,
-      completed,
       stats,
       loginOpen,
       loginRole,

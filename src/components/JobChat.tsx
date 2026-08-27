@@ -26,7 +26,9 @@ const JobChat = ({ jobId, partner }: { jobId: number; partner: string }) => {
 
   useEffect(() => {
     load();
-    const id = window.setInterval(load, 5000);
+    const id = window.setInterval(() => {
+      if (document.visibilityState === 'visible') load();
+    }, 8000);
     return () => window.clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId]);

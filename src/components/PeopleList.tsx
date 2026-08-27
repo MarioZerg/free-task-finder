@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import Icon from '@/components/ui/icon';
 import Avatar from '@/components/Avatar';
 import ProfileDialog from '@/components/ProfileDialog';
@@ -16,7 +16,13 @@ const lastSeenText = (u: User) => {
   return 'давно не заходил';
 };
 
-const PersonCard = ({ user, onOpen }: { user: User; onOpen: (id: number) => void }) => (
+interface Counts {
+  executors: number;
+  customers: number;
+  online: number;
+}
+
+const PersonCard = memo(({ user, onOpen }: { user: User; onOpen: (id: number) => void }) => (
   <button
     onClick={() => onOpen(user.id)}
     className="flex w-full items-center gap-3 rounded-3xl border border-line bg-surface p-4 text-left transition-colors hover:border-primary/50"
@@ -37,35 +43,62 @@ const PersonCard = ({ user, onOpen }: { user: User; onOpen: (id: number) => void
     </div>
     <Icon name="ChevronRight" size={18} className="shrink-0 text-chip" />
   </button>
-);
+));
+PersonCard.displayName = 'PersonCard';
+
+const PER_PAGE = 15;
+
+let cache: { executors: User[]; customers: User[]; counts: Counts; at: number } | null = null;
 
 const PeopleList = () => {
   const [tab, setTab] = useState<'executor' | 'customer'>('executor');
   const [executors, setExecutors] = useState<User[]>([]);
   const [customers, setCustomers] = useState<User[]>([]);
-  const [counts, setCounts] = useState({ executors: 0, customers: 0, online: 0 });
-  const [loading, setLoading] = useState(true);
+  const [counts, setCounts] = useState<Counts>(
+    cache?.counts || { executors: 0, customers: 0, online: 0 },
+  );
+  const [loading, setLoading] = useState(!cache);
   const [profileId, setProfileId] = useState<number | null>(null);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
+    let alive = true;
     const load = async () => {
       try {
         const r = await api.auth('people');
-        setExecutors(r.executors || []);
-        setCustomers(r.customers || []);
-        if (r.counts) setCounts(r.counts);
+        if (!alive) return;
+        const next = {
+          executors: r.executors || [],
+          customers: r.customers || [],
+          counts: r.counts || { executors: 0, customers: 0, online: 0 },
+          at: Date.now(),
+        };
+        cache = next;
+        setExecutors(next.executors);
+        setCustomers(next.customers);
+        setCounts(next.counts);
       } catch {
         /* тихо */
       } finally {
-        setLoading(false);
+        if (alive) setLoading(false);
       }
     };
-    load();
-    const id = window.setInterval(load, 30000);
-    return () => window.clearInterval(id);
+    if (!cache || Date.now() - cache.at > 60000) load();
+    const id = window.setInterval(() => {
+      if (document.visibilityState === 'visible') load();
+    }, 60000);
+    return () => {
+      alive = false;
+      window.clearInterval(id);
+    };
   }, []);
 
+  useEffect(() => setPage(1), [tab]);
+
   const list = tab === 'executor' ? executors : customers;
+  const pages = Math.max(1, Math.ceil(list.length / PER_PAGE));
+  const current = Math.min(page, pages);
+  const shown = list.slice((current - 1) * PER_PAGE, current * PER_PAGE);
 
   return (
     <section>
@@ -103,11 +136,57 @@ const PeopleList = () => {
           <p className="mt-2 text-sm text-chip">Участники появятся здесь после регистрации.</p>
         </div>
       ) : (
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {list.map((u) => (
-            <PersonCard key={`${u.role}-${u.id}`} user={u} onOpen={setProfileId} />
-          ))}
-        </div>
+        <>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {shown.map((u) => (
+              <PersonCard key={`${u.role}-${u.id}`} user={u} onOpen={setProfileId} />
+            ))}
+          </div>
+
+          {pages > 1 && (
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+              <button
+                onClick={() => setPage(current - 1)}
+                disabled={current === 1}
+                aria-label="Назад"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface transition-colors hover:border-primary/50 disabled:opacity-40"
+              >
+                <Icon name="ChevronLeft" size={18} />
+              </button>
+
+              {Array.from({ length: pages }, (_, i) => i + 1)
+                .filter((n) => n === 1 || n === pages || Math.abs(n - current) <= 1)
+                .map((n, i, arr) => (
+                  <span key={n} className="flex items-center gap-2">
+                    {i > 0 && arr[i - 1] !== n - 1 && <span className="text-chip">…</span>}
+                    <button
+                      onClick={() => setPage(n)}
+                      className={`h-10 min-w-10 rounded-full px-3 text-sm font-medium transition-colors ${
+                        n === current
+                          ? 'bg-primary text-primary-foreground'
+                          : 'border border-line bg-surface text-muted-foreground hover:border-primary/50'
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  </span>
+                ))}
+
+              <button
+                onClick={() => setPage(current + 1)}
+                disabled={current === pages}
+                aria-label="Вперёд"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface transition-colors hover:border-primary/50 disabled:opacity-40"
+              >
+                <Icon name="ChevronRight" size={18} />
+              </button>
+            </div>
+          )}
+
+          <p className="mt-3 text-center text-xs text-chip">
+            Страница {current} из {pages} · показано {shown.length} из {list.length}
+          </p>
+        </>
       )}
 
       <ProfileDialog userId={profileId} onOpenChange={() => setProfileId(null)} />

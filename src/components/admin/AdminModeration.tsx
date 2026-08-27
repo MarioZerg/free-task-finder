@@ -24,7 +24,9 @@ const AdminModeration = () => {
 
   useEffect(() => {
     load();
-    const id = window.setInterval(load, 30000);
+    const id = window.setInterval(() => {
+      if (document.visibilityState === 'visible') load();
+    }, 30000);
     return () => window.clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
