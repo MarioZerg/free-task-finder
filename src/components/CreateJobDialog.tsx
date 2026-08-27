@@ -8,7 +8,14 @@ import {
 } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
-import { CATEGORIES, CITIES, PHOTO_FURNITURE, PHOTO_GARDEN, PHOTO_MOVE } from '@/data/mock';
+import {
+  CATEGORIES,
+  CITY_DISTRICTS,
+  CITY_LIST,
+  PHOTO_FURNITURE,
+  PHOTO_GARDEN,
+  PHOTO_MOVE,
+} from '@/data/mock';
 import { toast } from '@/hooks/use-toast';
 
 const photoOptions = [
@@ -28,7 +35,9 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
-  const [city, setCity] = useState('Ярославль, Кировский район');
+  const [cityName, setCityName] = useState(CITY_LIST[0]);
+  const [district, setDistrict] = useState('');
+  const [address, setAddress] = useState('');
   const [when, setWhen] = useState('Сегодня до 19:00');
   const [category, setCategory] = useState(CATEGORIES[1]);
   const [photo, setPhoto] = useState('none');
@@ -39,8 +48,9 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
     const next: Record<string, string> = {};
     if (title.trim().length < 3) next.title = 'Коротко назовите задачу';
     if (description.trim().length < 10) next.description = 'Опишите подробнее — минимум 10 символов';
-    if (price && Number(price) > 1500) next.price = 'Сумма не должна превышать 1500 ₽';
-    if (!city.trim()) next.city = 'Укажите город или район области';
+    if (!price || Number(price) < 1) next.price = 'Укажите сумму';
+    if (!cityName) next.city = 'Выберите город';
+    if (districts.length && !district) next.district = 'Выберите район';
     setErrors(next);
     if (Object.keys(next).length) return;
 
@@ -50,18 +60,19 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
         title: title.trim(),
         description: description.trim(),
         price: Number(price),
-        city: city.trim(),
+        city: [cityName, district, address.trim()].filter(Boolean).join(', '),
         when: when.trim() || 'Дата не указана',
         category,
         photo: photoOptions.find((p) => p.id === photo)?.url,
       });
       toast({
-        title: 'Задание отправлено на проверку',
-        description: 'Модератор проверит его и выставит в ленту заказов.',
+        title: 'Задание в ленте заказов',
+        description: 'Исполнители уже видят его. Модератор проверит объявление дополнительно.',
       });
       setTitle('');
       setDescription('');
       setPrice('');
+      setAddress('');
       setPhoto('none');
       onOpenChange(false);
     } catch (e) {
@@ -78,6 +89,8 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
       setBusy(false);
     }
   };
+
+  const districts = CITY_DISTRICTS[cityName] || [];
 
   const field =
     'w-full rounded-2xl border border-line bg-tile px-4 py-3.5 text-base outline-none transition-colors placeholder:text-chip focus:border-primary/60';
@@ -97,7 +110,7 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
         <p className="flex items-start gap-2.5 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3.5 text-sm text-muted-foreground">
           <Icon name="TriangleAlert" size={18} className="mt-0.5 shrink-0 text-primary" />
           Задание прописывайте тщательно: что нужно сделать, объём, адрес и срок. Модераторы
-          проверят его и после проверки выставят в ленту заказов.
+          проверяют объявления и могут снять неточное с публикации.
         </p>
 
         <div className="space-y-4">
@@ -123,36 +136,75 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
             )}
           </div>
 
+          <div>
+            <label className="mb-2 block text-sm text-muted-foreground">Сумма оплаты</label>
+            <div className="relative">
+              <input
+                className={`${field} pr-12 font-head text-2xl font-medium`}
+                inputMode="numeric"
+                placeholder="0"
+                value={price ? Number(price).toLocaleString('ru-RU') : ''}
+                onChange={(e) => setPrice(e.target.value.replace(/\D/g, '').slice(0, 7))}
+              />
+              <span className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 font-head text-2xl text-chip">
+                ₽
+              </span>
+            </div>
+            <p className="mt-1.5 text-xs text-chip">
+              Сумму назначаете вы. Итоговую можно изменить при завершении заказа.
+            </p>
+            {errors.price && <p className="mt-1 text-sm text-destructive">{errors.price}</p>}
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <input
+              <label className="mb-2 block text-sm text-muted-foreground">Город</label>
+              <select
                 className={field}
-                inputMode="numeric"
-                placeholder="Сколько готовы заплатить, ₽"
-                value={price}
-                onChange={(e) => setPrice(e.target.value.replace(/\D/g, ''))}
-              />
-              <p className="mt-1 text-xs text-chip">
-                Максимум 1500 ₽ — сервис для небольших разовых задач.
-              </p>
-              {errors.price && <p className="mt-1 text-sm text-destructive">{errors.price}</p>}
-            </div>
-            <div>
-              <input
-                className={field}
-                placeholder="Город или район Ярославской области"
-                list="job-cities"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-              />
-              <datalist id="job-cities">
-                {CITIES.map((c) => (
-                  <option key={c} value={c} />
+                value={cityName}
+                onChange={(e) => {
+                  setCityName(e.target.value);
+                  setDistrict('');
+                }}
+              >
+                {CITY_LIST.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
-              </datalist>
+              </select>
               {errors.city && <p className="mt-1 text-sm text-destructive">{errors.city}</p>}
             </div>
+
+            <div>
+              <label className="mb-2 block text-sm text-muted-foreground">
+                {districts.length ? 'Район' : 'Район не требуется'}
+              </label>
+              <select
+                className={field}
+                value={district}
+                disabled={!districts.length}
+                onChange={(e) => setDistrict(e.target.value)}
+              >
+                <option value="">{districts.length ? 'Выберите район' : 'Весь город'}</option>
+                {districts.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+              {errors.district && (
+                <p className="mt-1 text-sm text-destructive">{errors.district}</p>
+              )}
+            </div>
           </div>
+
+          <input
+            className={field}
+            placeholder="Улица и дом (необязательно)"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+          />
 
           <input
             className={field}

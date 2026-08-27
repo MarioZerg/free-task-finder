@@ -12,6 +12,7 @@ import { useAppState, Role } from '@/hooks/use-app-state';
 import { CITIES } from '@/data/mock';
 import { toast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
+import { formatPhone, isPhoneValid, phoneDigits } from '@/lib/phone';
 
 const roleCopy: Record<Role, { title: string; hint: string }> = {
   customer: {
@@ -49,7 +50,6 @@ const LoginDialog = () => {
   const [step, setStep] = useState<'start' | 'code' | 'register'>('start');
   const [code, setCode] = useState('');
   const [botLink, setBotLink] = useState('');
-  const [botName, setBotName] = useState('');
   const [left, setLeft] = useState(CODE_TTL);
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
@@ -60,7 +60,44 @@ const LoginDialog = () => {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [adminHint, setAdminHint] = useState(false);
+  const [copied, setCopied] = useState(false);
   const doneRef = useRef(false);
+  const codeRef = useRef<HTMLParagraphElement>(null);
+
+  const copyCode = useCallback(async () => {
+    const value = codeRef.current?.textContent?.replace(/\s/g, '') || '';
+    if (!value) return;
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(value);
+      ok = true;
+    } catch {
+      const area = document.createElement('textarea');
+      area.value = value;
+      area.setAttribute('readonly', '');
+      area.style.position = 'fixed';
+      area.style.opacity = '0';
+      document.body.appendChild(area);
+      area.select();
+      area.setSelectionRange(0, value.length);
+      try {
+        ok = document.execCommand('copy');
+      } catch {
+        ok = false;
+      }
+      document.body.removeChild(area);
+    }
+    if (ok) {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+      toast({ title: 'Код скопирован', description: value });
+    } else {
+      toast({
+        title: 'Скопируйте код вручную',
+        description: `Ваш код: ${value}`,
+      });
+    }
+  }, []);
 
   const reset = useCallback(() => {
     setStep('start');
@@ -135,7 +172,6 @@ const LoginDialog = () => {
       const r = await startMaxLogin();
       setCode(r.code);
       setBotLink(r.botLink);
-      setBotName(r.botName);
       setLeft(CODE_TTL);
       doneRef.current = false;
       setStep('code');
@@ -201,7 +237,7 @@ const LoginDialog = () => {
       await finish({
         name: name.trim(),
         city: city.trim() || CITIES[0],
-        phone: phone.trim(),
+        phone: isPhoneValid(phone) ? `+${phoneDigits(phone)}` : '',
         contact: cleanMax ? `MAX: @${cleanMax}` : phone.trim(),
         skill: skill.trim(),
         about: about.trim(),
@@ -281,7 +317,11 @@ const LoginDialog = () => {
               <div className="space-y-4">
                 <div className="rounded-3xl border border-line bg-tile p-6 text-center">
                   <p className="text-xs uppercase tracking-[0.18em] text-chip">Ваш код входа</p>
-                  <p className="mt-3 font-head text-4xl font-semibold tracking-[0.3em] text-primary">
+                  <p
+                    ref={codeRef}
+                    onClick={copyCode}
+                    className="mt-3 cursor-pointer select-all font-head text-4xl font-semibold tracking-[0.3em] text-primary"
+                  >
                     {code}
                   </p>
                   <p className="mt-3 text-xs text-chip">
@@ -298,17 +338,14 @@ const LoginDialog = () => {
                   className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02]"
                 >
                   <Icon name="ExternalLink" size={18} />
-                  Открыть бота в MAX{botName ? ` · @${botName}` : ''}
+                  Открыть бота в MAX
                 </a>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => {
-                      navigator.clipboard?.writeText(code);
-                      toast({ title: 'Код скопирован' });
-                    }}
+                    onClick={() => copyCode()}
                     className="flex-1 rounded-full border border-line py-3 text-sm transition-colors hover:border-primary/50"
                   >
-                    Скопировать код
+                    {copied ? 'Код скопирован' : 'Скопировать код'}
                   </button>
                   <button
                     onClick={requestCode}
@@ -365,13 +402,22 @@ const LoginDialog = () => {
                     <option key={c} value={c} />
                   ))}
                 </datalist>
-                <input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Телефон для связи"
-                  inputMode="tel"
-                  className={field}
-                />
+                <div>
+                  <input
+                    value={phone}
+                    onFocus={() => !phone && setPhone('+7 (')}
+                    onChange={(e) => setPhone(formatPhone(e.target.value))}
+                    placeholder="+7 (900) 000-00-00"
+                    inputMode="tel"
+                    maxLength={18}
+                    className={field}
+                  />
+                  {phone && !isPhoneValid(phone) && (
+                    <p className="mt-1 text-xs text-destructive">
+                      Номер из 10 цифр после +7
+                    </p>
+                  )}
+                </div>
                 {loginRole === 'executor' && (
                   <>
                     <input

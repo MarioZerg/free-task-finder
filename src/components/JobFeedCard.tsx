@@ -62,9 +62,9 @@ const JobFeedCard = ({ job, responded, canRespond, readOnly }: Props) => {
         <img src={job.photo} alt={job.title} className="h-40 w-full object-cover sm:h-44" />
       )}
       <div className="p-5 sm:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div className="flex items-start justify-between gap-4">
           <h3 className="font-head text-lg font-medium leading-snug sm:text-xl">{job.title}</h3>
-          <span className="whitespace-nowrap rounded-full bg-primary/10 px-4 py-1.5 font-head text-base font-medium text-primary">
+          <span className="shrink-0 whitespace-nowrap font-head text-2xl font-semibold leading-none tracking-tight text-primary sm:text-3xl">
             {money(job.price)}
           </span>
         </div>

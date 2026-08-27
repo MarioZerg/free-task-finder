@@ -14,7 +14,7 @@ CORS = {
 }
 
 MIN_PRICE = 1
-MAX_PRICE = 1500
+MAX_PRICE = 1000000
 
 
 SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 'public')
@@ -193,7 +193,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
     if method == 'GET' and action == 'feed':
         cur.execute(
             JOB_SELECT
-            + " WHERE j.status = 'open' AND j.moderation = 'approved'"
+            + " WHERE j.status = 'open' AND j.moderation <> 'rejected'"
             + ' ORDER BY j.created_at DESC LIMIT 100'
         )
         jobs = []

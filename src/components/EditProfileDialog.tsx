@@ -11,6 +11,7 @@ import Avatar from '@/components/Avatar';
 import { useAppState } from '@/hooks/use-app-state';
 import { CITIES } from '@/data/mock';
 import { toast } from '@/hooks/use-toast';
+import { formatPhone, isPhoneValid, phoneDigits } from '@/lib/phone';
 
 interface Props {
   open: boolean;
@@ -70,7 +71,7 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
     setAvatar(user.avatar || '');
     setName(user.name || '');
     setCity(user.city || '');
-    setPhone(user.phone || '');
+    setPhone(user.phone ? formatPhone(user.phone) : '');
     setContact(user.contact || '');
     setSkill(user.skill || '');
     setAbout(user.about || '');
@@ -97,7 +98,7 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
       await updateProfile({
         name: name.trim(),
         city: city.trim(),
-        phone: phone.trim(),
+        phone: isPhoneValid(phone) ? `+${phoneDigits(phone)}` : '',
         contact: contact.trim(),
         skill: skill.trim(),
         about: about.trim(),
@@ -167,13 +168,20 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
               <option key={c} value={c} />
             ))}
           </datalist>
-          <input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="Телефон"
-            inputMode="tel"
-            className={field}
-          />
+          <div>
+            <input
+              value={phone}
+              onFocus={() => !phone && setPhone('+7 (')}
+              onChange={(e) => setPhone(formatPhone(e.target.value))}
+              placeholder="+7 (900) 000-00-00"
+              inputMode="tel"
+              maxLength={18}
+              className={field}
+            />
+            {phone && !isPhoneValid(phone) && (
+              <p className="mt-1 text-xs text-destructive">Номер из 10 цифр после +7</p>
+            )}
+          </div>
           <input
             value={contact}
             onChange={(e) => setContact(e.target.value)}

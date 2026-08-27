@@ -73,7 +73,7 @@ const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: num
           <p className="mt-1.5 text-sm text-muted-foreground">{job.description}</p>
         </div>
         <div className="text-right">
-          <span className="font-head text-lg font-medium text-primary md:text-xl">
+          <span className="block whitespace-nowrap font-head text-2xl font-semibold leading-none tracking-tight text-primary md:text-3xl">
             {money(job.price)}
           </span>
           <p className="mt-1 text-xs text-chip">{statusLabel[job.status]}</p>

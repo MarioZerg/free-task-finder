@@ -88,8 +88,8 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
 
   const doComplete = async () => {
     const v = Number(finalPrice);
-    if (!v || v > 1500) {
-      toast({ title: 'Не больше 1500 ₽', description: 'Укажите сумму до 1500 ₽.' });
+    if (!v) {
+      toast({ title: 'Укажите сумму', description: 'Впишите итоговую сумму по заказу.' });
       return;
     }
     setCompleteOpen(false);
@@ -257,7 +257,7 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
               {job.isOwner ? 'Укажите, сколько вы заплатили' : 'Укажите, сколько вы заработали'}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
-              Не больше 1500 ₽ — сервис для небольших разовых задач.
+              Итоговую сумму подтверждает заказчик.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <input
