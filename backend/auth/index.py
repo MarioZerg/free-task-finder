@@ -60,6 +60,7 @@ def _user_row(row: Dict[str, Any], private: bool = False) -> Dict[str, Any]:
         'doneCount': row['done_count'],
         'verified': bool(row.get('verified')),
         'online': _online(row.get('last_seen')),
+        'lastSeen': row.get('last_seen'),
         'blocked': bool(row.get('blocked')),
         'createdAt': row['created_at'],
     }
@@ -148,15 +149,30 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
     if method == 'GET' and action == 'people':
         cur.execute(
             f"""SELECT * FROM {SCHEMA}.users WHERE role = 'executor' AND blocked = FALSE
-                ORDER BY rating DESC, done_count DESC LIMIT 100"""
+                ORDER BY (last_seen > NOW() - INTERVAL '3 minutes') DESC,
+                         rating DESC, done_count DESC LIMIT 200"""
         )
         executors = [_user_row(r) for r in cur.fetchall()]
         cur.execute(
             f"""SELECT * FROM {SCHEMA}.users WHERE role = 'customer' AND blocked = FALSE
-                ORDER BY created_at DESC LIMIT 100"""
+                ORDER BY (last_seen > NOW() - INTERVAL '3 minutes') DESC,
+                         last_seen DESC NULLS LAST LIMIT 200"""
         )
         customers = [_user_row(r) for r in cur.fetchall()]
-        return _resp(200, {'executors': executors, 'customers': customers})
+        cur.execute(
+            f"""SELECT
+                 (SELECT COUNT(*) FROM {SCHEMA}.users WHERE role = 'executor' AND blocked = FALSE) AS executors,
+                 (SELECT COUNT(*) FROM {SCHEMA}.users WHERE role = 'customer' AND blocked = FALSE) AS customers,
+                 (SELECT COUNT(*) FROM {SCHEMA}.users
+                  WHERE role IN ('customer','executor') AND blocked = FALSE
+                    AND last_seen > NOW() - INTERVAL '3 minutes') AS online"""
+        )
+        counts = dict(cur.fetchone())
+        return _resp(200, {
+            'executors': executors,
+            'customers': customers,
+            'counts': {k: int(v or 0) for k, v in counts.items()},
+        })
 
     if method == 'GET' and action == 'profile':
         uid = re.sub(r'\D', '', params.get('id', '')) or '0'

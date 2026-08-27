@@ -20,6 +20,7 @@ import ProfileDialog from '@/components/ProfileDialog';
 import DashHeader from '@/components/DashHeader';
 import { AdminReturnBanner } from '@/components/admin/AdminDemoAccess';
 import LiveFeed from '@/components/LiveFeed';
+import PeopleList from '@/components/PeopleList';
 import Avatar, { OnlineBadge } from '@/components/Avatar';
 import { toast } from '@/hooks/use-toast';
 
@@ -345,14 +346,17 @@ const CustomerDashboard = () => {
             { id: 'feed', label: 'Лента заказов' },
             { id: 'jobs', label: `Мои задания · ${active.length}` },
             { id: 'done', label: `Завершённые · ${finished.length}` },
+            { id: 'people', label: 'Люди' },
           ]}
         />
       </div>
 
       <div className="mt-8">
         {tab === 'feed' && <LiveFeed readOnly />}
+        {tab === 'people' && <PeopleList />}
 
         {tab !== 'feed' &&
+          tab !== 'people' &&
           ((tab === 'jobs' ? active : finished).length === 0 ? (
             <div className="rounded-3xl border border-line bg-surface p-10 text-center">
               <p className="font-head text-lg">
@@ -400,6 +404,7 @@ const ExecutorDashboard = () => {
           items={[
             { id: 'feed', label: 'Лента заказов' },
             { id: 'mine', label: `Мои отклики · ${working.length + waiting.length}` },
+            { id: 'people', label: 'Люди' },
           ]}
         />
       </div>
@@ -407,6 +412,8 @@ const ExecutorDashboard = () => {
       <div className="mt-8">
         {tab === 'feed' ? (
           <LiveFeed />
+        ) : tab === 'people' ? (
+          <PeopleList />
         ) : working.length === 0 && waiting.length === 0 ? (
           <div className="rounded-3xl border border-line bg-surface p-10 text-center">
             <p className="font-head text-lg">Откликов пока нет</p>

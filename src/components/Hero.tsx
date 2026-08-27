@@ -1,12 +1,5 @@
 import { useAppState } from '@/hooks/use-app-state';
-import { money } from '@/data/mock';
-
-const preview = [
-  { id: 1, title: 'Перевезти диван', price: 1400, when: 'Сегодня до 19:00' },
-  { id: 2, title: 'Собрать шкаф', price: 1200, when: 'Завтра, утро' },
-  { id: 3, title: 'Убрать участок', price: 900, when: 'Суббота' },
-  { id: 4, title: 'Помочь с погрузкой', price: 700, when: 'Понедельник' },
-];
+import HeroPhone from '@/components/HeroPhone';
 
 const Hero = () => {
   const { openLogin } = useAppState();
@@ -37,33 +30,7 @@ const Hero = () => {
           </div>
 
           <div className="flex w-full justify-center">
-            <div className="relative h-[560px] w-[300px] max-w-full animate-rise rounded-[34px] bg-[linear-gradient(155deg,hsl(var(--screen))_0%,hsl(100_10%_22%)_100%)] p-3 shadow-[0_40px_70px_-38px_rgba(30,40,25,.45)] sm:h-[604px] sm:w-[322px]">
-              <div className="flex h-full flex-col gap-3 overflow-hidden rounded-3xl bg-screen px-4 py-5 text-[hsl(var(--primary-foreground))]">
-                <div className="mb-1 flex items-center justify-between">
-                  <div className="text-[0.72em] font-medium">Лента заказов</div>
-                  <div className="text-[0.6em] opacity-60">Ярославль</div>
-                </div>
-
-                {preview.map((job, i) => (
-                  <div
-                    key={job.id}
-                    className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.07]"
-                  >
-                    {i === 0 && <div className="h-[74px] bg-white/[0.06]" />}
-                    <div className="px-3.5 py-3">
-                      <div className="flex items-baseline justify-between gap-2.5">
-                        <div className="text-[0.7em] font-medium">{job.title}</div>
-                        <div className="whitespace-nowrap text-[0.7em] font-medium opacity-80">
-                          {money(job.price)}
-                        </div>
-                      </div>
-                      <div className="mt-1.5 text-[0.58em] opacity-55">{job.when}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="pointer-events-none absolute inset-x-3 bottom-3 h-24 rounded-b-3xl bg-[linear-gradient(to_bottom,transparent,hsl(var(--screen))_78%)]" />
-            </div>
+            <HeroPhone />
           </div>
         </div>
 

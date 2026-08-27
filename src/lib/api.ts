@@ -51,6 +51,7 @@ export interface User {
   doneCount: number;
   verified?: boolean;
   online?: boolean;
+  lastSeen?: string | null;
   blocked?: boolean;
   createdAt: string;
   phone?: string | null;
@@ -91,6 +92,7 @@ export interface JobResponseItem {
   doneCount: number;
   reviewsCount: number;
   online?: boolean;
+  lastSeen?: string | null;
 }
 
 export type JobStatus = 'open' | 'assigned' | 'expiring' | 'done' | 'cancelled';

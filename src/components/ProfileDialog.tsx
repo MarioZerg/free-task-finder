@@ -16,6 +16,18 @@ interface Props {
   onOpenChange: (v: boolean) => void;
 }
 
+const seenText = (u: User) => {
+  if (u.online) return 'в сети';
+  if (!u.lastSeen) return 'давно не заходил';
+  const min = Math.floor((Date.now() - new Date(u.lastSeen).getTime()) / 60000);
+  if (min < 60) return `был в сети ${min} мин назад`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `был в сети ${h} ч назад`;
+  const d = Math.floor(h / 24);
+  if (d < 30) return `был в сети ${d} дн назад`;
+  return 'давно не заходил';
+};
+
 const dateRu = (v: string) =>
   new Date(v).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -72,9 +84,16 @@ const ProfileDialog = ({ userId, onOpenChange }: Props) => {
                 online={profile.online}
               />
               <div className="min-w-0">
-                <p className="truncate font-head text-lg font-medium">{profile.name}</p>
-                <p className="truncate text-sm text-chip">
-                  {profile.skill || profile.city}
+                <p className="flex items-center gap-1.5 truncate font-head text-lg font-medium">
+                  {profile.name}
+                  {profile.verified && (
+                    <Icon name="BadgeCheck" size={16} className="shrink-0 text-primary" />
+                  )}
+                </p>
+                <p
+                  className={`truncate text-sm ${profile.online ? 'text-emerald-600' : 'text-chip'}`}
+                >
+                  {seenText(profile)}
                 </p>
               </div>
             </div>
@@ -93,15 +112,6 @@ const ProfileDialog = ({ userId, onOpenChange }: Props) => {
                 <p className="text-xs text-chip">отзывов</p>
               </div>
             </div>
-
-            {profile.about && (
-              <p className="text-sm leading-relaxed text-muted-foreground">{profile.about}</p>
-            )}
-
-            <p className="flex items-center gap-2 text-sm text-chip">
-              <Icon name="MapPin" size={16} />
-              {profile.city}
-            </p>
 
             <div className="border-t border-line pt-4">
               <h4 className="font-head text-lg font-medium">Отзывы</h4>
