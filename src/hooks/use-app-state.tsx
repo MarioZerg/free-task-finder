@@ -72,6 +72,7 @@ interface AppState {
   shareContact: (jobId: number) => Promise<void>;
   complete: (jobId: number, finalPrice: number) => Promise<void>;
   cancel: (jobId: number) => Promise<void>;
+  removeJob: (jobId: number) => Promise<void>;
   review: (jobId: number, rating: number, text: string) => Promise<void>;
 }
 
@@ -221,6 +222,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       shareContact: (jobId) => act('share_contact', { jobId }),
       complete: (jobId, finalPrice) => act('complete', { jobId, finalPrice }),
       cancel: (jobId) => act('cancel', { jobId }),
+      removeJob: (jobId) => act('delete', { jobId }),
       review: (jobId, rating, text) => act('review', { jobId, rating, text }),
     }),
     [

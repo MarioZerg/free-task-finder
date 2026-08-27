@@ -434,6 +434,15 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         cur.execute(f"UPDATE {SCHEMA}.jobs SET status = 'cancelled' WHERE id = {job_id}")
         return _resp(200, {'ok': True})
 
+    if method == 'POST' and action == 'delete':
+        if job['owner_id'] != me['id']:
+            return _resp(403, {'error': 'not_owner'})
+        if job['status'] not in ('open', 'cancelled'):
+            return _resp(400, {'error': 'job_in_work'})
+        cur.execute(f'DELETE FROM {SCHEMA}.job_responses WHERE job_id = {job_id}')
+        cur.execute(f'DELETE FROM {SCHEMA}.jobs WHERE id = {job_id}')
+        return _resp(200, {'ok': True})
+
     if method == 'POST' and action == 'review':
         if job['status'] != 'done':
             return _resp(400, {'error': 'not_done'})

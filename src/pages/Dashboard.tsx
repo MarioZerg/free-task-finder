@@ -1,5 +1,15 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import Icon from '@/components/ui/icon';
 import { AppStateProvider, useAppState } from '@/hooks/use-app-state';
 import { JobItem } from '@/lib/api';
@@ -54,9 +64,29 @@ const Tabs = ({
 );
 
 const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: number) => void }) => {
-  const { assign } = useAppState();
+  const { assign, removeJob } = useAppState();
   const [busy, setBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const responses = job.responses || [];
+
+  const remove = async () => {
+    setBusy(true);
+    try {
+      await removeJob(job.id);
+      toast({
+        title: 'Задание удалено',
+        description: 'Теперь можно разместить новое — оно появится в ленте после проверки.',
+      });
+    } catch {
+      toast({
+        title: 'Не удалось удалить',
+        description: 'Задание уже в работе — сначала завершите или отмените его.',
+      });
+    } finally {
+      setBusy(false);
+      setConfirmDelete(false);
+    }
+  };
 
   if (job.status === 'assigned' || job.status === 'expiring' || job.status === 'done') {
     return <ActiveJobCard job={job} />;
@@ -100,11 +130,50 @@ const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: num
       {pending && (
         <p className="mt-4 flex items-start gap-2.5 rounded-2xl border border-line bg-tile px-4 py-3 text-sm text-muted-foreground">
           <Icon name="ShieldQuestion" size={18} className="mt-0.5 shrink-0 text-primary" />
-          Задание на проверке у модератора. После проверки оно появится в ленте заказов.
+          Задание опубликовано и уже в ленте. Модератор проверит его дополнительно.
         </p>
       )}
 
-      {job.status === 'open' && !pending && (
+      {(job.status === 'open' || job.status === 'cancelled') && (
+        <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
+          <button
+            disabled={busy}
+            onClick={() => setConfirmDelete(true)}
+            className="flex items-center gap-2 rounded-full border border-line px-5 py-2.5 text-sm transition-colors hover:border-destructive/60 hover:text-destructive disabled:opacity-60"
+          >
+            <Icon name="Trash2" size={16} />
+            Удалить задание
+          </button>
+          <span className="flex items-center text-xs text-chip">
+            После удаления можно сразу разместить новое
+          </span>
+        </div>
+      )}
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent className="border-line bg-surface text-foreground">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-head text-xl font-medium">
+              Удалить задание?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              «{job.title}» и все отклики на него будут удалены без возможности восстановить. Сразу
+              после этого вы сможете разместить новое задание.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-full border-line">Оставить</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={remove}
+              className="rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {job.status === 'open' && (
         <div className="mt-5 border-t border-line pt-4">
           <h5 className="font-head text-base font-medium">Отклики · {responses.length}</h5>
           {responses.length === 0 ? (
