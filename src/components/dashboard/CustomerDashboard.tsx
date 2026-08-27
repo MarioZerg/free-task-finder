@@ -20,7 +20,7 @@ const CustomerDashboard = () => {
   const left = hoursLeft(limits.activeExpiresAt);
 
   return (
-    <div className="mx-auto w-full max-w-[1400px] px-5 py-8 md:px-10 md:py-12 lg:px-16">
+    <div className="safe-x safe-bottom mx-auto w-full max-w-[1400px] px-5 py-8 md:px-10 md:py-12 lg:px-16">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-chip">Кабинет заказчика</p>
@@ -40,7 +40,7 @@ const CustomerDashboard = () => {
             }
             setCreateOpen(true);
           }}
-          className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-60 sm:w-auto sm:px-7"
+          className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-60 sm:w-auto sm:px-7"
         >
           <Icon name="Plus" size={18} />
           Выставить задачу
@@ -82,7 +82,7 @@ const CustomerDashboard = () => {
         {tab !== 'feed' &&
           tab !== 'people' &&
           ((tab === 'jobs' ? active : finished).length === 0 ? (
-            <div className="rounded-3xl border border-line bg-surface p-10 text-center">
+            <div className="rounded-3xl border border-line bg-surface p-6 text-center sm:p-10">
               <p className="font-head text-lg">
                 {tab === 'jobs' ? 'Активных заданий нет' : 'Завершённых заданий пока нет'}
               </p>

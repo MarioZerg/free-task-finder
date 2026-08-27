@@ -95,10 +95,10 @@ const LiveFeed = ({ readOnly }: { readOnly?: boolean }) => {
       </div>
 
       {cities.length > 0 && (
-        <div className="-mx-5 mt-5 flex gap-2 overflow-x-auto px-5 pb-1 md:mx-0 md:flex-wrap md:px-0">
+        <div className="scrollbar-none -mx-5 mt-5 flex gap-2 overflow-x-auto px-5 pb-1 md:mx-0 md:flex-wrap md:px-0">
           <button
             onClick={() => pick('')}
-            className={`flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2.5 text-sm transition-colors ${
+            className={`flex min-h-[44px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-4 py-2.5 text-sm transition-colors ${
               city === ''
                 ? 'border-primary bg-primary text-primary-foreground'
                 : 'border-line bg-surface text-muted-foreground hover:border-primary/50'
@@ -111,7 +111,7 @@ const LiveFeed = ({ readOnly }: { readOnly?: boolean }) => {
             <button
               key={name}
               onClick={() => pick(name)}
-              className={`shrink-0 rounded-full border px-4 py-2.5 text-sm transition-colors ${
+              className={`min-h-[44px] shrink-0 whitespace-nowrap rounded-full border px-4 py-2.5 text-sm transition-colors ${
                 city === name
                   ? 'border-primary bg-primary text-primary-foreground'
                   : 'border-line bg-surface text-muted-foreground hover:border-primary/50'
@@ -137,7 +137,7 @@ const LiveFeed = ({ readOnly }: { readOnly?: boolean }) => {
       )}
 
       {visible.length === 0 ? (
-        <div className="mt-6 rounded-3xl border border-line bg-surface p-10 text-center">
+        <div className="mt-6 rounded-3xl border border-line bg-surface p-6 text-center sm:p-10">
           <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
             <Icon name="Radio" size={22} />
           </span>
@@ -152,7 +152,7 @@ const LiveFeed = ({ readOnly }: { readOnly?: boolean }) => {
           {city && (
             <button
               onClick={() => pick('')}
-              className="mt-4 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground"
+              className="mt-4 min-h-[44px] w-full rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground sm:w-auto"
             >
               Показать всю область
             </button>

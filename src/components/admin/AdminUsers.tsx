@@ -69,7 +69,7 @@ const AdminUsers = ({ onProfile }: { onProfile: (id: number) => void }) => {
           <button
             key={f.id}
             onClick={() => setRole(f.id)}
-            className={`rounded-full border px-5 py-2.5 text-sm transition-colors ${
+            className={`min-h-[44px] rounded-full border px-5 py-2.5 text-sm transition-colors ${
               role === f.id
                 ? 'border-primary bg-primary text-primary-foreground'
                 : 'border-line text-muted-foreground hover:border-primary/50'
@@ -91,11 +91,12 @@ const AdminUsers = ({ onProfile }: { onProfile: (id: number) => void }) => {
           {users.map((u) => (
             <div
               key={u.id}
-              className="flex flex-wrap items-center gap-4 rounded-3xl border border-line bg-surface p-5"
+              className="flex flex-col gap-4 rounded-3xl border border-line bg-surface p-4 sm:flex-row sm:flex-wrap sm:items-center sm:p-5"
             >
+              <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
               <Avatar src={u.avatar} name={u.name} size={48} online={u.online} />
               <div className="min-w-0 flex-1">
-                <p className="flex flex-wrap items-center gap-2 font-medium">
+                <p className="flex flex-wrap items-center gap-2 break-words font-medium">
                   {u.name}
                   {u.verified && <Icon name="BadgeCheck" size={16} className="text-primary" />}
                   {u.blocked && (
@@ -104,27 +105,30 @@ const AdminUsers = ({ onProfile }: { onProfile: (id: number) => void }) => {
                     </span>
                   )}
                 </p>
-                <p className="mt-0.5 text-sm text-chip">
+                <p className="mt-0.5 break-words text-sm text-chip">
                   @{u.maxId} · {u.city} · {u.role === 'customer' ? 'заказчик' : 'исполнитель'}
                 </p>
-                <p className="mt-0.5 text-xs text-chip">
+                <p className="mt-0.5 break-words text-xs text-chip">
                   ★ {u.rating.toFixed(1)} · {u.doneCount} работ · {u.reviewsCount} отзывов
                   {u.skill ? ` · ${u.skill}` : ''}
                 </p>
-                <p className="mt-0.5 text-xs text-chip">
+                <p className="mt-0.5 break-words text-xs text-chip">
                   {u.phone || 'телефон не указан'} · {u.contact || 'контакт не указан'}
                 </p>
                 {u.about && (
-                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{u.about}</p>
+                  <p className="mt-1 line-clamp-2 break-words text-xs text-muted-foreground">
+                    {u.about}
+                  </p>
                 )}
               </div>
-              <div className="flex flex-wrap gap-2">
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                 <button
                   onClick={() => onProfile(u.id)}
-                  className="flex items-center gap-1.5 rounded-full border border-line px-4 py-2 text-sm transition-colors hover:border-primary/50"
+                  className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-line px-4 py-2 text-sm transition-colors hover:border-primary/50"
                 >
                   <Icon name="IdCard" size={15} />
-                  Профиль и отзывы
+                  Профиль
                 </button>
                 <button
                   disabled={busy}
@@ -134,9 +138,9 @@ const AdminUsers = ({ onProfile }: { onProfile: (id: number) => void }) => {
                       u.verified ? 'Галочка снята' : 'Пользователь проверен',
                     )
                   }
-                  className="rounded-full border border-line px-4 py-2 text-sm transition-colors hover:border-primary/50 disabled:opacity-60"
+                  className="min-h-[44px] rounded-full border border-line px-4 py-2 text-sm transition-colors hover:border-primary/50 disabled:opacity-60"
                 >
-                  {u.verified ? 'Снять «проверен»' : 'Отметить проверенным'}
+                  {u.verified ? 'Снять «проверен»' : 'Проверен'}
                 </button>
                 <button
                   disabled={busy}
@@ -146,7 +150,7 @@ const AdminUsers = ({ onProfile }: { onProfile: (id: number) => void }) => {
                       u.blocked ? 'Разблокирован' : 'Заблокирован',
                     )
                   }
-                  className="rounded-full border border-line px-4 py-2 text-sm transition-colors hover:border-primary/50 disabled:opacity-60"
+                  className="min-h-[44px] rounded-full border border-line px-4 py-2 text-sm transition-colors hover:border-primary/50 disabled:opacity-60"
                 >
                   {u.blocked ? 'Разблокировать' : 'Заблокировать'}
                 </button>
@@ -155,7 +159,7 @@ const AdminUsers = ({ onProfile }: { onProfile: (id: number) => void }) => {
                     setEdit(u);
                     setForm({ name: u.name, city: u.city, skill: u.skill || '' });
                   }}
-                  className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03]"
+                  className="min-h-[44px] rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03]"
                 >
                   Изменить
                 </button>

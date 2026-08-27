@@ -32,7 +32,7 @@ const PhotoViewer = ({ jobId, title, thumb, hasFull, className = '', compact }: 
     <>
       <button
         onClick={() => setOpen(true)}
-        className={`group relative block w-full overflow-hidden ${className}`}
+        className={`group relative block overflow-hidden ${compact ? '' : 'w-full'} ${className}`}
       >
         <img
           src={thumb}

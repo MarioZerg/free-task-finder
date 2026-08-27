@@ -86,7 +86,7 @@ const AdminReviews = ({ onProfile }: { onProfile: (id: number) => void }) => {
           <button
             key={f.id || 'all'}
             onClick={() => setDirection(f.id)}
-            className={`rounded-full border px-5 py-2.5 text-sm transition-colors ${
+            className={`min-h-[44px] rounded-full border px-5 py-2.5 text-sm transition-colors ${
               direction === f.id
                 ? 'border-primary bg-primary text-primary-foreground'
                 : 'border-line text-muted-foreground hover:border-primary/50'
@@ -108,7 +108,7 @@ const AdminReviews = ({ onProfile }: { onProfile: (id: number) => void }) => {
           {items.map((r) => (
             <article
               key={r.id}
-              className={`rounded-3xl border bg-surface p-5 ${
+              className={`rounded-3xl border bg-surface p-4 sm:p-5 ${
                 r.hidden ? 'border-destructive/40 opacity-70' : 'border-line'
               }`}
             >
@@ -141,7 +141,7 @@ const AdminReviews = ({ onProfile }: { onProfile: (id: number) => void }) => {
                 </span>
               </div>
 
-              {r.text && <p className="mt-3 text-sm text-muted-foreground">{r.text}</p>}
+              {r.text && <p className="mt-3 break-words text-sm text-muted-foreground">{r.text}</p>}
 
               {r.hidden && (
                 <p className="mt-3 flex items-center gap-2 text-xs text-destructive">
@@ -150,12 +150,12 @@ const AdminReviews = ({ onProfile }: { onProfile: (id: number) => void }) => {
                 </p>
               )}
 
-              <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
+              <div className="mt-4 grid grid-cols-2 gap-2 border-t border-line pt-4 sm:flex sm:flex-wrap">
                 {r.hidden ? (
                   <button
                     disabled={busy === r.id}
                     onClick={() => act(r.id, 'show')}
-                    className="flex items-center gap-1.5 rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+                    className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
                   >
                     <Icon name="Eye" size={15} />
                     Опубликовать
@@ -164,7 +164,7 @@ const AdminReviews = ({ onProfile }: { onProfile: (id: number) => void }) => {
                   <button
                     disabled={busy === r.id}
                     onClick={() => act(r.id, 'hide')}
-                    className="flex items-center gap-1.5 rounded-full border border-line px-5 py-2 text-sm transition-colors hover:border-primary/50 disabled:opacity-60"
+                    className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-line px-5 py-2 text-sm transition-colors hover:border-primary/50 disabled:opacity-60"
                   >
                     <Icon name="EyeOff" size={15} />
                     Скрыть
@@ -173,7 +173,7 @@ const AdminReviews = ({ onProfile }: { onProfile: (id: number) => void }) => {
                 <button
                   disabled={busy === r.id}
                   onClick={() => act(r.id, 'delete')}
-                  className="flex items-center gap-1.5 rounded-full border border-line px-5 py-2 text-sm transition-colors hover:border-destructive/60 hover:text-destructive disabled:opacity-60"
+                  className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-line px-5 py-2 text-sm transition-colors hover:border-destructive/60 hover:text-destructive disabled:opacity-60"
                 >
                   <Icon name="Trash2" size={15} />
                   Удалить

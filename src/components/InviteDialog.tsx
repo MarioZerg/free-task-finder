@@ -98,7 +98,7 @@ const InviteDialog = ({ executor, onOpenChange }: Props) => {
             <select
               value={jobId}
               onChange={(e) => setJobId(e.target.value)}
-              className="w-full rounded-2xl border border-line bg-tile px-4 py-3.5 text-base outline-none focus:border-primary/60"
+              className="min-h-[44px] w-full rounded-2xl border border-line bg-tile px-4 py-3.5 text-base outline-none focus:border-primary/60"
             >
               {jobs.map((j) => (
                 <option key={j.id} value={j.id}>

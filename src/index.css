@@ -100,6 +100,12 @@
 }
 
 @layer base {
+  @media (max-width: 360px) {
+    :root {
+      --hero-size-head: 28px;
+    }
+  }
+
   @media (min-width: 768px) {
     :root {
       --hero-size-head: 49px;
@@ -108,6 +114,7 @@
 
   * {
     @apply border-border;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
@@ -118,9 +125,42 @@
   html {
     scroll-behavior: smooth;
   }
+
+  html,
+  body {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
+  button,
+  a {
+    touch-action: manipulation;
+  }
 }
 
 @layer components {
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-x {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
   .hero-head {
     font-size: var(--hero-size-head);
   }

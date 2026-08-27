@@ -36,11 +36,11 @@ const AdminDemoAccess = () => {
         </div>
       </div>
 
-      <div className="mt-5 flex flex-wrap gap-2">
+      <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <button
           disabled={!!busy}
           onClick={() => enter('customer')}
-          className="flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03] disabled:opacity-60"
+          className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03] disabled:opacity-60 sm:w-auto"
         >
           <Icon name="ClipboardList" size={16} />
           Кабинет заказчика
@@ -48,7 +48,7 @@ const AdminDemoAccess = () => {
         <button
           disabled={!!busy}
           onClick={() => enter('executor')}
-          className="flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03] disabled:opacity-60"
+          className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03] disabled:opacity-60 sm:w-auto"
         >
           <Icon name="Hammer" size={16} />
           Кабинет исполнителя
@@ -64,7 +64,7 @@ export const AdminReturnBanner = () => {
 
   return (
     <div className="border-b border-primary/30 bg-primary/10">
-      <div className="mx-auto flex w-full max-w-[1400px] flex-wrap items-center justify-between gap-3 px-5 py-3 md:px-10 lg:px-16">
+      <div className="safe-x mx-auto flex w-full max-w-[1400px] flex-wrap items-center justify-between gap-3 px-5 py-3 md:px-10 lg:px-16">
         <p className="flex items-center gap-2 text-sm text-muted-foreground">
           <Icon name="FlaskConical" size={16} className="text-primary" />
           Вы в тестовом кабинете. Реальные пользователи это не видят.
@@ -75,7 +75,7 @@ export const AdminReturnBanner = () => {
             localStorage.removeItem(ADMIN_BACKUP);
             window.location.href = '/admin';
           }}
-          className="rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground"
+          className="min-h-[44px] w-full rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground sm:w-auto"
         >
           Вернуться в админку
         </button>

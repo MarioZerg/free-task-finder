@@ -33,7 +33,7 @@ const HeroPhone = () => {
   const typing = showChat && bubbles === chat.length;
 
   return (
-    <div className="relative h-[560px] w-[300px] max-w-full animate-rise rounded-[34px] bg-[linear-gradient(155deg,hsl(var(--screen))_0%,hsl(100_10%_22%)_100%)] p-3 shadow-[0_40px_70px_-38px_rgba(30,40,25,.45)] sm:h-[604px] sm:w-[322px]">
+    <div className="relative mx-auto h-[560px] w-full max-w-[300px] animate-rise rounded-[34px] bg-[linear-gradient(155deg,hsl(var(--screen))_0%,hsl(100_10%_22%)_100%)] p-3 shadow-[0_40px_70px_-38px_rgba(30,40,25,.45)] sm:h-[604px] sm:max-w-[322px]">
       <div className="flex h-full flex-col overflow-hidden rounded-3xl bg-screen px-4 py-5 text-[hsl(var(--primary-foreground))]">
         <div className="mb-3 flex items-center justify-between">
           <div className="text-[0.72em] font-medium">

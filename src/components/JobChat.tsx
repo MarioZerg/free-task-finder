@@ -59,7 +59,7 @@ const JobChat = ({ jobId, partner }: { jobId: number; partner: string }) => {
         Чат по заказу · {partner}
       </p>
 
-      <div ref={boxRef} className="mt-3 max-h-[280px] space-y-3 overflow-y-auto pr-1">
+      <div ref={boxRef} className="mt-3 max-h-[50vh] space-y-3 overflow-y-auto pr-1 sm:max-h-[280px]">
         {messages.length === 0 ? (
           <p className="py-6 text-center text-sm text-chip">
             Сообщений пока нет. Напишите, чтобы договориться о деталях.
@@ -88,20 +88,20 @@ const JobChat = ({ jobId, partner }: { jobId: number; partner: string }) => {
         )}
       </div>
 
-      <div className="mt-3 flex gap-2">
+      <div className="mt-3 flex items-center gap-2">
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && send()}
           placeholder="Написать сообщение"
           maxLength={1000}
-          className="w-full rounded-full border border-line bg-surface px-4 py-3 text-sm outline-none placeholder:text-chip focus:border-primary/60"
+          className="min-h-[44px] w-full min-w-0 flex-1 rounded-full border border-line bg-surface px-4 py-3 text-base outline-none placeholder:text-chip focus:border-primary/60 sm:text-sm"
         />
         <button
           onClick={send}
           disabled={busy || !text.trim()}
           aria-label="Отправить"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform hover:scale-105 disabled:opacity-50"
+          className="flex h-11 w-11 shrink-0 grow-0 basis-11 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform hover:scale-105 disabled:opacity-50"
         >
           <Icon name="Send" size={17} />
         </button>

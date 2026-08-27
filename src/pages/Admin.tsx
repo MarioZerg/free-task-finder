@@ -95,8 +95,8 @@ const AdminInner = () => {
 
   return (
     <div className="min-h-screen bg-background font-body text-foreground">
-      <header className="border-b border-line bg-surface">
-        <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-4 px-5 py-4 md:px-10 md:py-5 lg:px-16">
+      <header className="safe-top border-b border-line bg-surface">
+        <div className="safe-x mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-4 px-5 py-4 md:px-10 md:py-5 lg:px-16">
           <div>
             <p className="font-head text-xl font-bold leading-none tracking-tight">
               Админка Доделай.ру
@@ -106,20 +106,20 @@ const AdminInner = () => {
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => setProfileOpen(true)}
-              className="flex items-center gap-3 rounded-full border border-line px-3 py-1.5 transition-colors hover:border-primary/50"
+              className="flex min-h-[44px] min-w-0 items-center gap-3 rounded-full border border-line px-3 py-1.5 transition-colors hover:border-primary/50"
             >
               <Avatar src={user.avatar} name={user.name} size={34} />
-              <span className="text-sm font-medium">{user.name}</span>
+              <span className="truncate text-sm font-medium">{user.name}</span>
             </button>
             <Link
               to="/"
-              className="rounded-full border border-line px-5 py-2.5 text-sm transition-colors hover:border-primary/50"
+              className="flex min-h-[44px] items-center justify-center rounded-full border border-line px-5 py-2.5 text-sm transition-colors hover:border-primary/50"
             >
               На сайт
             </Link>
             <button
               onClick={logout}
-              className="rounded-full border border-line px-5 py-2.5 text-sm transition-colors hover:border-primary/50"
+              className="flex min-h-[44px] items-center justify-center rounded-full border border-line px-5 py-2.5 text-sm transition-colors hover:border-primary/50"
             >
               Выйти
             </button>
@@ -127,18 +127,18 @@ const AdminInner = () => {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1400px] px-5 py-8 md:px-10 md:py-12 lg:px-16">
+      <main className="safe-x safe-bottom mx-auto max-w-[1400px] px-5 py-8 md:px-10 md:py-12 lg:px-16">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
           {tiles.map((t) => (
             <div
               key={t.key}
-              className="flex items-center gap-3 rounded-3xl border border-line bg-surface p-5"
+              className="flex items-center gap-3 rounded-3xl border border-line bg-surface p-4 sm:p-5"
             >
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/15 text-primary">
                 <Icon name={t.icon} size={20} />
               </span>
               <div className="min-w-0">
-                <p className="font-head text-2xl font-medium">
+                <p className="break-words font-head text-xl font-medium sm:text-2xl">
                   {stats ? (t.money ? money(stats[t.key]) : stats[t.key]) : '—'}
                 </p>
                 <p className="truncate text-sm text-chip">{t.label}</p>
@@ -153,12 +153,12 @@ const AdminInner = () => {
 
         <div className="mt-10 flex flex-wrap items-center gap-4">
           <p className="text-sm text-chip">Смотрю как:</p>
-          <div className="flex gap-1 overflow-x-auto rounded-full border border-line bg-surface p-1">
+          <div className="scrollbar-none flex w-full gap-1 overflow-x-auto rounded-full border border-line bg-surface p-1 sm:w-auto">
             {modes.map((m) => (
               <button
                 key={m.id}
                 onClick={() => setMode(m.id)}
-                className={`rounded-full px-5 py-2.5 text-sm font-medium transition-colors ${
+                className={`min-h-[44px] shrink-0 rounded-full px-5 py-2.5 text-sm font-medium transition-colors ${
                   mode === m.id
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:text-foreground'
@@ -178,20 +178,20 @@ const AdminInner = () => {
         <div className="mt-8">
           {mode === 'admin' ? (
             <Tabs defaultValue="moderation">
-              <TabsList className="flex w-full flex-wrap justify-start gap-1 rounded-full border border-line bg-surface p-1 sm:w-auto">
-                <TabsTrigger value="moderation" className="rounded-full px-6 py-2 text-sm">
+              <TabsList className="scrollbar-none flex w-full justify-start gap-1 overflow-x-auto rounded-full border border-line bg-surface p-1 sm:w-auto sm:flex-wrap">
+                <TabsTrigger value="moderation" className="min-h-[44px] shrink-0 whitespace-nowrap rounded-full px-5 py-2 text-sm sm:px-6">
                   Модерация
                 </TabsTrigger>
-                <TabsTrigger value="support" className="rounded-full px-6 py-2 text-sm">
+                <TabsTrigger value="support" className="min-h-[44px] shrink-0 whitespace-nowrap rounded-full px-5 py-2 text-sm sm:px-6">
                   Обращения{newTickets > 0 ? ` · ${newTickets}` : ''}
                 </TabsTrigger>
-                <TabsTrigger value="users" className="rounded-full px-6 py-2 text-sm">
+                <TabsTrigger value="users" className="min-h-[44px] shrink-0 whitespace-nowrap rounded-full px-5 py-2 text-sm sm:px-6">
                   Пользователи
                 </TabsTrigger>
-                <TabsTrigger value="jobs" className="rounded-full px-6 py-2 text-sm">
+                <TabsTrigger value="jobs" className="min-h-[44px] shrink-0 whitespace-nowrap rounded-full px-5 py-2 text-sm sm:px-6">
                   Заказы
                 </TabsTrigger>
-                <TabsTrigger value="reviews" className="rounded-full px-6 py-2 text-sm">
+                <TabsTrigger value="reviews" className="min-h-[44px] shrink-0 whitespace-nowrap rounded-full px-5 py-2 text-sm sm:px-6">
                   Отзывы
                 </TabsTrigger>
               </TabsList>

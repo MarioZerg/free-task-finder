@@ -58,7 +58,7 @@ const AdminModeration = () => {
 
   if (jobs.length === 0) {
     return (
-      <div className="rounded-3xl border border-line bg-surface p-10 text-center">
+      <div className="rounded-3xl border border-line bg-surface p-6 text-center sm:p-10">
         <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
           <Icon name="ShieldCheck" size={22} />
         </span>
@@ -76,11 +76,11 @@ const AdminModeration = () => {
       </p>
 
       {jobs.map((job) => (
-        <article key={job.id} className="rounded-3xl border border-line bg-surface p-5 md:p-6">
+        <article key={job.id} className="rounded-3xl border border-line bg-surface p-4 sm:p-5 md:p-6">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <h4 className="font-head text-lg font-medium md:text-xl">{job.title}</h4>
-              <p className="mt-1.5 text-sm text-muted-foreground">{job.description}</p>
+              <h4 className="break-words font-head text-lg font-medium md:text-xl">{job.title}</h4>
+              <p className="mt-1.5 break-words text-sm text-muted-foreground">{job.description}</p>
             </div>
             <span className="shrink-0 font-head text-2xl font-semibold leading-none text-primary md:text-3xl">
               {money(job.price)}
@@ -106,11 +106,11 @@ const AdminModeration = () => {
             </span>
           </div>
 
-          <div className="mt-5 flex flex-wrap gap-2 border-t border-line pt-4">
+          <div className="mt-5 flex flex-col gap-2 border-t border-line pt-4 sm:flex-row sm:flex-wrap">
             <button
               disabled={busy === job.id}
               onClick={() => decide(job, true)}
-              className="flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03] disabled:opacity-60"
+              className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03] disabled:opacity-60 sm:w-auto"
             >
               <Icon name="Check" size={16} />
               Одобрить и выставить в ленту
@@ -118,7 +118,7 @@ const AdminModeration = () => {
             <button
               disabled={busy === job.id}
               onClick={() => decide(job, false)}
-              className="flex items-center gap-2 rounded-full border border-line px-6 py-2.5 text-sm transition-colors hover:border-destructive/60 hover:text-destructive disabled:opacity-60"
+              className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border border-line px-6 py-2.5 text-sm transition-colors hover:border-destructive/60 hover:text-destructive disabled:opacity-60 sm:w-auto"
             >
               <Icon name="X" size={16} />
               Отклонить

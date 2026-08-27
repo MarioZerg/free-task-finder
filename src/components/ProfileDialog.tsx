@@ -99,7 +99,7 @@ const ProfileDialog = ({ userId, onOpenChange, showDetails = false }: Props) => 
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 rounded-3xl border border-line bg-tile p-5 text-center">
+            <div className="grid grid-cols-3 gap-2 rounded-3xl border border-line bg-tile p-4 text-center sm:p-5">
               <div>
                 <p className="font-head text-lg text-primary">★ {profile.rating.toFixed(1)}</p>
                 <p className="text-xs text-chip">рейтинг</p>
@@ -133,7 +133,7 @@ const ProfileDialog = ({ userId, onOpenChange, showDetails = false }: Props) => 
                 {profile.about && (
                   <>
                     <h4 className="mt-3 font-head text-base font-medium">О себе</h4>
-                    <p className="mt-1 whitespace-pre-line text-sm text-muted-foreground">
+                    <p className="mt-1 whitespace-pre-line break-words text-sm text-muted-foreground">
                       {profile.about}
                     </p>
                   </>
@@ -150,18 +150,18 @@ const ProfileDialog = ({ userId, onOpenChange, showDetails = false }: Props) => 
                   {reviews.map((r, i) => (
                     <div key={i} className="rounded-2xl border border-line bg-tile p-4">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="text-sm font-medium">{r.author_name}</span>
+                        <span className="min-w-0 break-words text-sm font-medium">{r.author_name}</span>
                         <span className="text-sm text-primary">
                           {'★'.repeat(r.rating)}
                           <span className="text-chip">{'★'.repeat(5 - r.rating)}</span>
                         </span>
                       </div>
-                      <p className="mt-1 text-xs text-chip">
+                      <p className="mt-1 break-words text-xs text-chip">
                         {r.job_title}
                         {r.final_price ? ` · ${money(r.final_price)}` : ''} · {dateRu(r.created_at)}
                       </p>
                       {r.text && (
-                        <p className="mt-2 text-sm text-muted-foreground">{r.text}</p>
+                        <p className="mt-2 break-words text-sm text-muted-foreground">{r.text}</p>
                       )}
                     </div>
                   ))}

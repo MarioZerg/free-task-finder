@@ -105,7 +105,7 @@ const SubscriptionDialog = ({ open, onOpenChange, hint }: Props) => {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="rounded-3xl border border-amber-500/40 bg-amber-500/5 p-5">
+        <div className="rounded-3xl border border-amber-500/40 bg-amber-500/5 p-4 sm:p-5">
           <div className="flex items-center gap-3">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-600">
               <Icon name="Crown" size={22} />
@@ -154,7 +154,7 @@ const SubscriptionDialog = ({ open, onOpenChange, hint }: Props) => {
             <button
               onClick={() => setCancelOpen(true)}
               disabled={busy}
-              className="w-full rounded-full border border-line py-3.5 text-sm transition-colors hover:border-destructive/60 hover:text-destructive disabled:opacity-60"
+              className="min-h-[44px] w-full rounded-full border border-line py-3.5 text-sm transition-colors hover:border-destructive/60 hover:text-destructive disabled:opacity-60"
             >
               Отказаться от подписки
             </button>
@@ -199,7 +199,7 @@ const SubscriptionDialog = ({ open, onOpenChange, hint }: Props) => {
             <button
               onClick={() => cancel(true)}
               disabled={busy}
-              className="rounded-full border border-line px-5 py-2.5 text-sm transition-colors hover:border-destructive/60 hover:text-destructive disabled:opacity-60"
+              className="min-h-[44px] w-full rounded-full border border-line px-5 py-2.5 text-sm transition-colors hover:border-destructive/60 hover:text-destructive disabled:opacity-60 sm:w-auto"
             >
               Отключить сразу
             </button>

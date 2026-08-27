@@ -15,7 +15,7 @@ const ExecutorDashboard = () => {
   const waiting = myJobs.filter((j) => j.status === 'open');
 
   return (
-    <div className="mx-auto w-full max-w-[1400px] px-5 py-8 md:px-10 md:py-12 lg:px-16">
+    <div className="safe-x safe-bottom mx-auto w-full max-w-[1400px] px-5 py-8 md:px-10 md:py-12 lg:px-16">
       <p className="text-xs uppercase tracking-[0.2em] text-chip">Кабинет исполнителя</p>
       <h1 className="mt-2 font-head text-2xl font-normal tracking-tight md:text-4xl">
         Заказы рядом
@@ -39,7 +39,7 @@ const ExecutorDashboard = () => {
         ) : tab === 'people' ? (
           <PeopleList />
         ) : working.length === 0 && waiting.length === 0 ? (
-          <div className="rounded-3xl border border-line bg-surface p-10 text-center">
+          <div className="rounded-3xl border border-line bg-surface p-6 text-center sm:p-10">
             <p className="font-head text-lg">Откликов пока нет</p>
             <p className="mt-2 text-sm text-chip">
               Откройте ленту заказов и нажмите «Готов взяться» на подходящей задаче.
@@ -56,8 +56,8 @@ const ExecutorDashboard = () => {
                 className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-line bg-surface p-5"
               >
                 <div className="min-w-0">
-                  <p className="font-head text-lg font-medium">{j.title}</p>
-                  <p className="mt-1 text-sm text-chip">
+                  <p className="break-words font-head text-lg font-medium">{j.title}</p>
+                  <p className="mt-1 break-words text-sm text-chip">
                     {j.city} · {j.when} · заказчик {j.ownerName}
                   </p>
                 </div>

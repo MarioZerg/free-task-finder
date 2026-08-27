@@ -9,7 +9,7 @@ const Ghost = ({ children }: { children: string }) => (
   <button
     disabled
     title="Просмотр глазами роли"
-    className="cursor-not-allowed rounded-full bg-primary/40 px-4 py-2 text-sm font-medium text-primary-foreground opacity-60"
+    className="min-h-[44px] w-full cursor-not-allowed rounded-full bg-primary/40 px-4 py-2 text-sm font-medium text-primary-foreground opacity-60 sm:w-auto"
   >
     {children}
   </button>
@@ -70,7 +70,7 @@ const AdminRoleView = ({ mode }: { mode: 'customer' | 'executor' }) => {
             )}
             <div className="flex flex-1 flex-col p-5">
               <div className="flex items-baseline justify-between gap-3">
-                <h4 className="font-head text-lg font-medium leading-snug">{job.title}</h4>
+                <h4 className="min-w-0 break-words font-head text-lg font-medium leading-snug">{job.title}</h4>
                 <span className="whitespace-nowrap font-head text-lg font-medium text-primary">
                   {money(job.price)}
                 </span>
@@ -87,7 +87,7 @@ const AdminRoleView = ({ mode }: { mode: 'customer' | 'executor' }) => {
                 <button
                   disabled
                   title="Просмотр глазами роли"
-                  className="w-full cursor-not-allowed rounded-full bg-primary/40 py-3 text-sm font-medium text-primary-foreground opacity-60"
+                  className="min-h-[44px] w-full cursor-not-allowed rounded-full bg-primary/40 py-3 text-sm font-medium text-primary-foreground opacity-60"
                 >
                   Готов взяться
                 </button>
@@ -102,15 +102,15 @@ const AdminRoleView = ({ mode }: { mode: 'customer' | 'executor' }) => {
   return (
     <div className="space-y-4">
       {jobs.map((job) => (
-        <article key={job.id} className="rounded-3xl border border-line bg-surface p-5 md:p-6">
+        <article key={job.id} className="rounded-3xl border border-line bg-surface p-4 sm:p-5 md:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h4 className="font-head text-xl font-medium">{job.title}</h4>
-              <p className="mt-1 max-w-[560px] text-sm text-muted-foreground">
+            <div className="min-w-0">
+              <h4 className="break-words font-head text-xl font-medium">{job.title}</h4>
+              <p className="mt-1 max-w-[560px] break-words text-sm text-muted-foreground">
                 {job.description}
               </p>
             </div>
-            <div className="text-right">
+            <div className="shrink-0 text-right">
               <span className="font-head text-xl font-medium text-primary">
                 {money(job.finalPrice || job.price)}
               </span>
@@ -142,7 +142,7 @@ const AdminRoleView = ({ mode }: { mode: 'customer' | 'executor' }) => {
                         <p className="mt-1.5 text-sm text-muted-foreground">{r.note}</p>
                       </div>
                     </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                       <Ghost>Посмотреть профиль</Ghost>
                       <Ghost>Назначить на заказ</Ghost>
                     </div>

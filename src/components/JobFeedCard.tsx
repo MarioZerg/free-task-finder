@@ -116,14 +116,18 @@ const JobFeedCard = ({ job, responded, canRespond, readOnly }: Props) => {
             />
           )}
           <div className="flex min-w-0 flex-1 items-start justify-between gap-3">
-            <h3 className="font-head text-lg font-medium leading-snug sm:text-xl">{job.title}</h3>
+            <h3 className="min-w-0 break-words font-head text-lg font-medium leading-snug sm:text-xl">
+              {job.title}
+            </h3>
             <span className="shrink-0 whitespace-nowrap font-head text-2xl font-semibold leading-none tracking-tight text-primary sm:text-3xl">
               {money(job.price)}
             </span>
           </div>
         </div>
 
-        <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">{job.description}</p>
+        <p className="mt-2.5 break-words text-sm leading-relaxed text-muted-foreground">
+          {job.description}
+        </p>
 
         <div className="mt-4 flex items-center gap-3 rounded-2xl border border-line bg-tile px-4 py-3">
           <Icon
@@ -144,9 +148,9 @@ const JobFeedCard = ({ job, responded, canRespond, readOnly }: Props) => {
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-chip">
-          <span className="flex items-center gap-1.5">
-            <Icon name="MapPin" size={14} />
-            {job.city}
+          <span className="flex min-w-0 items-center gap-1.5">
+            <Icon name="MapPin" size={14} className="shrink-0" />
+            <span className="break-words">{job.city}</span>
           </span>
           <span className="flex items-center gap-1.5">
             <Icon name="Clock" size={14} />
@@ -188,38 +192,40 @@ const JobFeedCard = ({ job, responded, canRespond, readOnly }: Props) => {
           </div>
         )}
 
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
-          <span className="flex items-center gap-2 text-sm text-chip">
+        <div className="mt-5 flex flex-col gap-3 border-t border-line pt-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <span className="flex min-w-0 items-center gap-2 text-sm text-chip">
             <Avatar
               src={job.ownerAvatar}
               name={job.ownerName}
               size={28}
               online={job.ownerOnline}
             />
-            {job.ownerName} · ★ {job.ownerRating.toFixed(1)}
+            <span className="truncate">
+              {job.ownerName} · ★ {job.ownerRating.toFixed(1)}
+            </span>
           </span>
 
           {responded ? (
-            <span className="flex items-center gap-2 rounded-full border border-line bg-tile px-5 py-2.5 text-sm text-muted-foreground">
+            <span className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border border-line bg-tile px-5 py-2.5 text-sm text-muted-foreground sm:w-auto">
               <Icon name="CheckCheck" size={16} className="text-primary" />
               Отклик отправлен
             </span>
           ) : readOnly ? (
             <span
               title="Просмотр глазами роли"
-              className="rounded-full border border-line px-5 py-2.5 text-sm text-chip"
+              className="flex min-h-[44px] w-full items-center justify-center rounded-full border border-line px-5 py-2.5 text-sm text-chip sm:w-auto"
             >
               Готов взяться
             </span>
           ) : canRespond ? (
             <button
               onClick={() => setOpen(true)}
-              className="rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03]"
+              className="min-h-[44px] w-full rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03] sm:w-auto"
             >
               Готов взяться
             </button>
           ) : (
-            <span className="rounded-full border border-line px-5 py-2.5 text-xs text-chip">
+            <span className="flex min-h-[44px] w-full items-center justify-center rounded-full border border-line px-5 py-2.5 text-center text-xs text-chip sm:w-auto">
               Сначала завершите текущий заказ
             </span>
           )}

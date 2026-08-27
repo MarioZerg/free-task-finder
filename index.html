@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
     <title>Доделай.ру — шабашка и подработка в Ярославле и Ярославской области</title>
     <meta name="description" content="Доделай.ру (dodelay.ru) — шабашка в Ярославле и области: бесплатные объявления о разовой подработке. Заказчики размещают разовые задачи, исполнители откликаются. Ярославль, Рыбинск, Тутаев, Переславль-Залесский, Углич, Ростов. Вход через MAX."/>
     <meta name="keywords" content="доделай ру, dodelay.ru, шабашка ярославль, подработка ярославль, разовая работа ярославль, найти подработку ярославская область, грузчики ярославль, разнорабочие рыбинск, подработка тутаев, работа на день ярославль"/>
@@ -13,6 +13,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Onest:wght@400;500;600&display=swap">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#4A653A">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Доделай.ру">
+    <meta name="format-detection" content="telephone=no">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="ru_RU">
     <meta property="og:site_name" content="Доделай.ру">
@@ -55,6 +64,13 @@
 <body>
 <div id="root"></div>
 <script type="module" src="/src/main.tsx"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js').catch(function () {});
+    });
+  }
+</script>
 
 <!-- Yandex.Metrika counter -->
 <script type="text/javascript">

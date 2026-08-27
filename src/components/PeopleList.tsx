@@ -36,7 +36,10 @@ const PersonCard = memo(
     onInvite?: (u: User) => void;
   }) => (
     <div className="rounded-3xl border border-line bg-surface p-4 transition-colors hover:border-primary/50">
-      <button onClick={() => onOpen(user.id)} className="flex w-full items-center gap-3 text-left">
+      <button
+        onClick={() => onOpen(user.id)}
+        className="flex min-h-[44px] w-full items-center gap-3 text-left"
+      >
         <Avatar src={user.avatar} name={user.name} size={46} online={user.online} />
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-1.5 truncate font-medium">
@@ -58,7 +61,7 @@ const PersonCard = memo(
       {onInvite && (
         <button
           onClick={() => onInvite(user)}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-line bg-tile px-4 py-2.5 text-sm transition-colors hover:border-primary/60 hover:text-primary"
+          className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border border-line bg-tile px-4 py-2.5 text-sm transition-colors hover:border-primary/60 hover:text-primary"
         >
           <Icon name="UserPlus" size={16} />
           Пригласить на заказ
@@ -142,12 +145,12 @@ const PeopleList = () => {
             {counts.executors + counts.customers} участников · {counts.online} сейчас в сети
           </p>
         </div>
-        <div className="flex gap-1 rounded-full border border-line bg-surface p-1">
+        <div className="scrollbar-none flex w-full gap-1 overflow-x-auto rounded-full border border-line bg-surface p-1 sm:w-auto">
           {(['executor', 'customer'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-medium transition-colors ${
+              className={`min-h-[44px] shrink-0 whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-medium transition-colors ${
                 tab === t ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
               }`}
             >
@@ -162,7 +165,7 @@ const PeopleList = () => {
       {loading ? (
         <p className="mt-6 text-sm text-chip">Загружаем…</p>
       ) : list.length === 0 ? (
-        <div className="mt-6 rounded-3xl border border-line bg-surface p-10 text-center">
+        <div className="mt-6 rounded-3xl border border-line bg-surface p-6 text-center sm:p-10">
           <p className="font-head text-lg">Пока никого нет</p>
           <p className="mt-2 text-sm text-chip">Участники появятся здесь после регистрации.</p>
         </div>
@@ -185,7 +188,7 @@ const PeopleList = () => {
                 onClick={() => setPage(current - 1)}
                 disabled={current === 1}
                 aria-label="Назад"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface transition-colors hover:border-primary/50 disabled:opacity-40"
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-line bg-surface transition-colors hover:border-primary/50 disabled:opacity-40"
               >
                 <Icon name="ChevronLeft" size={18} />
               </button>
@@ -197,7 +200,7 @@ const PeopleList = () => {
                     {i > 0 && arr[i - 1] !== n - 1 && <span className="text-chip">…</span>}
                     <button
                       onClick={() => setPage(n)}
-                      className={`h-10 min-w-10 rounded-full px-3 text-sm font-medium transition-colors ${
+                      className={`h-11 min-w-11 rounded-full px-3 text-sm font-medium transition-colors ${
                         n === current
                           ? 'bg-primary text-primary-foreground'
                           : 'border border-line bg-surface text-muted-foreground hover:border-primary/50'
@@ -212,7 +215,7 @@ const PeopleList = () => {
                 onClick={() => setPage(current + 1)}
                 disabled={current === pages}
                 aria-label="Вперёд"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface transition-colors hover:border-primary/50 disabled:opacity-40"
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-line bg-surface transition-colors hover:border-primary/50 disabled:opacity-40"
               >
                 <Icon name="ChevronRight" size={18} />
               </button>

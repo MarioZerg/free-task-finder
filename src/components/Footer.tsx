@@ -1,13 +1,14 @@
 import { Link } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
+import InstallPwa from '@/components/InstallPwa';
 
 const Footer = () => {
   const { openLogin } = useAppState();
 
   return (
     <footer className="overflow-hidden bg-tile pt-20 md:pt-28">
-      <div className="mx-auto max-w-[1400px] px-6 md:px-10 lg:px-16">
+      <div className="safe-x safe-bottom mx-auto max-w-[1400px] px-6 md:px-10 lg:px-16">
         <div className="grid gap-10 border-b border-line pb-16 md:grid-cols-2 md:items-end">
           <h2 className="font-head text-3xl font-normal leading-tight tracking-tight md:text-5xl">
             Задача есть — руки найдутся.
@@ -15,14 +16,14 @@ const Footer = () => {
           <div className="flex flex-wrap gap-3 md:justify-end">
             <button
               onClick={() => openLogin('customer')}
-              className="flex items-center gap-2 rounded-full bg-primary px-7 py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.03]"
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-7 py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.03] sm:w-auto"
             >
               Я заказчик
               <Icon name="ArrowRight" size={18} />
             </button>
             <button
               onClick={() => openLogin('executor')}
-              className="rounded-full border border-line bg-surface px-7 py-4 text-base font-medium transition-colors hover:border-primary"
+              className="w-full rounded-full border border-line bg-surface px-7 py-4 text-base font-medium transition-colors hover:border-primary sm:w-auto"
             >
               Я исполнитель
             </button>
@@ -33,7 +34,7 @@ const Footer = () => {
           <h3 className="font-head text-base font-medium">
             Доделай.ру — шабашка в городах Ярославской области
           </h3>
-          <p className="mt-3 max-w-[860px] text-sm text-chip">
+          <p className="mt-3 max-w-[860px] break-words text-sm text-chip">
             Подработка и разовые заказы: Ярославль (Кировский, Заволжский, Дзержинский, Фрунзенский,
             Ленинский, Красноперекопский районы), Рыбинск, Тутаев, Переславль-Залесский, Углич,
             Ростов Великий, Гаврилов-Ям, Данилов, Пошехонье, Мышкин, Некрасовское.
@@ -51,11 +52,12 @@ const Footer = () => {
 
         <div className="flex flex-wrap items-center justify-between gap-6 py-10 text-sm text-chip">
           <p>Бесплатный сервис поиска подработки в Ярославской области. Вход через MAX.</p>
-          <nav className="flex flex-wrap gap-6">
+          <nav className="flex flex-wrap items-center gap-x-6 gap-y-4">
             <a href="#roles" className="story-link">Роли</a>
             <a href="#how" className="story-link">Как это работает</a>
             <Link to="/privacy" className="story-link">Конфиденциальность</Link>
             <Link to="/terms" className="story-link">Условия (оферта)</Link>
+            <InstallPwa variant="link" />
             <a href="#top" className="story-link">Наверх</a>
           </nav>
         </div>

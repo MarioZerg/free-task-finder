@@ -102,7 +102,7 @@ const SupportDialog = ({ open, onOpenChange }: Props) => {
           <select
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
-            className="w-full rounded-2xl border border-line bg-tile px-4 py-3.5 text-base outline-none transition-colors focus:border-primary/60"
+            className="min-h-[44px] w-full rounded-2xl border border-line bg-tile px-4 py-3.5 text-base outline-none transition-colors focus:border-primary/60"
           >
             {TOPICS.map((t) => (
               <option key={t} value={t}>
@@ -144,7 +144,7 @@ const SupportDialog = ({ open, onOpenChange }: Props) => {
               {tickets.map((t) => (
                 <div key={t.id} className="rounded-2xl border border-line bg-tile p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-sm font-medium">{t.topic}</span>
+                    <span className="min-w-0 break-words text-sm font-medium">{t.topic}</span>
                     <span
                       className={`rounded-full px-3 py-1 text-xs ${
                         statusMeta[t.status]?.cls || 'bg-chip/20 text-chip'
@@ -154,7 +154,7 @@ const SupportDialog = ({ open, onOpenChange }: Props) => {
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-chip">{dateRu(t.created_at)}</p>
-                  <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">{t.text}</p>
+                  <p className="mt-2 whitespace-pre-line break-words text-sm text-muted-foreground">{t.text}</p>
                   {t.answer && (
                     <div className="mt-3 rounded-2xl border border-primary/30 bg-primary/5 p-3">
                       <p className="flex items-center gap-1.5 text-xs font-medium text-primary">

@@ -108,7 +108,7 @@ const AdminSupport = ({ onProfile }: { onProfile: (id: number) => void }) => {
           <button
             key={f.id || 'all'}
             onClick={() => setStatus(f.id)}
-            className={`rounded-full border px-5 py-2.5 text-sm transition-colors ${
+            className={`min-h-[44px] rounded-full border px-5 py-2.5 text-sm transition-colors ${
               status === f.id
                 ? 'border-primary bg-primary text-primary-foreground'
                 : 'border-line text-muted-foreground hover:border-primary/50'
@@ -128,7 +128,7 @@ const AdminSupport = ({ onProfile }: { onProfile: (id: number) => void }) => {
       ) : (
         <div className="mt-6 space-y-3">
           {items.map((t) => (
-            <article key={t.id} className="rounded-3xl border border-line bg-surface p-5">
+            <article key={t.id} className="rounded-3xl border border-line bg-surface p-4 sm:p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex min-w-0 items-start gap-3">
                   <Avatar src={t.avatar} name={t.name} size={40} />
@@ -164,7 +164,7 @@ const AdminSupport = ({ onProfile }: { onProfile: (id: number) => void }) => {
                 {t.topic}
                 <span className="ml-2 text-xs font-normal text-chip">{dateRu(t.created_at)}</span>
               </p>
-              <p className="mt-1.5 whitespace-pre-line text-sm text-muted-foreground">{t.text}</p>
+              <p className="mt-1.5 whitespace-pre-line break-words text-sm text-muted-foreground">{t.text}</p>
 
               {t.answer && (
                 <div className="mt-3 rounded-2xl border border-primary/30 bg-primary/5 p-3">
@@ -180,13 +180,13 @@ const AdminSupport = ({ onProfile }: { onProfile: (id: number) => void }) => {
                   value={answers[t.id] || ''}
                   onChange={(e) => setAnswers((p) => ({ ...p, [t.id]: e.target.value }))}
                   placeholder="Ответ пользователю"
-                  className="min-h-[80px] w-full resize-none rounded-2xl border border-line bg-tile px-4 py-3 text-sm outline-none placeholder:text-chip focus:border-primary/60"
+                  className="min-h-[80px] w-full resize-none rounded-2xl border border-line bg-tile px-4 py-3 text-base outline-none placeholder:text-chip focus:border-primary/60 sm:text-sm"
                 />
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                   <button
                     disabled={busy === t.id}
                     onClick={() => act(t, 'answer')}
-                    className="flex items-center gap-1.5 rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+                    className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
                   >
                     <Icon name="Send" size={15} />
                     Ответить
@@ -194,7 +194,7 @@ const AdminSupport = ({ onProfile }: { onProfile: (id: number) => void }) => {
                   <button
                     disabled={busy === t.id}
                     onClick={() => act(t, 'close')}
-                    className="flex items-center gap-1.5 rounded-full border border-line px-5 py-2 text-sm transition-colors hover:border-primary/50 disabled:opacity-60"
+                    className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-line px-5 py-2 text-sm transition-colors hover:border-primary/50 disabled:opacity-60"
                   >
                     <Icon name="CircleCheck" size={15} />
                     Закрыть
@@ -202,7 +202,7 @@ const AdminSupport = ({ onProfile }: { onProfile: (id: number) => void }) => {
                   <button
                     disabled={busy === t.id}
                     onClick={() => act(t, 'delete')}
-                    className="flex items-center gap-1.5 rounded-full border border-line px-5 py-2 text-sm transition-colors hover:border-destructive/60 hover:text-destructive disabled:opacity-60"
+                    className="col-span-2 flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-line px-5 py-2 text-sm transition-colors hover:border-destructive/60 hover:text-destructive disabled:opacity-60 sm:col-span-1"
                   >
                     <Icon name="Trash2" size={15} />
                     Удалить

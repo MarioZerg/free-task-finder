@@ -38,15 +38,15 @@ const Contacts = ({
     {data ? (
       <div className="mt-2 space-y-1 text-sm">
         {data.contact && (
-          <p className="flex items-center gap-2">
-            <Icon name="MessageCircle" size={16} className="text-primary" />
-            {data.contact}
+          <p className="flex items-start gap-2">
+            <Icon name="MessageCircle" size={16} className="mt-0.5 shrink-0 text-primary" />
+            <span className="min-w-0 break-words">{data.contact}</span>
           </p>
         )}
         {data.phone && (
-          <p className="flex items-center gap-2">
-            <Icon name="Phone" size={16} className="text-primary" />
-            {data.phone}
+          <p className="flex items-start gap-2">
+            <Icon name="Phone" size={16} className="mt-0.5 shrink-0 text-primary" />
+            <span className="min-w-0 break-words">{data.phone}</span>
           </p>
         )}
         {!data.contact && !data.phone && <p className="text-chip">Контакты не указаны</p>}
@@ -110,12 +110,12 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
   return (
     <div className="rounded-3xl border border-primary/40 bg-tile p-5 md:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs uppercase tracking-[0.16em] text-chip">
             {job.status === 'done' ? 'Заказ выполнен' : 'Заказ в работе'}
           </p>
-          <h4 className="mt-1 font-head text-xl font-medium">{job.title}</h4>
-          <p className="mt-1.5 flex items-center gap-2 text-sm text-chip">
+          <h4 className="mt-1 break-words font-head text-xl font-medium">{job.title}</h4>
+          <p className="mt-1.5 flex flex-wrap items-center gap-2 break-words text-sm text-chip">
             <Avatar
               src={job.isOwner ? job.executorAvatar : job.ownerAvatar}
               name={(job.isOwner ? job.executorName : job.ownerName) || '—'}
@@ -164,7 +164,7 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
               <button
                 onClick={() => run(() => shareContact(job.id), 'Контакты отправлены')}
                 disabled={busy}
-                className="mt-3 w-full rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-60"
+                className="mt-3 min-h-[44px] w-full rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-60"
               >
                 Поделиться своими контактами
               </button>
@@ -176,7 +176,7 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
       <JobChat jobId={job.id} partner={partner} />
 
       {job.status !== 'done' && (
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           {job.isOwner && (
             <button
               onClick={() => {
@@ -185,7 +185,7 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
               }}
               disabled={busy || !!completeGate}
               title={completeGate ? 'Дайте время договориться' : undefined}
-              className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             >
               <Icon name="CircleCheck" size={16} />
               {completeGate ? `Завершить через ${completeGate} мин` : 'Завершить заказ'}
@@ -194,7 +194,7 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
           <button
             onClick={() => setCancelOpen(true)}
             disabled={busy}
-            className="rounded-full border border-line px-6 py-3 text-sm transition-colors hover:border-primary/50 disabled:opacity-60"
+            className="min-h-[44px] w-full rounded-full border border-line px-6 py-3 text-sm transition-colors hover:border-primary/50 disabled:opacity-60 sm:w-auto"
           >
             Отменить заказ
           </button>
@@ -219,7 +219,7 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
                     key={s}
                     onClick={() => setRating(s)}
                     aria-label={`${s} звёзд`}
-                    className={`text-2xl leading-none transition-transform hover:scale-110 ${
+                    className={`flex h-11 w-11 items-center justify-center text-2xl leading-none transition-transform hover:scale-110 ${
                       s <= rating ? 'text-primary' : 'text-chip'
                     }`}
                   >
@@ -236,7 +236,7 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
               <button
                 onClick={() => run(() => review(job.id, rating, text.trim()), 'Отзыв отправлен')}
                 disabled={busy}
-                className="mt-3 flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-60"
+                className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-60 sm:w-auto"
               >
                 <Icon name="Send" size={16} />
                 Отправить отзыв
@@ -256,7 +256,7 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
               Заказ уйдёт в отменённые. Вернуть его будет нельзя — придётся выставить заново.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
             <AlertDialogCancel className="rounded-full border-line bg-tile">
               Не отменять
             </AlertDialogCancel>
@@ -286,7 +286,7 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
             inputMode="numeric"
             className="w-full rounded-2xl border border-line bg-tile px-4 py-3.5 text-base outline-none focus:border-primary/60"
           />
-          <AlertDialogFooter>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
             <AlertDialogCancel className="rounded-full border-line bg-tile">Назад</AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {

@@ -96,10 +96,10 @@ const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: num
         )}
         <div className="flex min-w-0 flex-1 flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h4 className="font-head text-lg font-medium md:text-xl">{job.title}</h4>
-          <p className="mt-1.5 text-sm text-muted-foreground">{job.description}</p>
+          <h4 className="break-words font-head text-lg font-medium md:text-xl">{job.title}</h4>
+          <p className="mt-1.5 break-words text-sm text-muted-foreground">{job.description}</p>
         </div>
-        <div className="text-right">
+        <div className="shrink-0 text-right">
           <span className="block whitespace-nowrap font-head text-2xl font-semibold leading-none tracking-tight text-primary md:text-3xl">
             {money(job.price)}
           </span>
@@ -109,9 +109,9 @@ const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: num
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-chip">
-        <span className="flex items-center gap-1.5">
-          <Icon name="MapPin" size={14} />
-          {job.city}
+        <span className="flex min-w-0 items-center gap-1.5">
+          <Icon name="MapPin" size={14} className="shrink-0" />
+          <span className="break-words">{job.city}</span>
         </span>
         <span className="flex items-center gap-1.5">
           <Icon name="Clock" size={14} />
@@ -140,12 +140,12 @@ const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: num
       )}
 
       {(job.status === 'open' || job.status === 'cancelled') && (
-        <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
+        <div className="mt-4 flex flex-col gap-2 border-t border-line pt-4 sm:flex-row sm:flex-wrap">
           {job.status === 'open' && job.moderation === 'approved' && (
             <button
               disabled={busy || !!bumpAvailableIn}
               onClick={bump}
-              className="flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             >
               <Icon name="ArrowUp" size={16} />
               {bumpAvailableIn ? `Поднять через ${bumpAvailableIn}` : 'Поднять в ленте'}
@@ -154,7 +154,7 @@ const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: num
           <button
             disabled={busy}
             onClick={() => setConfirmDelete(true)}
-            className="flex items-center gap-2 rounded-full border border-line px-5 py-2.5 text-sm transition-colors hover:border-destructive/60 hover:text-destructive disabled:opacity-60"
+            className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border border-line px-5 py-2.5 text-sm transition-colors hover:border-destructive/60 hover:text-destructive disabled:opacity-60 sm:w-auto"
           >
             <Icon name="Trash2" size={16} />
             Удалить задание
@@ -176,7 +176,7 @@ const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: num
               после этого вы сможете разместить новое задание.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
             <AlertDialogCancel className="rounded-full border-line">Оставить</AlertDialogCancel>
             <AlertDialogAction
               onClick={remove}
@@ -216,10 +216,10 @@ const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: num
                       <p className="mt-1.5 text-sm text-muted-foreground">{r.note}</p>
                     </div>
                   </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
+                  <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                     <button
                       onClick={() => onProfile(r.executorId)}
-                      className="flex-1 rounded-full border border-line bg-surface px-4 py-2.5 text-sm transition-colors hover:border-primary/60 sm:flex-none"
+                      className="min-h-[44px] w-full rounded-full border border-line bg-surface px-4 py-2.5 text-sm transition-colors hover:border-primary/60 sm:w-auto sm:flex-none"
                     >
                       Посмотреть профиль
                     </button>
@@ -249,7 +249,7 @@ const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: num
                           setBusy(false);
                         }
                       }}
-                      className="flex-1 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03] disabled:opacity-60 sm:flex-none"
+                      className="min-h-[44px] w-full rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03] disabled:opacity-60 sm:w-auto sm:flex-none"
                     >
                       Назначить на заказ
                     </button>

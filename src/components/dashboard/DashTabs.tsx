@@ -24,12 +24,12 @@ const DashTabs = ({
   onChange: (v: string) => void;
   items: { id: string; label: string }[];
 }) => (
-  <div className="flex gap-1 overflow-x-auto rounded-full border border-line bg-surface p-1">
+  <div className="scrollbar-none flex gap-1 overflow-x-auto rounded-full border border-line bg-surface p-1">
     {items.map((t) => (
       <button
         key={t.id}
         onClick={() => onChange(t.id)}
-        className={`whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-medium transition-colors sm:px-6 ${
+        className={`min-h-[44px] shrink-0 whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-medium transition-colors sm:px-6 ${
           value === t.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
         }`}
       >

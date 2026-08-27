@@ -212,7 +212,7 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
                 <button
                   key={c}
                   onClick={() => setCategory(c)}
-                  className={`rounded-full border px-4 py-2 text-sm transition-colors ${
+                  className={`min-h-[44px] rounded-full border px-4 py-2 text-sm transition-colors ${
                     category === c
                       ? 'border-primary bg-primary text-primary-foreground'
                       : 'border-line text-muted-foreground hover:border-primary/50'
@@ -257,7 +257,7 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
                 <div className="absolute right-3 top-3 flex gap-2">
                   <button
                     onClick={() => fileRef.current?.click()}
-                    className="rounded-full bg-background/90 px-4 py-2 text-xs font-medium shadow-sm"
+                    className="min-h-[44px] rounded-full bg-background/90 px-4 py-2 text-xs font-medium shadow-sm"
                   >
                     Заменить
                   </button>
@@ -266,10 +266,10 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
                       setPhotoThumb('');
                       setPhotoFull('');
                     }}
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-background/90 shadow-sm"
+                    className="flex h-11 w-11 items-center justify-center rounded-full bg-background/90 shadow-sm"
                     aria-label="Удалить фото"
                   >
-                    <Icon name="X" size={15} />
+                    <Icon name="X" size={16} />
                   </button>
                 </div>
               </div>

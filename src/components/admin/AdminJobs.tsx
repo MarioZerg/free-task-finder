@@ -128,21 +128,21 @@ const AdminJobs = () => {
         <button
           disabled={busy}
           onClick={() => setClearScope('cancelled')}
-          className="rounded-full border border-line px-5 py-2 text-sm transition-colors hover:border-destructive/60 hover:text-destructive disabled:opacity-60"
+          className="min-h-[44px] rounded-full border border-line px-5 py-2 text-sm transition-colors hover:border-destructive/60 hover:text-destructive disabled:opacity-60"
         >
           Отменённые
         </button>
         <button
           disabled={busy}
           onClick={() => setClearScope('done')}
-          className="rounded-full border border-line px-5 py-2 text-sm transition-colors hover:border-destructive/60 hover:text-destructive disabled:opacity-60"
+          className="min-h-[44px] rounded-full border border-line px-5 py-2 text-sm transition-colors hover:border-destructive/60 hover:text-destructive disabled:opacity-60"
         >
           Завершённые
         </button>
         <button
           disabled={busy}
           onClick={() => setClearScope('all_closed')}
-          className="rounded-full border border-line px-5 py-2 text-sm transition-colors hover:border-destructive/60 hover:text-destructive disabled:opacity-60"
+          className="min-h-[44px] rounded-full border border-line px-5 py-2 text-sm transition-colors hover:border-destructive/60 hover:text-destructive disabled:opacity-60"
         >
           Все закрытые
         </button>
@@ -153,7 +153,7 @@ const AdminJobs = () => {
           <button
             key={f}
             onClick={() => setStatus(f)}
-            className={`rounded-full border px-5 py-2.5 text-sm transition-colors ${
+            className={`min-h-[44px] rounded-full border px-5 py-2.5 text-sm transition-colors ${
               status === f
                 ? 'border-primary bg-primary text-primary-foreground'
                 : 'border-line text-muted-foreground hover:border-primary/50'
@@ -175,14 +175,14 @@ const AdminJobs = () => {
           {jobs.map((j) => (
             <div
               key={j.id}
-              className="flex flex-wrap items-center gap-4 rounded-3xl border border-line bg-surface p-5"
+              className="flex flex-col gap-4 rounded-3xl border border-line bg-surface p-4 sm:flex-row sm:flex-wrap sm:items-center sm:p-5"
             >
-              <div className="min-w-[220px] flex-1">
-                <p className="font-head text-lg font-medium">{j.title}</p>
-                <p className="mt-1 text-sm text-chip">
+              <div className="min-w-0 flex-1 sm:min-w-[220px]">
+                <p className="break-words font-head text-lg font-medium">{j.title}</p>
+                <p className="mt-1 break-words text-sm text-chip">
                   {money(j.finalPrice || j.price)} · {j.city} · {dateRu(j.createdAt)}
                 </p>
-                <p className="mt-0.5 text-xs text-chip">
+                <p className="mt-0.5 break-words text-xs text-chip">
                   Заказчик: {j.ownerName} · Исполнитель: {j.executorName || '—'}
                 </p>
                 {j.moderation === 'pending' && (
@@ -192,7 +192,7 @@ const AdminJobs = () => {
                   </p>
                 )}
               </div>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
                 {j.moderation === 'pending' && (
                   <>
                     <button
@@ -203,7 +203,7 @@ const AdminJobs = () => {
                           'Задание выставлено в ленту',
                         )
                       }
-                      className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03] disabled:opacity-60"
+                      className="min-h-[44px] rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03] disabled:opacity-60"
                     >
                       Одобрить
                     </button>
@@ -215,7 +215,7 @@ const AdminJobs = () => {
                           'Задание отклонено',
                         )
                       }
-                      className="rounded-full border border-line px-4 py-2 text-sm transition-colors hover:border-primary/50 disabled:opacity-60"
+                      className="min-h-[44px] rounded-full border border-line px-4 py-2 text-sm transition-colors hover:border-primary/50 disabled:opacity-60"
                     >
                       Отклонить
                     </button>
@@ -225,7 +225,7 @@ const AdminJobs = () => {
                   value={j.status}
                   onValueChange={(v) => update({ jobId: j.id, status: v }, 'Статус обновлён')}
                 >
-                  <SelectTrigger className="w-[170px] rounded-full border-line bg-tile">
+                  <SelectTrigger className="col-span-2 h-11 w-full rounded-full border-line bg-tile sm:w-[170px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="border-line bg-surface">
@@ -239,7 +239,7 @@ const AdminJobs = () => {
                 <button
                   disabled={busy}
                   onClick={() => setToDelete(j)}
-                  className="flex items-center gap-1.5 rounded-full border border-line px-4 py-2 text-sm transition-colors hover:border-destructive/60 hover:text-destructive disabled:opacity-60"
+                  className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-line px-4 py-2 text-sm transition-colors hover:border-destructive/60 hover:text-destructive disabled:opacity-60"
                 >
                   <Icon name="Trash2" size={15} />
                   Удалить
@@ -253,7 +253,7 @@ const AdminJobs = () => {
                       price: String(j.price),
                     });
                   }}
-                  className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03]"
+                  className="min-h-[44px] rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03]"
                 >
                   Изменить
                 </button>
@@ -274,7 +274,7 @@ const AdminJobs = () => {
               Восстановить не получится.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
             <AlertDialogCancel className="rounded-full border-line">Отмена</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => toDelete && removeJob(toDelete.id)}
@@ -297,7 +297,7 @@ const AdminJobs = () => {
               Рейтинги пользователей пересчитаются.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
             <AlertDialogCancel className="rounded-full border-line">Отмена</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => clearHistory(clearScope)}

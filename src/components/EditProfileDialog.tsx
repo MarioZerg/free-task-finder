@@ -127,7 +127,7 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <button
             onClick={() => fileRef.current?.click()}
             className="relative rounded-full transition-transform hover:scale-[1.03]"
@@ -220,7 +220,7 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
           </p>
           <button
             onClick={() => setProOpen(true)}
-            className="mt-3 w-full rounded-full border border-amber-500/50 bg-amber-500/10 px-5 py-2.5 text-sm font-medium text-amber-600 transition-colors hover:bg-amber-500/20"
+            className="mt-3 min-h-[44px] w-full rounded-full border border-amber-500/50 bg-amber-500/10 px-5 py-2.5 text-sm font-medium text-amber-600 transition-colors hover:bg-amber-500/20"
           >
             {user.isPro ? 'Управлять подпиской' : 'Подключить PRO'}
           </button>

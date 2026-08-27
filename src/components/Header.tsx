@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
 import Avatar from '@/components/Avatar';
+import InstallPwa from '@/components/InstallPwa';
 
 const links = [
   { href: '#roles', label: 'Роли' },
@@ -23,7 +24,7 @@ const Header = () => {
 
   return (
     <header className="absolute inset-x-0 top-0 z-40 animate-fade-plain">
-      <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between px-6 py-6 md:px-10 md:py-8 lg:px-16">
+      <div className="safe-x safe-top mx-auto flex w-full max-w-[1400px] items-center justify-between gap-3 px-6 py-6 md:px-10 md:py-8 lg:px-16">
         <a href="#top" className="font-head text-xl font-bold leading-none tracking-tight md:text-2xl">
           ДОДЕЛАЙ<sup className="align-super text-[0.42em] font-normal">.РУ</sup>
         </a>
@@ -74,7 +75,7 @@ const Header = () => {
       </div>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-background px-6 py-6 animate-fade-plain lg:hidden">
+        <div className="safe-x safe-top safe-bottom fixed inset-0 z-50 flex flex-col overflow-y-auto bg-background px-6 py-6 animate-fade-plain lg:hidden">
           <div className="flex items-center justify-between">
             <span className="font-head text-xl font-bold">ДОДЕЛАЙ.РУ</span>
             <button
@@ -97,7 +98,10 @@ const Header = () => {
               </a>
             ))}
           </nav>
-          <div className="mt-auto">
+          <div className="mt-auto space-y-3 pt-10">
+            <div className="[&>button]:min-h-[44px] [&>button]:w-full">
+              <InstallPwa />
+            </div>
             {user ? (
               <div className="space-y-3">
                 <Link

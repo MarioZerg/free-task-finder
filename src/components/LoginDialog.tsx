@@ -8,6 +8,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
+import InstallPwa from '@/components/InstallPwa';
 import { useAppState, Role } from '@/hooks/use-app-state';
 import { CITIES } from '@/data/mock';
 import { toast } from '@/hooks/use-toast';
@@ -302,7 +303,7 @@ const LoginDialog = () => {
                 <button
                   key={r}
                   onClick={() => openLogin(r)}
-                  className={`flex-1 rounded-full px-4 py-2.5 text-sm font-medium transition-colors ${
+                  className={`min-h-[44px] flex-1 rounded-full px-3 py-2.5 text-sm font-medium transition-colors ${
                     loginRole === r
                       ? 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:text-foreground'
@@ -320,7 +321,7 @@ const LoginDialog = () => {
                   <p
                     ref={codeRef}
                     onClick={copyCode}
-                    className="mt-3 cursor-pointer select-all font-head text-4xl font-semibold tracking-[0.3em] text-primary"
+                    className="mt-3 cursor-pointer select-all break-all font-head text-3xl font-semibold tracking-[0.22em] text-primary sm:text-4xl sm:tracking-[0.3em]"
                   >
                     {code}
                   </p>
@@ -343,14 +344,14 @@ const LoginDialog = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={() => copyCode()}
-                    className="flex-1 rounded-full border border-line py-3 text-sm transition-colors hover:border-primary/50"
+                    className="min-h-[44px] flex-1 rounded-full border border-line px-3 py-3 text-sm transition-colors hover:border-primary/50"
                   >
                     {copied ? 'Код скопирован' : 'Скопировать код'}
                   </button>
                   <button
                     onClick={requestCode}
                     disabled={busy}
-                    className="flex-1 rounded-full border border-line py-3 text-sm transition-colors hover:border-primary/50 disabled:opacity-60"
+                    className="min-h-[44px] flex-1 rounded-full border border-line px-3 py-3 text-sm transition-colors hover:border-primary/50 disabled:opacity-60"
                   >
                     Получить новый код
                   </button>
@@ -440,7 +441,7 @@ const LoginDialog = () => {
                     type="checkbox"
                     checked={terms}
                     onChange={(e) => setTerms(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 shrink-0 accent-[hsl(var(--primary))]"
+                    className="mt-0.5 h-5 w-5 shrink-0 accent-[hsl(var(--primary))]"
                   />
                   <span>
                     Я принимаю{' '}
@@ -486,6 +487,13 @@ const LoginDialog = () => {
             </p>
           </>
         )}
+
+        <div className="flex flex-col items-center gap-2 border-t border-line pt-4 text-center">
+          <InstallPwa variant="link" />
+          <p className="text-xs text-chip">
+            Установите приложение на телефон — вход останется сохранённым
+          </p>
+        </div>
       </DialogContent>
     </Dialog>
   );
