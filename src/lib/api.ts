@@ -118,6 +118,7 @@ export interface JobItem {
   when: string;
   category: string;
   photo?: string | null;
+  hasFullPhoto?: boolean;
   status: JobStatus;
   ownerId: number;
   ownerName: string;

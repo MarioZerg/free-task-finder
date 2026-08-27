@@ -22,6 +22,7 @@ import { AdminReturnBanner } from '@/components/admin/AdminDemoAccess';
 import LiveFeed from '@/components/LiveFeed';
 import PeopleList from '@/components/PeopleList';
 import Avatar, { OnlineBadge } from '@/components/Avatar';
+import PhotoViewer from '@/components/PhotoViewer';
 import { toast } from '@/hooks/use-toast';
 
 const statusLabel: Record<string, string> = {
@@ -127,7 +128,17 @@ const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: num
   const pending = job.moderation === 'pending';
 
   return (
-    <article className="rounded-3xl border border-line bg-surface p-5 md:p-6">
+    <article className="overflow-hidden rounded-3xl border border-line bg-surface">
+      {job.photo && (
+        <PhotoViewer
+          jobId={job.id}
+          title={job.title}
+          thumb={job.photo}
+          hasFull={job.hasFullPhoto}
+          className="h-44 sm:h-52"
+        />
+      )}
+      <div className="p-5 md:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h4 className="font-head text-lg font-medium md:text-xl">{job.title}</h4>
@@ -293,6 +304,7 @@ const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: num
           )}
         </div>
       )}
+      </div>
     </article>
   );
 };

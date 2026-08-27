@@ -1,6 +1,4 @@
-export const PHOTO_MOVE = '/img/job-move.jpg';
-export const PHOTO_GARDEN = '/img/job-garden.jpg';
-export const PHOTO_FURNITURE = '/img/job-furniture.jpg';
+export const PHOTO_MOVERS = '/img/movers.jpg';
 
 export const REGION = 'Ярославская область';
 

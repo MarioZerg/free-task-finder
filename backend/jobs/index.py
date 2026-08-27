@@ -93,7 +93,8 @@ def _job(row: Dict[str, Any], viewer: Optional[Dict[str, Any]]) -> Dict[str, Any
         'city': row['city'],
         'when': row['when_text'],
         'category': row['category'],
-        'photo': row['photo'],
+        'photo': row['photo_thumb'] or row['photo'],
+        'hasFullPhoto': bool(row['photo_full']),
         'status': row['status'],
         'ownerId': row['owner_id'],
         'ownerName': row['owner_name'],
@@ -273,6 +274,14 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
     me = _viewer(cur, token)
     if me:
         cur.execute(f"UPDATE {SCHEMA}.users SET last_seen = NOW() WHERE id = {me['id']}")
+
+    if method == 'GET' and action == 'photo':
+        jid = _int(params.get('jobId'))
+        cur.execute(f'SELECT photo_full, photo_thumb, photo FROM {SCHEMA}.jobs WHERE id = {jid}')
+        row = cur.fetchone()
+        if not row:
+            return _resp(404, {'error': 'not_found'})
+        return _resp(200, {'photo': row['photo_full'] or row['photo_thumb'] or row['photo']})
 
     if method == 'GET' and action == 'feed':
         cur.execute(
@@ -549,7 +558,14 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         city = str(body.get('city', me['city'])).strip()[:160]
         when_text = str(body.get('when', '')).strip()[:160] or 'Срок не указан'
         category = str(body.get('category', 'Разное')).strip()[:80]
-        photo = str(body.get('photo') or '')[:500]
+        photo_thumb = str(body.get('photoThumb') or '')
+        photo_full = str(body.get('photoFull') or '')
+        if photo_thumb and not photo_thumb.startswith('data:image/'):
+            photo_thumb = ''
+        if photo_full and not photo_full.startswith('data:image/'):
+            photo_full = ''
+        if len(photo_thumb) > 400000 or len(photo_full) > 3000000:
+            return _resp(400, {'error': 'photo_too_big'})
         if len(title) < 3:
             return _resp(400, {'error': 'bad_title'})
         if len(description) < 10:
@@ -558,11 +574,12 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             return _resp(400, {'error': 'bad_price'})
         cur.execute(
             f"""INSERT INTO {SCHEMA}.jobs
-                  (owner_id, title, description, price, city, when_text, category, photo,
-                   moderation, expires_at)
+                  (owner_id, title, description, price, city, when_text, category,
+                   photo_thumb, photo_full, moderation, expires_at)
                 VALUES ({me['id']}, '{_esc(title)}', '{_esc(description)}', {price},
                         '{_esc(city)}', '{_esc(when_text)}', '{_esc(category)}',
-                        {"'" + _esc(photo) + "'" if photo else 'NULL'},
+                        {"'" + _esc(photo_thumb) + "'" if photo_thumb else 'NULL'},
+                        {"'" + _esc(photo_full) + "'" if photo_full else 'NULL'},
                         'pending', NOW() + INTERVAL '24 hours')
                 RETURNING id"""
         )

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -8,22 +8,9 @@ import {
 } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
-import {
-  CATEGORIES,
-  CITY_DISTRICTS,
-  CITY_LIST,
-  PHOTO_FURNITURE,
-  PHOTO_GARDEN,
-  PHOTO_MOVE,
-} from '@/data/mock';
+import { CATEGORIES, CITY_DISTRICTS, CITY_LIST } from '@/data/mock';
+import { prepareJobPhoto } from '@/lib/image';
 import { toast } from '@/hooks/use-toast';
-
-const photoOptions = [
-  { id: 'none', label: 'Без фото', url: undefined },
-  { id: 'move', label: 'Переезд', url: PHOTO_MOVE },
-  { id: 'garden', label: 'Участок', url: PHOTO_GARDEN },
-  { id: 'furniture', label: 'Мебель', url: PHOTO_FURNITURE },
-];
 
 interface Props {
   open: boolean;
@@ -40,7 +27,10 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
   const [address, setAddress] = useState('');
   const [when, setWhen] = useState('Сегодня до 19:00');
   const [category, setCategory] = useState(CATEGORIES[1]);
-  const [photo, setPhoto] = useState('none');
+  const [photoThumb, setPhotoThumb] = useState('');
+  const [photoFull, setPhotoFull] = useState('');
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
 
@@ -63,7 +53,8 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
         city: [cityName, district, address.trim()].filter(Boolean).join(', '),
         when: when.trim() || 'Дата не указана',
         category,
-        photo: photoOptions.find((p) => p.id === photo)?.url,
+        photoThumb: photoThumb || undefined,
+        photoFull: photoFull || undefined,
       });
       toast({
         title: 'Задание отправлено на проверку',
@@ -73,7 +64,8 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
       setDescription('');
       setPrice('');
       setAddress('');
-      setPhoto('none');
+      setPhotoThumb('');
+      setPhotoFull('');
       onOpenChange(false);
     } catch (e) {
       const code = (e as Error).message;
@@ -233,26 +225,67 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
           </div>
 
           <div>
-            <p className="mb-2 text-sm text-muted-foreground">Фото (необязательно)</p>
-            <div className="grid grid-cols-4 gap-2">
-              {photoOptions.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setPhoto(p.id)}
-                  className={`overflow-hidden rounded-xl border transition-colors ${
-                    photo === p.id ? 'border-primary' : 'border-line hover:border-primary/50'
-                  }`}
-                >
-                  {p.url ? (
-                    <img src={p.url} alt={p.label} className="h-16 w-full object-cover" />
-                  ) : (
-                    <span className="flex h-16 w-full items-center justify-center text-chip">
-                      <Icon name="ImageOff" size={18} />
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
+            <p className="mb-2 text-sm text-muted-foreground">Фото задачи (необязательно)</p>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                e.target.value = '';
+                if (!file) return;
+                setPhotoBusy(true);
+                try {
+                  const r = await prepareJobPhoto(file);
+                  setPhotoThumb(r.thumb);
+                  setPhotoFull(r.full);
+                } catch {
+                  toast({
+                    title: 'Не удалось загрузить фото',
+                    description: 'Выберите другое изображение.',
+                  });
+                } finally {
+                  setPhotoBusy(false);
+                }
+              }}
+            />
+
+            {photoThumb ? (
+              <div className="relative overflow-hidden rounded-2xl border border-line">
+                <img src={photoThumb} alt="Фото задачи" className="h-48 w-full object-cover" />
+                <div className="absolute right-3 top-3 flex gap-2">
+                  <button
+                    onClick={() => fileRef.current?.click()}
+                    className="rounded-full bg-background/90 px-4 py-2 text-xs font-medium shadow-sm"
+                  >
+                    Заменить
+                  </button>
+                  <button
+                    onClick={() => {
+                      setPhotoThumb('');
+                      setPhotoFull('');
+                    }}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-background/90 shadow-sm"
+                    aria-label="Удалить фото"
+                  >
+                    <Icon name="X" size={15} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => fileRef.current?.click()}
+                disabled={photoBusy}
+                className="flex w-full flex-col items-center gap-2 rounded-2xl border border-dashed border-line bg-tile px-4 py-8 text-sm text-muted-foreground transition-colors hover:border-primary/60 disabled:opacity-60"
+              >
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <Icon name={photoBusy ? 'Loader' : 'Camera'} size={20} />
+                </span>
+                {photoBusy ? 'Готовим фото…' : 'Загрузить фото с телефона или компьютера'}
+                <span className="text-xs text-chip">Фото поможет исполнителю оценить объём</span>
+              </button>
+            )}
           </div>
 
           <button

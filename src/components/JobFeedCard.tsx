@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
 import Avatar from '@/components/Avatar';
+import PhotoViewer from '@/components/PhotoViewer';
 import { useAppState } from '@/hooks/use-app-state';
 import { JobItem } from '@/lib/api';
 import { money } from '@/data/mock';
@@ -103,7 +104,13 @@ const JobFeedCard = ({ job, responded, canRespond, readOnly }: Props) => {
   return (
     <article className="overflow-hidden rounded-3xl border border-line bg-surface">
       {job.photo && (
-        <img src={job.photo} alt={job.title} className="h-40 w-full object-cover sm:h-44" />
+        <PhotoViewer
+          jobId={job.id}
+          title={job.title}
+          thumb={job.photo}
+          hasFull={job.hasFullPhoto}
+          className="h-44 sm:h-48"
+        />
       )}
       <div className="p-5 sm:p-6">
         <div className="flex items-start justify-between gap-4">

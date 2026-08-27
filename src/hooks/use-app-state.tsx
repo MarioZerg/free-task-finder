@@ -66,7 +66,8 @@ interface AppState {
     city: string;
     when: string;
     category: string;
-    photo?: string;
+    photoThumb?: string;
+    photoFull?: string;
   }) => Promise<void>;
   respond: (jobId: number, note: string) => Promise<void>;
   assign: (jobId: number, executorId: number) => Promise<void>;

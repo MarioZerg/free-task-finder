@@ -1,6 +1,6 @@
 import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
-import { PHOTO_GARDEN } from '@/data/mock';
+import { PHOTO_MOVERS } from '@/data/mock';
 
 const facts = [
   { icon: 'CircleDollarSign', title: 'Ноль комиссий', text: 'Оплата напрямую от заказчика. Сервис не берёт ни рубля.' },
@@ -17,8 +17,8 @@ const ExecutorsCta = () => {
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <div className="overflow-hidden rounded-3xl border border-line">
             <img
-              src={PHOTO_GARDEN}
-              alt="Исполнитель за работой на участке"
+              src={PHOTO_MOVERS}
+              alt="Грузчики Доделай.ру разгружают газель с мебелью"
               className="h-[320px] w-full object-cover md:h-[460px]"
               loading="lazy"
             />
