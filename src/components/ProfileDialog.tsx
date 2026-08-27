@@ -65,7 +65,12 @@ const ProfileDialog = ({ userId, onOpenChange }: Props) => {
         {profile && (
           <>
             <div className="flex items-center gap-4">
-              <Avatar src={profile.avatar} name={profile.name} size={56} />
+              <Avatar
+                src={profile.avatar}
+                name={profile.name}
+                size={56}
+                online={profile.online}
+              />
               <div className="min-w-0">
                 <p className="truncate font-head text-lg font-medium">{profile.name}</p>
                 <p className="truncate text-sm text-chip">

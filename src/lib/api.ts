@@ -50,6 +50,7 @@ export interface User {
   reviewsCount: number;
   doneCount: number;
   verified?: boolean;
+  online?: boolean;
   blocked?: boolean;
   createdAt: string;
   phone?: string | null;
@@ -67,6 +68,16 @@ export interface ReviewItem {
   final_price: number | null;
 }
 
+export interface ChatMessage {
+  id: number;
+  text: string;
+  createdAt: string;
+  authorId: number;
+  authorName: string;
+  authorAvatar?: string | null;
+  mine: boolean;
+}
+
 export interface JobResponseItem {
   executorId: number;
   avatar?: string | null;
@@ -79,6 +90,7 @@ export interface JobResponseItem {
   rating: number;
   doneCount: number;
   reviewsCount: number;
+  online?: boolean;
 }
 
 export type JobStatus = 'open' | 'assigned' | 'expiring' | 'done' | 'cancelled';
@@ -112,6 +124,9 @@ export interface JobItem {
   isOwner: boolean;
   isAssignedExecutor: boolean;
   executorContactShared: boolean;
+  ownerContactShared?: boolean;
+  ownerOnline?: boolean;
+  executorOnline?: boolean;
   moderation?: 'pending' | 'approved' | 'rejected';
   expiresAt?: string | null;
   bumpedAt?: string | null;

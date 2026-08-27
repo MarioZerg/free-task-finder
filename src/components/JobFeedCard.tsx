@@ -92,7 +92,12 @@ const JobFeedCard = ({ job, responded, canRespond, readOnly }: Props) => {
 
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
           <span className="flex items-center gap-2 text-sm text-chip">
-            <Avatar src={job.ownerAvatar} name={job.ownerName} size={28} />
+            <Avatar
+              src={job.ownerAvatar}
+              name={job.ownerName}
+              size={28}
+              online={job.ownerOnline}
+            />
             {job.ownerName} · ★ {job.ownerRating.toFixed(1)}
           </span>
 

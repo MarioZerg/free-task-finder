@@ -59,6 +59,7 @@ def _user_row(row: Dict[str, Any], private: bool = False) -> Dict[str, Any]:
         'reviewsCount': row['reviews_count'],
         'doneCount': row['done_count'],
         'verified': bool(row.get('verified')),
+        'online': _online(row.get('last_seen')),
         'blocked': bool(row.get('blocked')),
         'createdAt': row['created_at'],
     }
@@ -70,11 +71,20 @@ def _user_row(row: Dict[str, Any], private: bool = False) -> Dict[str, Any]:
     return data
 
 
+def _online(seen) -> bool:
+    if not seen:
+        return False
+    from datetime import datetime, timedelta
+    return datetime.now() - seen < timedelta(minutes=3)
+
+
 def _me(cur, token: str) -> Optional[Dict[str, Any]]:
     if not token:
         return None
     cur.execute(f"SELECT * FROM {SCHEMA}.users WHERE token = '{_esc(token)}'")
     row = cur.fetchone()
+    if row:
+        cur.execute(f"UPDATE {SCHEMA}.users SET last_seen = NOW() WHERE id = {row['id']}")
     return dict(row) if row else None
 
 
@@ -260,7 +270,9 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             cur.execute(
                 f"""UPDATE {SCHEMA}.users
                     SET is_admin = {'TRUE' if is_admin else 'is_admin'},
-                        verified = {'TRUE' if code else 'verified'}
+                        verified = {'TRUE' if code else 'verified'},
+                        last_seen = NOW(),
+                        max_user_id = {"'" + _esc(max_user_id) + "'" if max_user_id else 'max_user_id'}
                     WHERE id = {row['id']} RETURNING *"""
             )
             return _resp(200, {'user': _user_row(cur.fetchone(), True), 'created': False})

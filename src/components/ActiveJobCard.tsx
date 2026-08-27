@@ -13,7 +13,8 @@ import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
 import { JobItem } from '@/lib/api';
 import { money } from '@/data/mock';
-import Avatar from '@/components/Avatar';
+import Avatar, { OnlineBadge } from '@/components/Avatar';
+import JobChat from '@/components/JobChat';
 import { toast } from '@/hooks/use-toast';
 
 const leftText = (deadline?: string | null) => {
@@ -51,7 +52,7 @@ const Contacts = ({
         {!data.contact && !data.phone && <p className="text-chip">Контакты не указаны</p>}
       </div>
     ) : (
-      <p className="mt-2 text-sm text-chip">Исполнитель ещё не поделился контактами</p>
+      <p className="mt-2 text-sm text-chip">Собеседник ещё не открыл контакты</p>
     )}
   </div>
 );
@@ -73,6 +74,16 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
 
   const expired = job.status === 'expiring';
   const left = leftText(job.deadlineAt);
+  const partner = (job.isOwner ? job.executorName : job.ownerName) || 'собеседник';
+  const partnerOnline = job.isOwner ? job.executorOnline : job.ownerOnline;
+  const iShared = job.isOwner ? job.ownerContactShared : job.executorContactShared;
+
+  const completeGate = (() => {
+    if (!job.assignedAt) return null;
+    const ms = new Date(job.assignedAt).getTime() + 15 * 60000 - Date.now();
+    if (ms <= 0) return null;
+    return Math.max(1, Math.ceil(ms / 60000));
+  })();
 
   const run = async (fn: () => Promise<void>, ok: string) => {
     setBusy(true);
@@ -109,8 +120,10 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
               src={job.isOwner ? job.executorAvatar : job.ownerAvatar}
               name={(job.isOwner ? job.executorName : job.ownerName) || '—'}
               size={26}
+              online={partnerOnline}
             />
             {job.isOwner ? `Исполнитель: ${job.executorName}` : `Заказчик: ${job.ownerName}`}
+            <OnlineBadge online={partnerOnline} />
           </p>
         </div>
         <span className="whitespace-nowrap font-head text-xl font-medium text-primary">
@@ -132,29 +145,35 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
         ))}
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <Contacts label="Контакты заказчика" data={job.ownerContact} />
-        {job.isOwner ? (
-          <Contacts label="Контакты исполнителя" data={job.executorContact} />
-        ) : (
-          <div className="rounded-2xl border border-line bg-tile p-4">
-            <p className="text-xs uppercase tracking-[0.16em] text-chip">Ваши контакты</p>
-            {job.executorContactShared ? (
-              <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                <Icon name="CheckCheck" size={16} className="text-primary" />
-                Заказчик видит ваши контакты
+        <Contacts
+          label={job.isOwner ? 'Контакты исполнителя' : 'Контакты заказчика'}
+          data={job.isOwner ? job.executorContact : job.ownerContact}
+        />
+        <div className="rounded-2xl border border-line bg-tile p-4">
+          <p className="text-xs uppercase tracking-[0.16em] text-chip">Ваши контакты</p>
+          {iShared ? (
+            <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+              <Icon name="CheckCheck" size={16} className="text-primary" />
+              {partner} видит ваши контакты
+            </p>
+          ) : (
+            <>
+              <p className="mt-2 text-sm text-chip">
+                Откройте контакты, когда будете готовы связаться напрямую.
               </p>
-            ) : (
               <button
-                onClick={() => run(() => shareContact(job.id), 'Контакты отправлены заказчику')}
+                onClick={() => run(() => shareContact(job.id), 'Контакты отправлены')}
                 disabled={busy}
                 className="mt-3 w-full rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-60"
               >
                 Поделиться своими контактами
               </button>
-            )}
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
+
+      <JobChat jobId={job.id} partner={partner} />
 
       {job.status !== 'done' && (
         <div className="mt-4 flex flex-wrap gap-2">
@@ -164,11 +183,12 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
                 setFinalPrice(String(job.price));
                 setCompleteOpen(true);
               }}
-              disabled={busy}
-              className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-60"
+              disabled={busy || !!completeGate}
+              title={completeGate ? 'Дайте время договориться' : undefined}
+              className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Icon name="CircleCheck" size={16} />
-              Завершить заказ
+              {completeGate ? `Завершить через ${completeGate} мин` : 'Завершить заказ'}
             </button>
           )}
           <button

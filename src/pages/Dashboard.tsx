@@ -20,7 +20,7 @@ import ProfileDialog from '@/components/ProfileDialog';
 import DashHeader from '@/components/DashHeader';
 import { AdminReturnBanner } from '@/components/admin/AdminDemoAccess';
 import LiveFeed from '@/components/LiveFeed';
-import Avatar from '@/components/Avatar';
+import Avatar, { OnlineBadge } from '@/components/Avatar';
 import { toast } from '@/hooks/use-toast';
 
 const statusLabel: Record<string, string> = {
@@ -230,9 +230,12 @@ const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: num
               {responses.map((r) => (
                 <div key={r.executorId} className="rounded-2xl border border-line bg-tile p-4">
                   <div className="flex items-start gap-3">
-                    <Avatar src={r.avatar} name={r.name} size={40} />
+                    <Avatar src={r.avatar} name={r.name} size={40} online={r.online} />
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium">{r.name}</p>
+                      <p className="flex flex-wrap items-center gap-2 font-medium">
+                        {r.name}
+                        <OnlineBadge online={r.online} />
+                      </p>
                       <p className="text-xs text-chip">
                         ★ {r.rating.toFixed(1)} · {r.doneCount} работ · {r.reviewsCount} отзывов
                       </p>

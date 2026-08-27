@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import urllib.request
 from typing import Any, Dict, Optional
 
 import psycopg2
@@ -18,6 +19,22 @@ MAX_PRICE = 1000000
 
 
 SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 'public')
+BOT_TOKEN = os.environ.get('MAX_BOT_TOKEN', '')
+SITE_URL = os.environ.get('SITE_URL', 'https://dodelay.ru')
+
+
+def _notify(max_user_id: Any, text: str):
+    if not BOT_TOKEN or not max_user_id:
+        return
+    try:
+        req = urllib.request.Request(
+            f'https://botapi.max.ru/messages?user_id={max_user_id}',
+            data=json.dumps({'text': text}).encode(),
+            headers={'Content-Type': 'application/json', 'Authorization': BOT_TOKEN},
+        )
+        urllib.request.urlopen(req, timeout=3).read()
+    except Exception:
+        pass
 
 
 def _conn():
@@ -48,11 +65,20 @@ SELECT j.*,
        o.contact AS owner_contact, o.phone AS owner_phone,
        e.name AS executor_name, e.rating AS executor_rating, e.skill AS executor_skill,
        e.contact AS executor_contact, e.phone AS executor_phone, e.done_count AS executor_done,
-       e.avatar AS executor_avatar, o.avatar AS owner_avatar
+       e.avatar AS executor_avatar, o.avatar AS owner_avatar,
+       o.last_seen AS owner_seen, e.last_seen AS executor_seen,
+       o.max_user_id AS owner_max, e.max_user_id AS executor_max
 FROM {SCHEMA}.jobs j
 JOIN {SCHEMA}.users o ON o.id = j.owner_id
 LEFT JOIN {SCHEMA}.users e ON e.id = j.assigned_executor_id
 """
+
+
+def _online(seen) -> bool:
+    if not seen:
+        return False
+    from datetime import datetime, timedelta
+    return datetime.now() - seen < timedelta(minutes=3)
 
 
 def _job(row: Dict[str, Any], viewer: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -88,19 +114,28 @@ def _job(row: Dict[str, Any], viewer: Optional[Dict[str, Any]]) -> Dict[str, Any
         'isOwner': is_owner,
         'isAssignedExecutor': is_executor,
         'executorContactShared': row['executor_contact_shared'],
+        'ownerOnline': _online(row['owner_seen']),
+        'executorOnline': _online(row['executor_seen']),
+        'ownerContactShared': row['owner_contact_shared'],
         'moderation': row['moderation'],
         'expiresAt': row['expires_at'],
         'bumpedAt': row['bumped_at'],
     }
     if (is_owner or is_executor) and (assigned or row['status'] == 'done'):
-        data['ownerContact'] = {'contact': row['owner_contact'], 'phone': row['owner_phone']}
-        if is_owner and not row['executor_contact_shared']:
-            data['executorContact'] = None
+        if is_owner or row['owner_contact_shared']:
+            data['ownerContact'] = {
+                'contact': row['owner_contact'],
+                'phone': row['owner_phone'],
+            }
         else:
+            data['ownerContact'] = None
+        if is_executor or row['executor_contact_shared']:
             data['executorContact'] = {
                 'contact': row['executor_contact'],
                 'phone': row['executor_phone'],
             }
+        else:
+            data['executorContact'] = None
     return data
 
 
@@ -115,7 +150,8 @@ def _viewer(cur, token: str) -> Optional[Dict[str, Any]]:
 def _responses(cur, job_id: int) -> list:
     cur.execute(
         f"""SELECT r.executor_id, r.note, r.created_at,
-                   u.name, u.city, u.skill, u.about, u.rating, u.done_count, u.reviews_count, u.avatar
+                   u.name, u.city, u.skill, u.about, u.rating, u.done_count, u.reviews_count, u.avatar,
+                   u.last_seen
             FROM {SCHEMA}.job_responses r JOIN {SCHEMA}.users u ON u.id = r.executor_id
             WHERE r.job_id = {job_id}
             ORDER BY u.rating DESC, r.created_at ASC"""
@@ -134,6 +170,7 @@ def _responses(cur, job_id: int) -> list:
             'doneCount': r['done_count'],
             'reviewsCount': r['reviews_count'],
             'avatar': r['avatar'],
+            'online': _online(r['last_seen']),
         })
     return out
 
@@ -190,6 +227,8 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     _expire(cur)
     me = _viewer(cur, token)
+    if me:
+        cur.execute(f"UPDATE {SCHEMA}.users SET last_seen = NOW() WHERE id = {me['id']}")
 
     if method == 'GET' and action == 'feed':
         cur.execute(
@@ -258,6 +297,35 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             'executors': row['executors'],
             'avgCheck': int(row['avg_check'] or 0),
         })
+
+    if method == 'GET' and action == 'messages':
+        if not me:
+            return _resp(401, {'error': 'no_token'})
+        jid = _int(params.get('jobId'))
+        cur.execute(f'SELECT * FROM {SCHEMA}.jobs WHERE id = {jid}')
+        j = cur.fetchone()
+        if not j:
+            return _resp(404, {'error': 'job_not_found'})
+        if me['id'] not in (j['owner_id'], j['assigned_executor_id']):
+            return _resp(403, {'error': 'not_participant'})
+        cur.execute(
+            f"""SELECT m.id, m.text, m.created_at, m.author_id, u.name, u.avatar
+                FROM {SCHEMA}.job_messages m JOIN {SCHEMA}.users u ON u.id = m.author_id
+                WHERE m.job_id = {jid} ORDER BY m.created_at ASC LIMIT 200"""
+        )
+        msgs = [
+            {
+                'id': r['id'],
+                'text': r['text'],
+                'createdAt': r['created_at'],
+                'authorId': r['author_id'],
+                'authorName': r['name'],
+                'authorAvatar': r['avatar'],
+                'mine': r['author_id'] == me['id'],
+            }
+            for r in cur.fetchall()
+        ]
+        return _resp(200, {'messages': msgs})
 
     body = json.loads(event.get('body') or '{}')
 
@@ -381,6 +449,13 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 VALUES ({job_id}, {me['id']}, '{_esc(note)}')
                 ON CONFLICT (job_id, executor_id) DO UPDATE SET note = EXCLUDED.note"""
         )
+        cur.execute(f"SELECT max_user_id FROM {SCHEMA}.users WHERE id = {job['owner_id']}")
+        owner = cur.fetchone()
+        _notify(
+            owner['max_user_id'] if owner else None,
+            f"Новый отклик на «{job['title']}»: {me['name']}. "
+            f'Откройте кабинет Доделай.ру, чтобы выбрать исполнителя.',
+        )
         return _resp(200, {'ok': True})
 
     if method == 'POST' and action == 'assign':
@@ -398,15 +473,41 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             return _resp(400, {'error': 'executor_already_busy'})
         cur.execute(
             f"""UPDATE {SCHEMA}.jobs SET status = 'assigned', assigned_executor_id = {executor_id},
-                assigned_at = NOW(), deadline_at = NOW() + INTERVAL '48 hours'
+                assigned_at = NOW(), deadline_at = NOW() + INTERVAL '48 hours',
+                owner_contact_shared = FALSE, executor_contact_shared = FALSE
                 WHERE id = {job_id}"""
+        )
+        cur.execute(f'SELECT name, max_user_id FROM {SCHEMA}.users WHERE id = {executor_id}')
+        ex = cur.fetchone()
+        _notify(
+            ex['max_user_id'] if ex else None,
+            f"Вас назначили на заказ «{job['title']}». Откройте кабинет Доделай.ру: "
+            f'обменяйтесь контактами и договоритесь в чате заказа.',
+        )
+        _notify(
+            me['max_user_id'],
+            f"Вы назначили исполнителя на «{job['title']}»: {ex['name'] if ex else ''}. "
+            f'На выполнение — 48 часов.',
         )
         return _resp(200, {'ok': True})
 
     if method == 'POST' and action == 'share_contact':
-        if job['assigned_executor_id'] != me['id']:
-            return _resp(403, {'error': 'not_assigned'})
-        cur.execute(f'UPDATE {SCHEMA}.jobs SET executor_contact_shared = TRUE WHERE id = {job_id}')
+        if me['id'] == job['owner_id']:
+            column = 'owner_contact_shared'
+            other = job['assigned_executor_id']
+        elif me['id'] == job['assigned_executor_id']:
+            column = 'executor_contact_shared'
+            other = job['owner_id']
+        else:
+            return _resp(403, {'error': 'not_participant'})
+        cur.execute(f'UPDATE {SCHEMA}.jobs SET {column} = TRUE WHERE id = {job_id}')
+        if other:
+            cur.execute(f'SELECT max_user_id FROM {SCHEMA}.users WHERE id = {other}')
+            row = cur.fetchone()
+            _notify(
+                row['max_user_id'] if row else None,
+                f"{me['name']} открыл контакты по заказу «{job['title']}».",
+            )
         return _resp(200, {'ok': True})
 
     if method == 'POST' and action == 'complete':
@@ -414,6 +515,14 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             return _resp(403, {'error': 'not_owner'})
         if job['status'] not in ('assigned', 'expiring'):
             return _resp(400, {'error': 'bad_status'})
+        cur.execute(
+            f"""SELECT assigned_at + INTERVAL '15 minutes' > NOW() AS too_soon,
+                       assigned_at + INTERVAL '15 minutes' AS ready_at
+                FROM {SCHEMA}.jobs WHERE id = {job_id}"""
+        )
+        gate = cur.fetchone()
+        if gate and gate['too_soon']:
+            return _resp(400, {'error': 'too_soon', 'readyAt': str(gate['ready_at'])})
         final_price = _int(body.get('finalPrice'), job['price'])
         if final_price < MIN_PRICE or final_price > MAX_PRICE:
             final_price = job['price']
@@ -424,6 +533,15 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         cur.execute(
             f"UPDATE {SCHEMA}.users SET done_count = done_count + 1 WHERE id = {job['assigned_executor_id']}"
         )
+        cur.execute(
+            f"SELECT max_user_id FROM {SCHEMA}.users WHERE id = {job['assigned_executor_id']}"
+        )
+        row = cur.fetchone()
+        _notify(
+            row['max_user_id'] if row else None,
+            f"Заказ «{job['title']}» завершён на сумму {final_price} ₽. "
+            f'Оставьте отзыв о заказчике в кабинете Доделай.ру.',
+        )
         return _resp(200, {'ok': True})
 
     if method == 'POST' and action == 'cancel':
@@ -433,6 +551,16 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         if job['status'] == 'done':
             return _resp(400, {'error': 'already_done'})
         cur.execute(f"UPDATE {SCHEMA}.jobs SET status = 'cancelled' WHERE id = {job_id}")
+        other = (
+            job['assigned_executor_id'] if me['id'] == job['owner_id'] else job['owner_id']
+        )
+        if other:
+            cur.execute(f'SELECT max_user_id FROM {SCHEMA}.users WHERE id = {other}')
+            row = cur.fetchone()
+            _notify(
+                row['max_user_id'] if row else None,
+                f"Заказ «{job['title']}» отменён. Отменил: {me['name']}.",
+            )
         return _resp(200, {'ok': True})
 
     if method == 'POST' and action == 'bump':
@@ -449,6 +577,28 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         if check['too_soon']:
             return _resp(400, {'error': 'bump_too_soon', 'nextAt': str(check['next_at'])})
         cur.execute(f'UPDATE {SCHEMA}.jobs SET bumped_at = NOW() WHERE id = {job_id}')
+        return _resp(200, {'ok': True})
+
+    if method == 'POST' and action == 'message':
+        if me['id'] not in (job['owner_id'], job['assigned_executor_id']):
+            return _resp(403, {'error': 'not_participant'})
+        text = str(body.get('text', '')).strip()[:1000]
+        if not text:
+            return _resp(400, {'error': 'empty_message'})
+        cur.execute(
+            f"""INSERT INTO {SCHEMA}.job_messages (job_id, author_id, text)
+                VALUES ({job_id}, {me['id']}, '{_esc(text)}')"""
+        )
+        other = (
+            job['assigned_executor_id'] if me['id'] == job['owner_id'] else job['owner_id']
+        )
+        if other:
+            cur.execute(f'SELECT max_user_id FROM {SCHEMA}.users WHERE id = {other}')
+            row = cur.fetchone()
+            _notify(
+                row['max_user_id'] if row else None,
+                f"Новое сообщение по заказу «{job['title']}» от {me['name']}: {text[:120]}",
+            )
         return _resp(200, {'ok': True})
 
     if method == 'POST' and action == 'delete':

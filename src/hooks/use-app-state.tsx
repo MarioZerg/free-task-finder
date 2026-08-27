@@ -74,6 +74,7 @@ interface AppState {
   cancel: (jobId: number) => Promise<void>;
   removeJob: (jobId: number) => Promise<void>;
   bumpJob: (jobId: number) => Promise<void>;
+  sendMessage: (jobId: number, text: string) => Promise<void>;
   review: (jobId: number, rating: number, text: string) => Promise<void>;
 }
 
@@ -225,6 +226,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       cancel: (jobId) => act('cancel', { jobId }),
       removeJob: (jobId) => act('delete', { jobId }),
       bumpJob: (jobId) => act('bump', { jobId }),
+      sendMessage: (jobId, text) => act('message', { jobId, text }),
       review: (jobId, rating, text) => act('review', { jobId, rating, text }),
     }),
     [
