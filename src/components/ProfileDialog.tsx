@@ -55,7 +55,7 @@ const ProfileDialog = ({ userId, onOpenChange }: Props) => {
           <DialogTitle className="font-head text-2xl font-medium tracking-tight">
             {profile?.name || 'Профиль'}
           </DialogTitle>
-          <DialogDescription className="text-muted-foreground/80">
+          <DialogDescription className="text-muted-foreground">
             {profile?.role === 'executor' ? 'Исполнитель Доделай.ру' : 'Заказчик Доделай.ру'}
           </DialogDescription>
         </DialogHeader>
@@ -90,7 +90,7 @@ const ProfileDialog = ({ userId, onOpenChange }: Props) => {
             </div>
 
             {profile.about && (
-              <p className="text-sm leading-relaxed text-muted-foreground/85">{profile.about}</p>
+              <p className="text-sm leading-relaxed text-muted-foreground">{profile.about}</p>
             )}
 
             <p className="flex items-center gap-2 text-sm text-chip">
@@ -118,7 +118,7 @@ const ProfileDialog = ({ userId, onOpenChange }: Props) => {
                         {r.final_price ? ` · ${money(r.final_price)}` : ''} · {dateRu(r.created_at)}
                       </p>
                       {r.text && (
-                        <p className="mt-2 text-sm text-muted-foreground/85">{r.text}</p>
+                        <p className="mt-2 text-sm text-muted-foreground">{r.text}</p>
                       )}
                     </div>
                   ))}

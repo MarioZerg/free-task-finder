@@ -20,7 +20,7 @@ const roleCopy: Record<Role, { title: string; hint: string }> = {
   },
   executor: {
     title: 'Вход для исполнителя',
-    hint: 'Радар Доделай — живая лента заказов Ярославской области.',
+    hint: 'Живая лента заказов Ярославской области — откликайтесь в один клик.',
   },
 };
 
@@ -90,8 +90,8 @@ const LoginDialog = () => {
       title: 'Вы в Доделай.ру',
       description:
         loginRole === 'customer'
-          ? 'Можно выставлять задачу — исполнители увидят её в радаре.'
-          : 'Радар открыт — откликайтесь на заказы.',
+          ? 'Можно выставить задачу — после проверки она появится в ленте.'
+          : 'Лента заказов открыта — откликайтесь.',
     });
     setMaxId('');
     setName('');
@@ -228,7 +228,7 @@ const LoginDialog = () => {
                 ? 'Создание аккаунта'
                 : roleCopy[loginRole].title}
           </DialogTitle>
-          <DialogDescription className="text-muted-foreground/80">
+          <DialogDescription className="text-muted-foreground">
             {adminHint
               ? 'Доступна панель управления сервисом.'
               : step === 'register'
@@ -269,7 +269,7 @@ const LoginDialog = () => {
                   className={`flex-1 rounded-full px-4 py-2.5 text-sm font-medium transition-colors ${
                     loginRole === r
                       ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground/80 hover:text-foreground'
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   {r === 'customer' ? 'Я заказчик' : 'Я исполнитель'}
@@ -288,7 +288,7 @@ const LoginDialog = () => {
                     {left > 0 ? `Код действует ещё ${mmss}` : 'Срок кода истёк'}
                   </p>
                 </div>
-                <p className="text-sm text-muted-foreground/85">
+                <p className="text-sm text-muted-foreground">
                   Отправьте боту этот код — вход подтвердится автоматически.
                 </p>
                 <a
@@ -327,7 +327,7 @@ const LoginDialog = () => {
 
             {step === 'start' && !maxEnabled && (
               <div>
-                <label className="mb-2 block text-sm text-muted-foreground/80" htmlFor="login-max">
+                <label className="mb-2 block text-sm text-muted-foreground" htmlFor="login-max">
                   Ваш профиль MAX
                 </label>
                 <input
@@ -389,7 +389,7 @@ const LoginDialog = () => {
                   </>
                 )}
 
-                <label className="flex cursor-pointer gap-3 rounded-2xl border border-line bg-tile p-4 text-sm text-muted-foreground/85">
+                <label className="flex cursor-pointer gap-3 rounded-2xl border border-line bg-tile p-4 text-sm text-muted-foreground">
                   <input
                     type="checkbox"
                     checked={terms}
@@ -413,7 +413,7 @@ const LoginDialog = () => {
               </div>
             )}
 
-            {error && <p className="text-sm text-destructive-foreground/90">{error}</p>}
+            {error && <p className="text-sm text-destructive">{error}</p>}
 
             {step === 'register' ? (
               <button

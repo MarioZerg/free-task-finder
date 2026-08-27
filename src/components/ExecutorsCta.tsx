@@ -12,8 +12,8 @@ const ExecutorsCta = () => {
   const { openLogin } = useAppState();
 
   return (
-    <section id="executors" className="bg-surface py-24 md:py-32">
-      <div className="mx-auto max-w-[1400px] px-6 md:px-16">
+    <section id="executors" className="bg-surface py-20 md:py-28">
+      <div className="mx-auto max-w-[1400px] px-6 md:px-10 lg:px-16">
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <div className="overflow-hidden rounded-3xl border border-line">
             <img
@@ -29,7 +29,7 @@ const ExecutorsCta = () => {
             <h2 className="mt-4 font-head text-3xl font-normal leading-tight tracking-tight md:text-5xl">
               Подработка в Ярославской области — без посредников
             </h2>
-            <p className="mt-4 max-w-[520px] text-base text-muted-foreground/85">
+            <p className="mt-4 max-w-[520px] text-base text-muted-foreground">
               Разовые заказы от частных лиц и небольших фирм: Ярославль, Рыбинск, Тутаев,
               Переславль-Залесский, Углич, Ростов. Оплата до 1500 ₽ за разовую задачу — напрямую от
               заказчика.
@@ -43,7 +43,7 @@ const ExecutorsCta = () => {
                   </span>
                   <div>
                     <h3 className="font-head text-lg font-medium">{f.title}</h3>
-                    <p className="text-sm text-muted-foreground/80">{f.text}</p>
+                    <p className="text-sm text-muted-foreground">{f.text}</p>
                   </div>
                 </li>
               ))}

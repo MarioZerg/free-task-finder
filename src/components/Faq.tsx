@@ -37,9 +37,9 @@ const items = [
 ];
 
 const Faq = () => (
-  <section className="bg-background py-24 md:py-32">
-    <div className="mx-auto max-w-[900px] px-6 md:px-16">
-      <p className="text-sm uppercase tracking-[0.2em] text-foreground/60">Вопросы</p>
+  <section className="bg-background py-20 md:py-28">
+    <div className="mx-auto max-w-[900px] px-6 md:px-10">
+      <p className="text-sm uppercase tracking-[0.2em] text-chip">Вопросы</p>
       <h2 className="mt-4 font-head text-3xl font-normal leading-tight tracking-tight md:text-5xl">
         Коротко о главном
       </h2>
@@ -50,7 +50,7 @@ const Faq = () => (
             <AccordionTrigger className="py-6 text-left font-head text-lg font-medium hover:no-underline">
               {it.q}
             </AccordionTrigger>
-            <AccordionContent className="pb-6 text-base leading-relaxed text-muted-foreground/85">
+            <AccordionContent className="pb-6 text-base leading-relaxed text-muted-foreground">
               {it.a}
             </AccordionContent>
           </AccordionItem>

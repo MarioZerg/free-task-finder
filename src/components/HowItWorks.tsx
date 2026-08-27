@@ -11,7 +11,7 @@ const steps: Record<Role, { icon: string; title: string; text: string }[]> = {
   ],
   executor: [
     { icon: 'LogIn', title: 'Вход через MAX', text: 'Регистрация занимает меньше минуты.' },
-    { icon: 'ListFilter', title: 'Лента по области', text: 'Фильтры по категории и поиску — только нужные заказы.' },
+    { icon: 'Radio', title: 'Лента заказов', text: 'Живая лента: новые задачи появляются сами, без фильтров и поиска.' },
     { icon: 'Hand', title: 'Отклик', text: 'Пара слов заказчику — и вы в списке кандидатов.' },
     { icon: 'Wallet', title: 'Работа и оплата', text: 'Заказчик подтвердил — договариваетесь напрямую, без комиссий.' },
   ],
@@ -21,8 +21,8 @@ const HowItWorks = () => {
   const [role, setRole] = useState<Role>('customer');
 
   return (
-    <section id="how" className="bg-surface py-24 md:py-32">
-      <div className="mx-auto max-w-[1400px] px-6 md:px-16">
+    <section id="how" className="bg-surface py-20 md:py-28">
+      <div className="mx-auto max-w-[1400px] px-6 md:px-10 lg:px-16">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
             <p className="text-sm uppercase tracking-[0.2em] text-chip">Как это работает</p>
@@ -39,7 +39,7 @@ const HowItWorks = () => {
                 className={`rounded-full px-6 py-2.5 text-sm font-medium transition-colors ${
                   role === r
                     ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground/80 hover:text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {r === 'customer' ? 'Заказчику' : 'Исполнителю'}
@@ -59,10 +59,10 @@ const HowItWorks = () => {
                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/15 text-primary">
                   <Icon name={s.icon} size={20} />
                 </span>
-                <span className="font-head text-3xl font-bold text-foreground/10">0{i + 1}</span>
+                <span className="font-head text-3xl font-bold text-primary/15">0{i + 1}</span>
               </div>
               <h3 className="mt-6 font-head text-lg font-medium">{s.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground/80">{s.text}</p>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{s.text}</p>
             </article>
           ))}
         </div>

@@ -22,9 +22,17 @@ export interface ProfilePayload {
   avatar?: string;
 }
 
+export interface Limits {
+  busy: boolean;
+  canCreate: boolean;
+  activeJobId: number | null;
+  activeExpiresAt: string | null;
+}
+
 interface AppState {
   user: User | null;
   loading: boolean;
+  limits: Limits;
   maxEnabled: boolean;
   feed: JobItem[];
   myJobs: JobItem[];
@@ -71,6 +79,13 @@ const Ctx = createContext<AppState | null>(null);
 
 const emptyStats = { openJobs: 0, doneJobs: 0, executors: 0, avgCheck: 0 };
 
+const emptyLimits: Limits = {
+  busy: false,
+  canCreate: true,
+  activeJobId: null,
+  activeExpiresAt: null,
+};
+
 export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -78,6 +93,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [myJobs, setMyJobs] = useState<JobItem[]>([]);
   const [completed, setCompleted] = useState<JobItem[]>([]);
   const [stats, setStats] = useState(emptyStats);
+  const [limits, setLimits] = useState<Limits>(emptyLimits);
   const [loginOpen, setLoginOpen] = useState(false);
   const [loginRole, setLoginRole] = useState<Role>('customer');
   const [maxEnabled, setMaxEnabled] = useState(false);
@@ -98,10 +114,12 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const loadMine = useCallback(async () => {
     if (!getToken()) {
       setMyJobs([]);
+      setLimits(emptyLimits);
       return;
     }
-    const r = await api.jobs('mine').catch(() => ({ jobs: [] }));
+    const r = await api.jobs('mine').catch(() => ({ jobs: [], limits: emptyLimits }));
     setMyJobs(r.jobs || []);
+    setLimits({ ...emptyLimits, ...(r.limits || {}) });
   }, []);
 
   const refresh = useCallback(async () => {
@@ -167,6 +185,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     clearToken();
     setUser(null);
     setMyJobs([]);
+    setLimits(emptyLimits);
   }, []);
 
   const act = useCallback(
@@ -181,6 +200,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     () => ({
       user,
       loading,
+      limits,
       maxEnabled,
       feed,
       myJobs,
@@ -206,6 +226,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     [
       user,
       loading,
+      limits,
       maxEnabled,
       feed,
       myJobs,

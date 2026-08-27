@@ -4,7 +4,6 @@ import Hero from '@/components/Hero';
 import RolePreview from '@/components/RolePreview';
 import HowItWorks from '@/components/HowItWorks';
 import ExecutorsCta from '@/components/ExecutorsCta';
-import CompletedFeed from '@/components/CompletedFeed';
 import Faq from '@/components/Faq';
 import Footer from '@/components/Footer';
 import LoginDialog from '@/components/LoginDialog';
@@ -18,7 +17,6 @@ const Index = () => (
         <RolePreview />
         <HowItWorks />
         <ExecutorsCta />
-        <CompletedFeed />
         <Faq />
       </main>
       <Footer />

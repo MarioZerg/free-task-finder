@@ -112,6 +112,8 @@ export interface JobItem {
   isOwner: boolean;
   isAssignedExecutor: boolean;
   executorContactShared: boolean;
+  moderation?: 'pending' | 'approved' | 'rejected';
+  expiresAt?: string | null;
   responses?: JobResponseItem[];
   myReviewDone?: boolean;
   ownerContact?: { contact: string | null; phone: string | null };

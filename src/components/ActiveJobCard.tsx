@@ -139,7 +139,7 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
           <div className="rounded-2xl border border-line bg-tile p-4">
             <p className="text-xs uppercase tracking-[0.16em] text-chip">Ваши контакты</p>
             {job.executorContactShared ? (
-              <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground/85">
+              <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
                 <Icon name="CheckCheck" size={16} className="text-primary" />
                 Заказчик видит ваши контакты
               </p>
@@ -184,13 +184,13 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
       {job.status === 'done' && (
         <div className="mt-5 border-t border-line pt-4">
           {job.myReviewDone ? (
-            <p className="flex items-center gap-2 text-sm text-muted-foreground/85">
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <Icon name="CheckCheck" size={16} className="text-primary" />
               Отзыв отправлен
             </p>
           ) : (
             <>
-              <p className="text-sm text-muted-foreground/85">
+              <p className="text-sm text-muted-foreground">
                 Оцените {job.isOwner ? 'исполнителя' : 'заказчика'}
               </p>
               <div className="mt-2 flex gap-1">
@@ -232,7 +232,7 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
             <AlertDialogTitle className="font-head text-xl font-medium">
               Отменить заказ «{job.title}»?
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-muted-foreground/80">
+            <AlertDialogDescription className="text-muted-foreground">
               Заказ уйдёт в отменённые. Вернуть его будет нельзя — придётся выставить заново.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -256,7 +256,7 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
             <AlertDialogTitle className="font-head text-xl font-medium">
               {job.isOwner ? 'Укажите, сколько вы заплатили' : 'Укажите, сколько вы заработали'}
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-muted-foreground/80">
+            <AlertDialogDescription className="text-muted-foreground">
               Не больше 1500 ₽ — сервис для небольших разовых задач.
             </AlertDialogDescription>
           </AlertDialogHeader>

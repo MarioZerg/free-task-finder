@@ -30,12 +30,12 @@ const LegalLayout = ({ title, updated, intro, children }: Props) => (
         {title}
       </h1>
       <p className="mt-3 text-sm text-chip">Редакция от {updated}</p>
-      <p className="mt-6 max-w-[640px] text-base text-muted-foreground/85">{intro}</p>
+      <p className="mt-6 max-w-[640px] text-base text-muted-foreground">{intro}</p>
 
       <div className="mt-12 space-y-4">{children}</div>
 
       <div className="mt-12 rounded-3xl border border-line bg-surface p-6 md:p-8">
-        <p className="flex items-start gap-3 text-base text-muted-foreground/85">
+        <p className="flex items-start gap-3 text-base text-muted-foreground">
           <Icon name="ShieldAlert" size={20} className="mt-0.5 shrink-0 text-primary" />
           Сервис бесплатный и является только доской объявлений. Всю ответственность за
           договорённости, оплату, качество и безопасность работ несут заказчики и исполнители
@@ -51,7 +51,7 @@ export const LegalBlock = ({ title, items }: { title: string; items: string[] })
     <h2 className="font-head text-xl font-medium tracking-tight md:text-2xl">{title}</h2>
     <ul className="mt-4 space-y-3">
       {items.map((t) => (
-        <li key={t} className="flex gap-3 text-base text-muted-foreground/85">
+        <li key={t} className="flex gap-3 text-base text-muted-foreground">
           <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
           <span>{t}</span>
         </li>

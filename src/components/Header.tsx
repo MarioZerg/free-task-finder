@@ -8,7 +8,6 @@ const links = [
   { href: '#roles', label: 'Роли' },
   { href: '#how', label: 'Как это работает' },
   { href: '#executors', label: 'Исполнителям' },
-  { href: '#completed', label: 'Завершённые заказы' },
 ];
 
 const Header = () => {
@@ -24,14 +23,14 @@ const Header = () => {
 
   return (
     <header className="absolute inset-x-0 top-0 z-40 animate-fade-plain">
-      <div className="flex items-center justify-between px-6 py-7 md:px-16 md:py-11">
+      <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between px-6 py-6 md:px-10 md:py-8 lg:px-16">
         <a href="#top" className="font-head text-xl font-bold leading-none tracking-tight md:text-2xl">
           ДОДЕЛАЙ<sup className="align-super text-[0.42em] font-normal">.РУ</sup>
         </a>
 
         <nav className="hidden items-center gap-11 lg:flex">
           {links.map((l) => (
-            <a key={l.href} href={l.href} className="story-link text-base font-medium text-foreground/95">
+            <a key={l.href} href={l.href} className="story-link text-base font-medium text-foreground/80 hover:text-foreground">
               {l.label}
             </a>
           ))}
@@ -50,7 +49,7 @@ const Header = () => {
               </Link>
               <button
                 onClick={logout}
-                className="rounded-full border border-foreground/40 px-6 py-3 text-sm font-medium transition-colors hover:bg-foreground/10"
+                className="rounded-full border border-line px-6 py-3 text-sm font-medium transition-colors hover:border-primary/60"
               >
                 Выйти
               </button>
@@ -66,7 +65,7 @@ const Header = () => {
         </div>
 
         <button
-          className="flex h-11 w-11 items-center justify-center rounded-full border border-foreground/35 lg:hidden"
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-line bg-surface lg:hidden"
           onClick={() => setOpen(true)}
           aria-label="Меню"
         >
@@ -75,11 +74,11 @@ const Header = () => {
       </div>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-screen/95 px-6 py-7 animate-fade-plain backdrop-blur lg:hidden">
+        <div className="fixed inset-0 z-50 flex flex-col bg-background px-6 py-6 animate-fade-plain lg:hidden">
           <div className="flex items-center justify-between">
             <span className="font-head text-xl font-bold">ДОДЕЛАЙ.РУ</span>
             <button
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-foreground/35"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-line"
               onClick={() => setOpen(false)}
               aria-label="Закрыть"
             >
@@ -113,7 +112,7 @@ const Header = () => {
                     logout();
                     setOpen(false);
                   }}
-                  className="w-full rounded-full border border-foreground/40 py-4 text-base font-medium"
+                  className="w-full rounded-full border border-line py-4 text-base font-medium"
                 >
                   Выйти
                 </button>

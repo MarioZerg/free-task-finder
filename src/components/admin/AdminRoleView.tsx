@@ -59,16 +59,14 @@ const AdminRoleView = ({ mode }: { mode: 'customer' | 'executor' }) => {
 
   if (mode === 'executor') {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
         {jobs.map((job) => (
           <article
             key={job.id}
             className="flex flex-col overflow-hidden rounded-3xl border border-line bg-surface"
           >
-            {job.photo ? (
+            {job.photo && (
               <img src={job.photo} alt={job.title} className="h-36 w-full object-cover" />
-            ) : (
-              <div className="photo-stub h-36 w-full" />
             )}
             <div className="flex flex-1 flex-col p-5">
               <div className="flex items-baseline justify-between gap-3">
@@ -77,7 +75,7 @@ const AdminRoleView = ({ mode }: { mode: 'customer' | 'executor' }) => {
                   {money(job.price)}
                 </span>
               </div>
-              <p className="mt-2 line-clamp-3 text-sm text-muted-foreground/85">
+              <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">
                 {job.description}
               </p>
               <Meta job={job} />
@@ -108,7 +106,7 @@ const AdminRoleView = ({ mode }: { mode: 'customer' | 'executor' }) => {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h4 className="font-head text-xl font-medium">{job.title}</h4>
-              <p className="mt-1 max-w-[560px] text-sm text-muted-foreground/85">
+              <p className="mt-1 max-w-[560px] text-sm text-muted-foreground">
                 {job.description}
               </p>
             </div>
@@ -141,7 +139,7 @@ const AdminRoleView = ({ mode }: { mode: 'customer' | 'executor' }) => {
                           </span>
                         </div>
                         {r.skill && <p className="text-xs text-chip">{r.skill}</p>}
-                        <p className="mt-1.5 text-sm text-muted-foreground/85">{r.note}</p>
+                        <p className="mt-1.5 text-sm text-muted-foreground">{r.note}</p>
                       </div>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2">

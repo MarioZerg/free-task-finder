@@ -72,7 +72,7 @@ const AdminUsers = () => {
             className={`rounded-full border px-5 py-2.5 text-sm transition-colors ${
               role === f.id
                 ? 'border-primary bg-primary text-primary-foreground'
-                : 'border-line text-muted-foreground/85 hover:border-primary/50'
+                : 'border-line text-muted-foreground hover:border-primary/50'
             }`}
           >
             {f.label}
@@ -158,7 +158,7 @@ const AdminUsers = () => {
             <DialogTitle className="font-head text-2xl font-medium tracking-tight">
               Редактирование пользователя
             </DialogTitle>
-            <DialogDescription className="text-muted-foreground/80">
+            <DialogDescription className="text-muted-foreground">
               @{edit?.maxId}
             </DialogDescription>
           </DialogHeader>

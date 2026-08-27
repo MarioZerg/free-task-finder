@@ -6,8 +6,8 @@ const Footer = () => {
   const { openLogin } = useAppState();
 
   return (
-    <footer className="overflow-hidden bg-surface pt-24 md:pt-32">
-      <div className="mx-auto max-w-[1400px] px-6 md:px-16">
+    <footer className="overflow-hidden bg-tile pt-20 md:pt-28">
+      <div className="mx-auto max-w-[1400px] px-6 md:px-10 lg:px-16">
         <div className="grid gap-10 border-b border-line pb-16 md:grid-cols-2 md:items-end">
           <h2 className="font-head text-3xl font-normal leading-tight tracking-tight md:text-5xl">
             Задача есть — руки найдутся.
@@ -22,7 +22,7 @@ const Footer = () => {
             </button>
             <button
               onClick={() => openLogin('executor')}
-              className="rounded-full border border-foreground/30 px-7 py-4 text-base font-medium transition-colors hover:border-primary"
+              className="rounded-full border border-line bg-surface px-7 py-4 text-base font-medium transition-colors hover:border-primary"
             >
               Я исполнитель
             </button>
@@ -41,7 +41,7 @@ const Footer = () => {
         </div>
 
         <div className="border-b border-line py-10">
-          <p className="flex max-w-[860px] items-start gap-3 text-sm text-muted-foreground/85">
+          <p className="flex max-w-[860px] items-start gap-3 text-sm text-muted-foreground">
             <Icon name="ShieldAlert" size={18} className="mt-0.5 shrink-0 text-primary" />
             Сервис бесплатный и является только доской объявлений. Он не участвует в расчётах и не
             проверяет исполнителей: всю ответственность за условия, оплату, качество и безопасность
@@ -54,7 +54,6 @@ const Footer = () => {
           <nav className="flex flex-wrap gap-6">
             <a href="#roles" className="story-link">Роли</a>
             <a href="#how" className="story-link">Как это работает</a>
-            <a href="#completed" className="story-link">Завершённые заказы</a>
             <Link to="/privacy" className="story-link">Конфиденциальность</Link>
             <Link to="/terms" className="story-link">Условия (оферта)</Link>
             <a href="#top" className="story-link">Наверх</a>
@@ -62,10 +61,10 @@ const Footer = () => {
         </div>
 
         <div className="pointer-events-none mt-6 flex select-none items-end justify-between pb-10 md:pb-14">
-          <b className="wordmark-fill block pt-[0.12em] font-head font-bold leading-[1.02] text-foreground/90">
+          <b className="wordmark-fill block pt-[0.12em] font-head font-bold leading-[1.02] text-primary/25">
             ДОДЕЛАЙ
           </b>
-          <i className="mb-[0.15em] font-head text-[1.15em] not-italic leading-none text-foreground/90">
+          <i className="mb-[0.15em] font-head text-[1.15em] not-italic leading-none text-primary/25">
             .РУ
           </i>
         </div>

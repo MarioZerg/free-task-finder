@@ -75,7 +75,7 @@ const AdminInner = () => {
   return (
     <div className="min-h-screen bg-background font-body text-foreground">
       <header className="border-b border-line bg-surface">
-        <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-4 px-6 py-5 md:px-16">
+        <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-4 px-5 py-4 md:px-10 md:py-5 lg:px-16">
           <div>
             <p className="font-head text-xl font-bold leading-none tracking-tight">
               Админка Доделай.ру
@@ -106,8 +106,8 @@ const AdminInner = () => {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1400px] px-6 py-10 md:px-16 md:py-14">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <main className="mx-auto max-w-[1400px] px-5 py-8 md:px-10 md:py-12 lg:px-16">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
           {tiles.map((t) => (
             <div
               key={t.key}
@@ -128,7 +128,7 @@ const AdminInner = () => {
 
         <div className="mt-10 flex flex-wrap items-center gap-4">
           <p className="text-sm text-chip">Смотрю как:</p>
-          <div className="flex gap-1 rounded-full border border-line p-1">
+          <div className="flex gap-1 overflow-x-auto rounded-full border border-line bg-surface p-1">
             {modes.map((m) => (
               <button
                 key={m.id}
@@ -136,7 +136,7 @@ const AdminInner = () => {
                 className={`rounded-full px-5 py-2.5 text-sm font-medium transition-colors ${
                   mode === m.id
                     ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground/80 hover:text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {m.label}
@@ -145,7 +145,7 @@ const AdminInner = () => {
           </div>
         </div>
 
-        <p className="mt-5 flex items-center gap-2 rounded-2xl border border-line bg-tile px-5 py-3.5 text-sm text-muted-foreground/85">
+        <p className="mt-5 flex items-center gap-2 rounded-2xl border border-line bg-tile px-5 py-3.5 text-sm text-muted-foreground">
           <Icon name="Eye" size={16} className="text-primary" />
           {modeNote[mode]}
         </p>

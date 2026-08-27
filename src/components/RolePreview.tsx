@@ -39,8 +39,8 @@ const RolePreview = () => {
   const { openLogin } = useAppState();
 
   return (
-    <section id="roles" className="bg-surface py-24 md:py-32">
-      <div className="mx-auto max-w-[1400px] px-6 md:px-16">
+    <section id="roles" className="bg-surface py-20 md:py-28">
+      <div className="mx-auto max-w-[1400px] px-6 md:px-10 lg:px-16">
         <p className="text-sm uppercase tracking-[0.2em] text-chip">Вход</p>
         <h2 className="mt-4 max-w-[720px] font-head text-3xl font-normal leading-tight tracking-tight md:text-5xl">
           Две роли, один вход через MAX
@@ -64,7 +64,7 @@ const RolePreview = () => {
 
               <ul className="mt-8 space-y-4">
                 {c.points.map((p) => (
-                  <li key={p} className="flex gap-3 text-base text-muted-foreground/90">
+                  <li key={p} className="flex gap-3 text-base text-muted-foreground">
                     <Icon name="Check" size={18} className="mt-1 shrink-0 text-primary" />
                     <span>{p}</span>
                   </li>

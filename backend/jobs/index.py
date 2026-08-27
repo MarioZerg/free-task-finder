@@ -88,6 +88,8 @@ def _job(row: Dict[str, Any], viewer: Optional[Dict[str, Any]]) -> Dict[str, Any
         'isOwner': is_owner,
         'isAssignedExecutor': is_executor,
         'executorContactShared': row['executor_contact_shared'],
+        'moderation': row['moderation'],
+        'expiresAt': row['expires_at'],
     }
     if (is_owner or is_executor) and (assigned or row['status'] == 'done'):
         data['ownerContact'] = {'contact': row['owner_contact'], 'phone': row['owner_phone']}
@@ -139,6 +141,27 @@ def _expire(cur):
     cur.execute(
         f"UPDATE {SCHEMA}.jobs SET status = 'expiring' WHERE status = 'assigned' AND deadline_at < NOW()"
     )
+    cur.execute(
+        f"""UPDATE {SCHEMA}.jobs SET status = 'cancelled'
+            WHERE status = 'open' AND expires_at IS NOT NULL AND expires_at < NOW()"""
+    )
+
+
+def _busy_executor(cur, user_id: int) -> bool:
+    cur.execute(
+        f"""SELECT 1 FROM {SCHEMA}.jobs
+            WHERE assigned_executor_id = {user_id} AND status IN ('assigned', 'expiring') LIMIT 1"""
+    )
+    return cur.fetchone() is not None
+
+
+def _active_customer_job(cur, user_id: int):
+    cur.execute(
+        f"""SELECT id, title, expires_at, status FROM {SCHEMA}.jobs
+            WHERE owner_id = {user_id} AND status IN ('open', 'assigned', 'expiring')
+            ORDER BY created_at DESC LIMIT 1"""
+    )
+    return cur.fetchone()
 
 
 def _recalc(cur, user_id: int):
@@ -168,7 +191,11 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
     me = _viewer(cur, token)
 
     if method == 'GET' and action == 'feed':
-        cur.execute(JOB_SELECT + " WHERE j.status = 'open' ORDER BY j.created_at DESC LIMIT 100")
+        cur.execute(
+            JOB_SELECT
+            + " WHERE j.status = 'open' AND j.moderation = 'approved'"
+            + ' ORDER BY j.created_at DESC LIMIT 100'
+        )
         jobs = []
         for row in cur.fetchall():
             item = _job(row, me)
@@ -205,7 +232,15 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             )
             item['myReviewDone'] = cur.fetchone()['c'] > 0
             jobs.append(item)
-        return _resp(200, {'jobs': jobs})
+        limits = {'busy': _busy_executor(cur, me['id'])}
+        if me['role'] == 'customer':
+            active = _active_customer_job(cur, me['id'])
+            limits['canCreate'] = active is None
+            limits['activeJobId'] = active['id'] if active else None
+            limits['activeExpiresAt'] = (
+                str(active['expires_at']) if active and active['expires_at'] else None
+            )
+        return _resp(200, {'jobs': jobs, 'limits': limits})
 
     if method == 'GET' and action == 'stats':
         cur.execute(
@@ -235,7 +270,9 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         if method == 'POST' and action == 'admin_jobs':
             status = str(body.get('status', ''))
             where = ''
-            if status in ('open', 'assigned', 'expiring', 'done', 'cancelled'):
+            if status == 'moderation':
+                where = " WHERE j.moderation = 'pending'"
+            elif status in ('open', 'assigned', 'expiring', 'done', 'cancelled'):
                 where = f" WHERE j.status = '{status}'"
             cur.execute(JOB_SELECT + where + ' ORDER BY j.created_at DESC LIMIT 200')
             jobs = []
@@ -257,6 +294,11 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 sets.append(f"description = '{_esc(str(body['description'])[:2000])}'")
             if body.get('price'):
                 sets.append(f'price = {min(_int(body["price"]), MAX_PRICE)}')
+            moderation = str(body.get('moderation', ''))
+            if moderation in ('approved', 'pending', 'rejected'):
+                sets.append(f"moderation = '{moderation}'")
+                if moderation == 'approved':
+                    sets.append("expires_at = NOW() + INTERVAL '24 hours'")
             if not sets or not jid:
                 return _resp(400, {'error': 'nothing_to_update'})
             cur.execute(f"UPDATE {SCHEMA}.jobs SET {', '.join(sets)} WHERE id = {jid}")
@@ -281,6 +323,17 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
     if method == 'POST' and action == 'create':
         if me['role'] != 'customer':
             return _resp(403, {'error': 'only_customer'})
+        active = _active_customer_job(cur, me['id'])
+        if active:
+            return _resp(400, {
+                'error': 'active_job_exists',
+                'activeJob': {
+                    'id': active['id'],
+                    'title': active['title'],
+                    'status': active['status'],
+                    'expiresAt': str(active['expires_at']) if active['expires_at'] else None,
+                },
+            })
         title = str(body.get('title', '')).strip()[:200]
         description = str(body.get('description', '')).strip()[:2000]
         price = _int(body.get('price'))
@@ -295,10 +348,13 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         if price < MIN_PRICE or price > MAX_PRICE:
             return _resp(400, {'error': 'bad_price'})
         cur.execute(
-            f"""INSERT INTO {SCHEMA}.jobs (owner_id, title, description, price, city, when_text, category, photo)
+            f"""INSERT INTO {SCHEMA}.jobs
+                  (owner_id, title, description, price, city, when_text, category, photo,
+                   moderation, expires_at)
                 VALUES ({me['id']}, '{_esc(title)}', '{_esc(description)}', {price},
                         '{_esc(city)}', '{_esc(when_text)}', '{_esc(category)}',
-                        {"'" + _esc(photo) + "'" if photo else 'NULL'})
+                        {"'" + _esc(photo) + "'" if photo else 'NULL'},
+                        'pending', NOW() + INTERVAL '24 hours')
                 RETURNING id"""
         )
         return _resp(200, {'id': cur.fetchone()['id']})
@@ -316,6 +372,8 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             return _resp(403, {'error': 'only_executor'})
         if job['status'] != 'open':
             return _resp(400, {'error': 'job_closed'})
+        if _busy_executor(cur, me['id']):
+            return _resp(400, {'error': 'executor_busy'})
         note = str(body.get('note', '')).strip()[:500] or 'Готов взяться.'
         cur.execute(
             f"""INSERT INTO {SCHEMA}.job_responses (job_id, executor_id, note)
@@ -335,6 +393,8 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         )
         if not cur.fetchone():
             return _resp(400, {'error': 'no_such_response'})
+        if _busy_executor(cur, executor_id):
+            return _resp(400, {'error': 'executor_already_busy'})
         cur.execute(
             f"""UPDATE {SCHEMA}.jobs SET status = 'assigned', assigned_executor_id = {executor_id},
                 assigned_at = NOW(), deadline_at = NOW() + INTERVAL '48 hours'

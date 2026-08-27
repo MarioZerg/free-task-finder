@@ -119,7 +119,7 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
           <DialogTitle className="font-head text-2xl font-medium tracking-tight">
             Мой профиль
           </DialogTitle>
-          <DialogDescription className="text-muted-foreground/80">
+          <DialogDescription className="text-muted-foreground">
             Как вас видят другие пользователи Доделай.ру.
           </DialogDescription>
         </DialogHeader>

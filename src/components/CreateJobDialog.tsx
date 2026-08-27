@@ -56,18 +56,23 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
         photo: photoOptions.find((p) => p.id === photo)?.url,
       });
       toast({
-        title: 'Задача в радаре',
-        description: 'Исполнители из Ярославля и области уже видят её — ждите откликов.',
+        title: 'Задание отправлено на проверку',
+        description: 'Модератор проверит его и выставит в ленту заказов.',
       });
       setTitle('');
       setDescription('');
       setPrice('');
       setPhoto('none');
       onOpenChange(false);
-    } catch {
+    } catch (e) {
+      const code = (e as Error).message;
       toast({
-        title: 'Не удалось опубликовать',
-        description: 'Проверьте поля и попробуйте ещё раз.',
+        title:
+          code === 'active_job_exists' ? 'Уже есть активное задание' : 'Не удалось опубликовать',
+        description:
+          code === 'active_job_exists'
+            ? 'Новое можно выставить после завершения текущего или через 24 часа.'
+            : 'Проверьте поля и попробуйте ещё раз.',
       });
     } finally {
       setBusy(false);
@@ -84,11 +89,16 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
           <DialogTitle className="font-head text-2xl font-medium tracking-tight">
             Новое объявление
           </DialogTitle>
-          <DialogDescription className="text-muted-foreground/80">
-            Публикация бесплатна. Объявление появится в общей ленте исполнителей Ярославской
-            области.
+          <DialogDescription className="text-muted-foreground">
+            Публикация бесплатна. Одновременно можно вести одно задание.
           </DialogDescription>
         </DialogHeader>
+
+        <p className="flex items-start gap-2.5 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3.5 text-sm text-muted-foreground">
+          <Icon name="TriangleAlert" size={18} className="mt-0.5 shrink-0 text-primary" />
+          Задание прописывайте тщательно: что нужно сделать, объём, адрес и срок. Модераторы
+          проверят его и после проверки выставят в ленту заказов.
+        </p>
 
         <div className="space-y-4">
           <div>
@@ -98,7 +108,7 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
-            {errors.title && <p className="mt-1 text-sm text-destructive-foreground/90">{errors.title}</p>}
+            {errors.title && <p className="mt-1 text-sm text-destructive">{errors.title}</p>}
           </div>
 
           <div>
@@ -109,7 +119,7 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
               onChange={(e) => setDescription(e.target.value)}
             />
             {errors.description && (
-              <p className="mt-1 text-sm text-destructive-foreground/90">{errors.description}</p>
+              <p className="mt-1 text-sm text-destructive">{errors.description}</p>
             )}
           </div>
 
@@ -125,7 +135,7 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
               <p className="mt-1 text-xs text-chip">
                 Максимум 1500 ₽ — сервис для небольших разовых задач.
               </p>
-              {errors.price && <p className="mt-1 text-sm text-destructive-foreground/90">{errors.price}</p>}
+              {errors.price && <p className="mt-1 text-sm text-destructive">{errors.price}</p>}
             </div>
             <div>
               <input
@@ -140,7 +150,7 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
                   <option key={c} value={c} />
                 ))}
               </datalist>
-              {errors.city && <p className="mt-1 text-sm text-destructive-foreground/90">{errors.city}</p>}
+              {errors.city && <p className="mt-1 text-sm text-destructive">{errors.city}</p>}
             </div>
           </div>
 
@@ -152,7 +162,7 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
           />
 
           <div>
-            <p className="mb-2 text-sm text-muted-foreground/80">Категория</p>
+            <p className="mb-2 text-sm text-muted-foreground">Категория</p>
             <div className="flex flex-wrap gap-2">
               {CATEGORIES.slice(1).map((c) => (
                 <button
@@ -161,7 +171,7 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
                   className={`rounded-full border px-4 py-2 text-sm transition-colors ${
                     category === c
                       ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-line text-muted-foreground/80 hover:border-primary/50'
+                      : 'border-line text-muted-foreground hover:border-primary/50'
                   }`}
                 >
                   {c}
@@ -171,7 +181,7 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
           </div>
 
           <div>
-            <p className="mb-2 text-sm text-muted-foreground/80">Фото (необязательно)</p>
+            <p className="mb-2 text-sm text-muted-foreground">Фото (необязательно)</p>
             <div className="grid grid-cols-4 gap-2">
               {photoOptions.map((p) => (
                 <button

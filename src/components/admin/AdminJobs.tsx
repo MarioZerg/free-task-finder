@@ -29,7 +29,13 @@ export const statusLabel: Record<string, string> = {
   cancelled: 'Отменён',
 };
 
-const filters = ['all', 'open', 'assigned', 'done', 'cancelled'];
+const filters = ['moderation', 'all', 'open', 'assigned', 'done', 'cancelled'];
+
+const filterLabel: Record<string, string> = {
+  moderation: 'На модерации',
+  all: 'Все',
+  ...statusLabel,
+};
 
 const dateRu = (v?: string | null) =>
   v ? new Date(v).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) : '—';
@@ -85,10 +91,10 @@ const AdminJobs = () => {
             className={`rounded-full border px-5 py-2.5 text-sm transition-colors ${
               status === f
                 ? 'border-primary bg-primary text-primary-foreground'
-                : 'border-line text-muted-foreground/85 hover:border-primary/50'
+                : 'border-line text-muted-foreground hover:border-primary/50'
             }`}
           >
-            {f === 'all' ? 'Все' : statusLabel[f]}
+            {filterLabel[f]}
           </button>
         ))}
       </div>
@@ -114,8 +120,42 @@ const AdminJobs = () => {
                 <p className="mt-0.5 text-xs text-chip">
                   Заказчик: {j.ownerName} · Исполнитель: {j.executorName || '—'}
                 </p>
+                {j.moderation === 'pending' && (
+                  <p className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs text-primary">
+                    <Icon name="ShieldQuestion" size={13} />
+                    Ждёт проверки модератора
+                  </p>
+                )}
               </div>
               <div className="flex flex-wrap items-center gap-2">
+                {j.moderation === 'pending' && (
+                  <>
+                    <button
+                      disabled={busy}
+                      onClick={() =>
+                        update(
+                          { jobId: j.id, moderation: 'approved' },
+                          'Задание выставлено в ленту',
+                        )
+                      }
+                      className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03] disabled:opacity-60"
+                    >
+                      Одобрить
+                    </button>
+                    <button
+                      disabled={busy}
+                      onClick={() =>
+                        update(
+                          { jobId: j.id, moderation: 'rejected', status: 'cancelled' },
+                          'Задание отклонено',
+                        )
+                      }
+                      className="rounded-full border border-line px-4 py-2 text-sm transition-colors hover:border-primary/50 disabled:opacity-60"
+                    >
+                      Отклонить
+                    </button>
+                  </>
+                )}
                 <Select
                   value={j.status}
                   onValueChange={(v) => update({ jobId: j.id, status: v }, 'Статус обновлён')}
@@ -156,7 +196,7 @@ const AdminJobs = () => {
             <DialogTitle className="font-head text-2xl font-medium tracking-tight">
               Редактирование заказа
             </DialogTitle>
-            <DialogDescription className="text-muted-foreground/80">
+            <DialogDescription className="text-muted-foreground">
               Заказ #{edit?.id}
             </DialogDescription>
           </DialogHeader>
