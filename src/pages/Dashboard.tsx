@@ -129,17 +129,19 @@ const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: num
 
   return (
     <article className="overflow-hidden rounded-3xl border border-line bg-surface">
-      {job.photo && (
-        <PhotoViewer
-          jobId={job.id}
-          title={job.title}
-          thumb={job.photo}
-          hasFull={job.hasFullPhoto}
-          className="h-44 sm:h-52"
-        />
-      )}
       <div className="p-5 md:p-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex items-start gap-3">
+        {job.photo && (
+          <PhotoViewer
+            jobId={job.id}
+            title={job.title}
+            thumb={job.photo}
+            hasFull={job.hasFullPhoto}
+            className="h-16 w-16 shrink-0 rounded-2xl border border-line sm:h-20 sm:w-20"
+            compact
+          />
+        )}
+        <div className="flex min-w-0 flex-1 flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h4 className="font-head text-lg font-medium md:text-xl">{job.title}</h4>
           <p className="mt-1.5 text-sm text-muted-foreground">{job.description}</p>
@@ -149,6 +151,7 @@ const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: num
             {money(job.price)}
           </span>
           <p className="mt-1 text-xs text-chip">{statusLabel[job.status]}</p>
+        </div>
         </div>
       </div>
 

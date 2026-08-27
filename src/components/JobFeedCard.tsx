@@ -103,21 +103,24 @@ const JobFeedCard = ({ job, responded, canRespond, readOnly }: Props) => {
 
   return (
     <article className="overflow-hidden rounded-3xl border border-line bg-surface">
-      {job.photo && (
-        <PhotoViewer
-          jobId={job.id}
-          title={job.title}
-          thumb={job.photo}
-          hasFull={job.hasFullPhoto}
-          className="h-44 sm:h-48"
-        />
-      )}
       <div className="p-5 sm:p-6">
-        <div className="flex items-start justify-between gap-4">
-          <h3 className="font-head text-lg font-medium leading-snug sm:text-xl">{job.title}</h3>
-          <span className="shrink-0 whitespace-nowrap font-head text-2xl font-semibold leading-none tracking-tight text-primary sm:text-3xl">
-            {money(job.price)}
-          </span>
+        <div className="flex items-start gap-3">
+          {job.photo && (
+            <PhotoViewer
+              jobId={job.id}
+              title={job.title}
+              thumb={job.photo}
+              hasFull={job.hasFullPhoto}
+              className="h-16 w-16 shrink-0 rounded-2xl border border-line sm:h-20 sm:w-20"
+              compact
+            />
+          )}
+          <div className="flex min-w-0 flex-1 items-start justify-between gap-3">
+            <h3 className="font-head text-lg font-medium leading-snug sm:text-xl">{job.title}</h3>
+            <span className="shrink-0 whitespace-nowrap font-head text-2xl font-semibold leading-none tracking-tight text-primary sm:text-3xl">
+              {money(job.price)}
+            </span>
+          </div>
         </div>
 
         <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">{job.description}</p>

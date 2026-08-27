@@ -9,9 +9,10 @@ interface Props {
   thumb: string;
   hasFull?: boolean;
   className?: string;
+  compact?: boolean;
 }
 
-const PhotoViewer = ({ jobId, title, thumb, hasFull, className = '' }: Props) => {
+const PhotoViewer = ({ jobId, title, thumb, hasFull, className = '', compact }: Props) => {
   const [open, setOpen] = useState(false);
   const [full, setFull] = useState('');
 
@@ -39,10 +40,16 @@ const PhotoViewer = ({ jobId, title, thumb, hasFull, className = '' }: Props) =>
           loading="lazy"
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
         />
-        <span className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-background/85 px-3 py-1.5 text-xs font-medium shadow-sm">
-          <Icon name="Maximize2" size={13} />
-          Открыть фото
-        </span>
+        {compact ? (
+          <span className="absolute bottom-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-background/85 shadow-sm">
+            <Icon name="Maximize2" size={12} />
+          </span>
+        ) : (
+          <span className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-background/85 px-3 py-1.5 text-xs font-medium shadow-sm">
+            <Icon name="Maximize2" size={13} />
+            Открыть фото
+          </span>
+        )}
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>

@@ -4,14 +4,12 @@ import Icon from '@/components/ui/icon';
 import Avatar from '@/components/Avatar';
 import EditProfileDialog from '@/components/EditProfileDialog';
 import SupportDialog from '@/components/SupportDialog';
-import SubscriptionDialog from '@/components/SubscriptionDialog';
 import { useAppState } from '@/hooks/use-app-state';
 
 const DashHeader = () => {
   const { user, logout } = useAppState();
   const [profileOpen, setProfileOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
-  const [proOpen, setProOpen] = useState(false);
   const [menu, setMenu] = useState(false);
   if (!user) return null;
 
@@ -44,20 +42,6 @@ const DashHeader = () => {
       >
         <Icon name="LifeBuoy" size={16} />
         Техподдержка
-      </button>
-      <button
-        onClick={() => {
-          setProOpen(true);
-          setMenu(false);
-        }}
-        className={`flex items-center justify-center gap-2 rounded-full border px-5 py-2.5 text-sm transition-colors ${
-          user.isPro
-            ? 'border-amber-500/50 bg-amber-500/10 text-amber-600'
-            : 'border-line hover:border-primary/60'
-        }`}
-      >
-        <Icon name="Crown" size={16} />
-        PRO
       </button>
       <button
         onClick={logout}
@@ -116,7 +100,6 @@ const DashHeader = () => {
 
       <EditProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
       <SupportDialog open={supportOpen} onOpenChange={setSupportOpen} />
-      <SubscriptionDialog open={proOpen} onOpenChange={setProOpen} />
     </header>
   );
 };
