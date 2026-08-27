@@ -114,6 +114,7 @@ export interface JobItem {
   executorContactShared: boolean;
   moderation?: 'pending' | 'approved' | 'rejected';
   expiresAt?: string | null;
+  bumpedAt?: string | null;
   responses?: JobResponseItem[];
   myReviewDone?: boolean;
   ownerContact?: { contact: string | null; phone: string | null };

@@ -90,6 +90,7 @@ def _job(row: Dict[str, Any], viewer: Optional[Dict[str, Any]]) -> Dict[str, Any
         'executorContactShared': row['executor_contact_shared'],
         'moderation': row['moderation'],
         'expiresAt': row['expires_at'],
+        'bumpedAt': row['bumped_at'],
     }
     if (is_owner or is_executor) and (assigned or row['status'] == 'done'):
         data['ownerContact'] = {'contact': row['owner_contact'], 'phone': row['owner_phone']}
@@ -193,8 +194,8 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
     if method == 'GET' and action == 'feed':
         cur.execute(
             JOB_SELECT
-            + " WHERE j.status = 'open' AND j.moderation <> 'rejected'"
-            + ' ORDER BY j.created_at DESC LIMIT 100'
+            + " WHERE j.status = 'open' AND j.moderation = 'approved'"
+            + ' ORDER BY COALESCE(j.bumped_at, j.created_at) DESC LIMIT 100'
         )
         jobs = []
         for row in cur.fetchall():
@@ -432,6 +433,22 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         if job['status'] == 'done':
             return _resp(400, {'error': 'already_done'})
         cur.execute(f"UPDATE {SCHEMA}.jobs SET status = 'cancelled' WHERE id = {job_id}")
+        return _resp(200, {'ok': True})
+
+    if method == 'POST' and action == 'bump':
+        if job['owner_id'] != me['id']:
+            return _resp(403, {'error': 'not_owner'})
+        if job['status'] != 'open':
+            return _resp(400, {'error': 'not_open'})
+        cur.execute(
+            f"""SELECT COALESCE(bumped_at, created_at) + INTERVAL '5 hours' > NOW() AS too_soon,
+                       COALESCE(bumped_at, created_at) + INTERVAL '5 hours' AS next_at
+                FROM {SCHEMA}.jobs WHERE id = {job_id}"""
+        )
+        check = cur.fetchone()
+        if check['too_soon']:
+            return _resp(400, {'error': 'bump_too_soon', 'nextAt': str(check['next_at'])})
+        cur.execute(f'UPDATE {SCHEMA}.jobs SET bumped_at = NOW() WHERE id = {job_id}')
         return _resp(200, {'ok': True})
 
     if method == 'POST' and action == 'delete':

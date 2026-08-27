@@ -73,6 +73,7 @@ interface AppState {
   complete: (jobId: number, finalPrice: number) => Promise<void>;
   cancel: (jobId: number) => Promise<void>;
   removeJob: (jobId: number) => Promise<void>;
+  bumpJob: (jobId: number) => Promise<void>;
   review: (jobId: number, rating: number, text: string) => Promise<void>;
 }
 
@@ -223,6 +224,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       complete: (jobId, finalPrice) => act('complete', { jobId, finalPrice }),
       cancel: (jobId) => act('cancel', { jobId }),
       removeJob: (jobId) => act('delete', { jobId }),
+      bumpJob: (jobId) => act('bump', { jobId }),
       review: (jobId, rating, text) => act('review', { jobId, rating, text }),
     }),
     [

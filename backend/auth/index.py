@@ -332,6 +332,33 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 users.append(item)
             return _resp(200, {'users': users})
 
+        if method == 'POST' and action == 'admin_demo_login':
+            role = body.get('role')
+            if role not in ('customer', 'executor'):
+                return _resp(400, {'error': 'bad_role'})
+            demo_id = f'demo_{role}'
+            cur.execute(
+                f"""SELECT * FROM {SCHEMA}.users
+                    WHERE max_id = '{demo_id}' AND role = '{role}'"""
+            )
+            row = cur.fetchone()
+            if not row:
+                name = 'Демо-заказчик' if role == 'customer' else 'Демо-исполнитель'
+                skill = '' if role == 'customer' else 'Разнорабочий, погрузка'
+                demo_token = secrets.token_urlsafe(32)
+                cur.execute(
+                    f"""INSERT INTO {SCHEMA}.users
+                          (max_id, role, name, city, phone, contact, skill, about,
+                           accepted_terms, token, verified)
+                        VALUES ('{demo_id}', '{role}', '{name}', 'Ярославль, Кировский район',
+                                '+79000000000', 'Демо-аккаунт для проверки', '{skill}',
+                                'Тестовый аккаунт для осмотра кабинета.', TRUE,
+                                '{demo_token}', TRUE)
+                        RETURNING *"""
+                )
+                row = cur.fetchone()
+            return _resp(200, {'user': _user_row(row, True)})
+
         if method == 'POST' and action == 'admin_update_user':
             uid = re.sub(r'\D', '', str(body.get('userId', ''))) or '0'
             sets = []

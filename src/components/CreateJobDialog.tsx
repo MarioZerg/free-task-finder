@@ -66,8 +66,8 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
         photo: photoOptions.find((p) => p.id === photo)?.url,
       });
       toast({
-        title: 'Задание в ленте заказов',
-        description: 'Исполнители уже видят его. Модератор проверит объявление дополнительно.',
+        title: 'Задание отправлено на проверку',
+        description: 'После одобрения модератором оно появится в ленте заказов.',
       });
       setTitle('');
       setDescription('');
@@ -110,7 +110,7 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
         <p className="flex items-start gap-2.5 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3.5 text-sm text-muted-foreground">
           <Icon name="TriangleAlert" size={18} className="mt-0.5 shrink-0 text-primary" />
           Задание прописывайте тщательно: что нужно сделать, объём, адрес и срок. Модераторы
-          проверяют объявления и могут снять неточное с публикации.
+          проверят его и после проверки выставят в ленту заказов.
         </p>
 
         <div className="space-y-4">

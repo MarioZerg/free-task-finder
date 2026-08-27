@@ -18,6 +18,7 @@ import CreateJobDialog from '@/components/CreateJobDialog';
 import ActiveJobCard from '@/components/ActiveJobCard';
 import ProfileDialog from '@/components/ProfileDialog';
 import DashHeader from '@/components/DashHeader';
+import { AdminReturnBanner } from '@/components/admin/AdminDemoAccess';
 import LiveFeed from '@/components/LiveFeed';
 import Avatar from '@/components/Avatar';
 import { toast } from '@/hooks/use-toast';
@@ -64,10 +65,37 @@ const Tabs = ({
 );
 
 const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: number) => void }) => {
-  const { assign, removeJob } = useAppState();
+  const { assign, removeJob, bumpJob } = useAppState();
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const responses = job.responses || [];
+
+  const bumpAvailableIn = (() => {
+    const base = job.bumpedAt || job.createdAt;
+    const ms = new Date(base).getTime() + 5 * 3600000 - Date.now();
+    if (ms <= 0) return null;
+    const h = Math.floor(ms / 3600000);
+    const m = Math.floor((ms % 3600000) / 60000);
+    return h > 0 ? `${h} ч ${m} мин` : `${m} мин`;
+  })();
+
+  const bump = async () => {
+    setBusy(true);
+    try {
+      await bumpJob(job.id);
+      toast({
+        title: 'Объявление поднято',
+        description: 'Задание снова наверху ленты заказов.',
+      });
+    } catch {
+      toast({
+        title: 'Пока рано',
+        description: 'Поднимать объявление можно раз в 5 часов.',
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const remove = async () => {
     setBusy(true);
@@ -130,12 +158,29 @@ const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: num
       {pending && (
         <p className="mt-4 flex items-start gap-2.5 rounded-2xl border border-line bg-tile px-4 py-3 text-sm text-muted-foreground">
           <Icon name="ShieldQuestion" size={18} className="mt-0.5 shrink-0 text-primary" />
-          Задание опубликовано и уже в ленте. Модератор проверит его дополнительно.
+          Задание на проверке у модератора. Как только его одобрят, оно появится в ленте заказов.
+        </p>
+      )}
+
+      {job.moderation === 'rejected' && (
+        <p className="mt-4 flex items-start gap-2.5 rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-muted-foreground">
+          <Icon name="ShieldX" size={18} className="mt-0.5 shrink-0 text-destructive" />
+          Модератор отклонил задание. Удалите его и разместите новое с более точным описанием.
         </p>
       )}
 
       {(job.status === 'open' || job.status === 'cancelled') && (
         <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
+          {job.status === 'open' && job.moderation === 'approved' && (
+            <button
+              disabled={busy || !!bumpAvailableIn}
+              onClick={bump}
+              className="flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Icon name="ArrowUp" size={16} />
+              {bumpAvailableIn ? `Поднять через ${bumpAvailableIn}` : 'Поднять в ленте'}
+            </button>
+          )}
           <button
             disabled={busy}
             onClick={() => setConfirmDelete(true)}
@@ -145,7 +190,7 @@ const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: num
             Удалить задание
           </button>
           <span className="flex items-center text-xs text-chip">
-            После удаления можно сразу разместить новое
+            Поднимать объявление можно раз в 5 часов
           </span>
         </div>
       )}
@@ -408,6 +453,7 @@ const DashboardInner = () => {
 
   return (
     <div className="min-h-screen bg-background font-body text-foreground">
+      <AdminReturnBanner />
       <DashHeader />
       <main>{user.role === 'customer' ? <CustomerDashboard /> : <ExecutorDashboard />}</main>
     </div>

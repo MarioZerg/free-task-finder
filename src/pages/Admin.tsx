@@ -10,6 +10,8 @@ import EditProfileDialog from '@/components/EditProfileDialog';
 import AdminUsers from '@/components/admin/AdminUsers';
 import AdminJobs from '@/components/admin/AdminJobs';
 import AdminRoleView from '@/components/admin/AdminRoleView';
+import AdminModeration from '@/components/admin/AdminModeration';
+import AdminDemoAccess from '@/components/admin/AdminDemoAccess';
 
 type Mode = 'customer' | 'executor' | 'admin';
 
@@ -126,6 +128,10 @@ const AdminInner = () => {
           ))}
         </div>
 
+        <div className="mt-8">
+          <AdminDemoAccess />
+        </div>
+
         <div className="mt-10 flex flex-wrap items-center gap-4">
           <p className="text-sm text-chip">Смотрю как:</p>
           <div className="flex gap-1 overflow-x-auto rounded-full border border-line bg-surface p-1">
@@ -152,8 +158,11 @@ const AdminInner = () => {
 
         <div className="mt-8">
           {mode === 'admin' ? (
-            <Tabs defaultValue="users">
-              <TabsList className="rounded-full border border-line bg-surface p-1">
+            <Tabs defaultValue="moderation">
+              <TabsList className="flex w-full flex-wrap justify-start gap-1 rounded-full border border-line bg-surface p-1 sm:w-auto">
+                <TabsTrigger value="moderation" className="rounded-full px-6 py-2 text-sm">
+                  Модерация
+                </TabsTrigger>
                 <TabsTrigger value="users" className="rounded-full px-6 py-2 text-sm">
                   Пользователи
                 </TabsTrigger>
@@ -161,6 +170,9 @@ const AdminInner = () => {
                   Заказы
                 </TabsTrigger>
               </TabsList>
+              <TabsContent value="moderation" className="mt-6">
+                <AdminModeration />
+              </TabsContent>
               <TabsContent value="users" className="mt-6">
                 <AdminUsers />
               </TabsContent>
