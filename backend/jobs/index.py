@@ -180,8 +180,37 @@ def _expire(cur):
         f"UPDATE {SCHEMA}.jobs SET status = 'expiring' WHERE status = 'assigned' AND deadline_at < NOW()"
     )
     cur.execute(
-        f"""UPDATE {SCHEMA}.jobs SET status = 'cancelled'
+        f"""DELETE FROM {SCHEMA}.job_responses WHERE job_id IN (
+                SELECT id FROM {SCHEMA}.jobs
+                WHERE status = 'open' AND expires_at IS NOT NULL AND expires_at < NOW()
+            )"""
+    )
+    cur.execute(
+        f"""DELETE FROM {SCHEMA}.job_messages WHERE job_id IN (
+                SELECT id FROM {SCHEMA}.jobs
+                WHERE status = 'open' AND expires_at IS NOT NULL AND expires_at < NOW()
+            )"""
+    )
+    cur.execute(
+        f"""DELETE FROM {SCHEMA}.jobs
             WHERE status = 'open' AND expires_at IS NOT NULL AND expires_at < NOW()"""
+    )
+    cur.execute(
+        f"""DELETE FROM {SCHEMA}.job_responses WHERE job_id IN (
+                SELECT id FROM {SCHEMA}.jobs
+                WHERE status = 'cancelled' AND created_at < NOW() - INTERVAL '7 days'
+            )"""
+    )
+    cur.execute(
+        f"""DELETE FROM {SCHEMA}.job_messages WHERE job_id IN (
+                SELECT id FROM {SCHEMA}.jobs
+                WHERE status = 'cancelled' AND created_at < NOW() - INTERVAL '7 days'
+            )"""
+    )
+    cur.execute(
+        f"""DELETE FROM {SCHEMA}.jobs
+            WHERE status = 'cancelled' AND created_at < NOW() - INTERVAL '7 days'
+              AND id NOT IN (SELECT job_id FROM {SCHEMA}.reviews)"""
     )
 
 
@@ -205,8 +234,10 @@ def _active_customer_job(cur, user_id: int):
 def _recalc(cur, user_id: int):
     cur.execute(
         f"""UPDATE {SCHEMA}.users SET
-              rating = COALESCE((SELECT ROUND(AVG(rating)::numeric, 2) FROM {SCHEMA}.reviews WHERE target_id = {user_id}), 0),
-              reviews_count = (SELECT COUNT(*) FROM {SCHEMA}.reviews WHERE target_id = {user_id})
+              rating = COALESCE((SELECT ROUND(AVG(rating)::numeric, 2) FROM {SCHEMA}.reviews
+                                 WHERE target_id = {user_id} AND hidden = FALSE), 0),
+              reviews_count = (SELECT COUNT(*) FROM {SCHEMA}.reviews
+                               WHERE target_id = {user_id} AND hidden = FALSE)
             WHERE id = {user_id}"""
     )
 
@@ -371,6 +402,100 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             if not sets or not jid:
                 return _resp(400, {'error': 'nothing_to_update'})
             cur.execute(f"UPDATE {SCHEMA}.jobs SET {', '.join(sets)} WHERE id = {jid}")
+            return _resp(200, {'ok': True})
+
+        if method == 'POST' and action == 'admin_delete_job':
+            jid = _int(body.get('jobId'))
+            if not jid:
+                return _resp(400, {'error': 'no_job'})
+            cur.execute(f'DELETE FROM {SCHEMA}.reviews WHERE job_id = {jid}')
+            cur.execute(f'DELETE FROM {SCHEMA}.job_messages WHERE job_id = {jid}')
+            cur.execute(f'DELETE FROM {SCHEMA}.job_responses WHERE job_id = {jid}')
+            cur.execute(f'DELETE FROM {SCHEMA}.jobs WHERE id = {jid}')
+            return _resp(200, {'ok': True})
+
+        if method == 'POST' and action == 'admin_clear_history':
+            scope = str(body.get('scope', ''))
+            if scope == 'cancelled':
+                where = "status = 'cancelled'"
+            elif scope == 'done':
+                where = "status = 'done'"
+            elif scope == 'all_closed':
+                where = "status IN ('done', 'cancelled')"
+            else:
+                return _resp(400, {'error': 'bad_scope'})
+            cur.execute(
+                f'DELETE FROM {SCHEMA}.reviews WHERE job_id IN '
+                f'(SELECT id FROM {SCHEMA}.jobs WHERE {where})'
+            )
+            cur.execute(
+                f'DELETE FROM {SCHEMA}.job_messages WHERE job_id IN '
+                f'(SELECT id FROM {SCHEMA}.jobs WHERE {where})'
+            )
+            cur.execute(
+                f'DELETE FROM {SCHEMA}.job_responses WHERE job_id IN '
+                f'(SELECT id FROM {SCHEMA}.jobs WHERE {where})'
+            )
+            cur.execute(f'DELETE FROM {SCHEMA}.jobs WHERE {where} RETURNING id')
+            removed = len(cur.fetchall())
+            cur.execute(
+                f"""UPDATE {SCHEMA}.users u SET
+                      rating = COALESCE((SELECT ROUND(AVG(r.rating)::numeric, 2)
+                                         FROM {SCHEMA}.reviews r
+                                         WHERE r.target_id = u.id AND r.hidden = FALSE), 0),
+                      reviews_count = (SELECT COUNT(*) FROM {SCHEMA}.reviews r
+                                       WHERE r.target_id = u.id AND r.hidden = FALSE)"""
+            )
+            return _resp(200, {'ok': True, 'removed': removed})
+
+        if method == 'POST' and action == 'admin_reviews':
+            direction = str(body.get('direction', ''))
+            extra = ''
+            if direction == 'to_executor':
+                extra = " AND t.role = 'executor'"
+            elif direction == 'to_customer':
+                extra = " AND t.role = 'customer'"
+            cur.execute(
+                f"""SELECT r.id, r.rating, r.text, r.created_at, r.hidden,
+                           a.name AS author_name, a.role AS author_role, a.avatar AS author_avatar,
+                           t.id AS target_id, t.name AS target_name, t.role AS target_role,
+                           j.title AS job_title, j.final_price
+                    FROM {SCHEMA}.reviews r
+                    JOIN {SCHEMA}.users a ON a.id = r.author_id
+                    JOIN {SCHEMA}.users t ON t.id = r.target_id
+                    JOIN {SCHEMA}.jobs j ON j.id = r.job_id
+                    WHERE TRUE{extra}
+                    ORDER BY r.created_at DESC LIMIT 200"""
+            )
+            return _resp(200, {'reviews': [dict(r) for r in cur.fetchall()]})
+
+        if method == 'POST' and action == 'admin_review_action':
+            rid = _int(body.get('reviewId'))
+            act_type = str(body.get('act', ''))
+            if not rid:
+                return _resp(400, {'error': 'no_review'})
+            cur.execute(f'SELECT target_id FROM {SCHEMA}.reviews WHERE id = {rid}')
+            row = cur.fetchone()
+            if not row:
+                return _resp(404, {'error': 'not_found'})
+            target = row['target_id']
+            if act_type == 'hide':
+                cur.execute(f'UPDATE {SCHEMA}.reviews SET hidden = TRUE WHERE id = {rid}')
+            elif act_type == 'show':
+                cur.execute(f'UPDATE {SCHEMA}.reviews SET hidden = FALSE WHERE id = {rid}')
+            elif act_type == 'delete':
+                cur.execute(f'DELETE FROM {SCHEMA}.reviews WHERE id = {rid}')
+            else:
+                return _resp(400, {'error': 'bad_act'})
+            cur.execute(
+                f"""UPDATE {SCHEMA}.users SET
+                      rating = COALESCE((SELECT ROUND(AVG(rating)::numeric, 2)
+                                         FROM {SCHEMA}.reviews
+                                         WHERE target_id = {target} AND hidden = FALSE), 0),
+                      reviews_count = (SELECT COUNT(*) FROM {SCHEMA}.reviews
+                                       WHERE target_id = {target} AND hidden = FALSE)
+                    WHERE id = {target}"""
+            )
             return _resp(200, {'ok': True})
 
         if method == 'POST' and action == 'admin_stats':
@@ -550,33 +675,40 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             return _resp(403, {'error': 'not_allowed'})
         if job['status'] == 'done':
             return _resp(400, {'error': 'already_done'})
-        cur.execute(f"UPDATE {SCHEMA}.jobs SET status = 'cancelled' WHERE id = {job_id}")
-        other = (
-            job['assigned_executor_id'] if me['id'] == job['owner_id'] else job['owner_id']
-        )
-        if other:
-            cur.execute(f'SELECT max_user_id FROM {SCHEMA}.users WHERE id = {other}')
+
+        by_executor = me['id'] == job['assigned_executor_id'] and me['id'] != job['owner_id']
+        if by_executor:
+            cur.execute(
+                f"""UPDATE {SCHEMA}.jobs
+                    SET status = 'open', assigned_executor_id = NULL, assigned_at = NULL,
+                        deadline_at = NULL, owner_contact_shared = FALSE,
+                        executor_contact_shared = FALSE, bumped_at = NOW(),
+                        expires_at = NOW() + INTERVAL '24 hours'
+                    WHERE id = {job_id}"""
+            )
+            cur.execute(
+                f'DELETE FROM {SCHEMA}.job_responses WHERE job_id = {job_id} '
+                f"AND executor_id = {me['id']}"
+            )
+            cur.execute(f'SELECT max_user_id FROM {SCHEMA}.users WHERE id = {job["owner_id"]}')
             row = cur.fetchone()
             _notify(
                 row['max_user_id'] if row else None,
-                f"Заказ «{job['title']}» отменён. Отменил: {me['name']}.",
+                f"Исполнитель {me['name']} отказался от заказа «{job['title']}». "
+                f'Задание снова в ленте — выберите другого исполнителя.',
             )
-        return _resp(200, {'ok': True})
+            return _resp(200, {'ok': True, 'returnedToFeed': True})
 
-    if method == 'POST' and action == 'bump':
-        if job['owner_id'] != me['id']:
-            return _resp(403, {'error': 'not_owner'})
-        if job['status'] != 'open':
-            return _resp(400, {'error': 'not_open'})
-        cur.execute(
-            f"""SELECT COALESCE(bumped_at, created_at) + INTERVAL '5 hours' > NOW() AS too_soon,
-                       COALESCE(bumped_at, created_at) + INTERVAL '5 hours' AS next_at
-                FROM {SCHEMA}.jobs WHERE id = {job_id}"""
-        )
-        check = cur.fetchone()
-        if check['too_soon']:
-            return _resp(400, {'error': 'bump_too_soon', 'nextAt': str(check['next_at'])})
-        cur.execute(f'UPDATE {SCHEMA}.jobs SET bumped_at = NOW() WHERE id = {job_id}')
+        cur.execute(f"UPDATE {SCHEMA}.jobs SET status = 'cancelled' WHERE id = {job_id}")
+        if job['assigned_executor_id']:
+            cur.execute(
+                f"SELECT max_user_id FROM {SCHEMA}.users WHERE id = {job['assigned_executor_id']}"
+            )
+            row = cur.fetchone()
+            _notify(
+                row['max_user_id'] if row else None,
+                f"Заказчик отменил заказ «{job['title']}».",
+            )
         return _resp(200, {'ok': True})
 
     if method == 'POST' and action == 'message':

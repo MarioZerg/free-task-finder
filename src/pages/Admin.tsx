@@ -12,6 +12,8 @@ import AdminJobs from '@/components/admin/AdminJobs';
 import AdminRoleView from '@/components/admin/AdminRoleView';
 import AdminModeration from '@/components/admin/AdminModeration';
 import AdminDemoAccess from '@/components/admin/AdminDemoAccess';
+import AdminReviews from '@/components/admin/AdminReviews';
+import ProfileDialog from '@/components/ProfileDialog';
 
 type Mode = 'customer' | 'executor' | 'admin';
 
@@ -56,6 +58,7 @@ const AdminInner = () => {
   const [mode, setMode] = useState<Mode>('admin');
   const [stats, setStats] = useState<Stats | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [viewProfile, setViewProfile] = useState<number | null>(null);
 
   useEffect(() => {
     if (!user?.isAdmin) return;
@@ -169,12 +172,18 @@ const AdminInner = () => {
                 <TabsTrigger value="jobs" className="rounded-full px-6 py-2 text-sm">
                   Заказы
                 </TabsTrigger>
+                <TabsTrigger value="reviews" className="rounded-full px-6 py-2 text-sm">
+                  Отзывы
+                </TabsTrigger>
               </TabsList>
               <TabsContent value="moderation" className="mt-6">
                 <AdminModeration />
               </TabsContent>
               <TabsContent value="users" className="mt-6">
-                <AdminUsers />
+                <AdminUsers onProfile={setViewProfile} />
+              </TabsContent>
+              <TabsContent value="reviews" className="mt-6">
+                <AdminReviews onProfile={setViewProfile} />
               </TabsContent>
               <TabsContent value="jobs" className="mt-6">
                 <AdminJobs />
@@ -187,6 +196,7 @@ const AdminInner = () => {
       </main>
 
       <EditProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
+      <ProfileDialog userId={viewProfile} onOpenChange={() => setViewProfile(null)} />
     </div>
   );
 };

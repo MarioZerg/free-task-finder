@@ -15,6 +15,16 @@ import {
 } from '@/components/ui/select';
 import Icon from '@/components/ui/icon';
 import { api, JobItem } from '@/lib/api';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { money } from '@/data/mock';
 import { toast } from '@/hooks/use-toast';
 
@@ -47,6 +57,8 @@ const AdminJobs = () => {
   const [edit, setEdit] = useState<JobItem | null>(null);
   const [form, setForm] = useState({ title: '', description: '', price: '' });
   const [busy, setBusy] = useState(false);
+  const [toDelete, setToDelete] = useState<JobItem | null>(null);
+  const [clearScope, setClearScope] = useState('');
 
   const load = async (s = status) => {
     setLoading(true);
@@ -81,8 +93,61 @@ const AdminJobs = () => {
     }
   };
 
+  const removeJob = async (id: number) => {
+    setBusy(true);
+    try {
+      await api.jobs('admin_delete_job', { method: 'POST', body: { jobId: id } });
+      toast({ title: 'Заказ удалён', description: 'Отклики, чат и отзывы тоже удалены.' });
+      await load(status);
+    } catch {
+      toast({ title: 'Не получилось удалить' });
+    } finally {
+      setBusy(false);
+      setToDelete(null);
+    }
+  };
+
+  const clearHistory = async (scope: string) => {
+    setBusy(true);
+    try {
+      const r = await api.jobs('admin_clear_history', { method: 'POST', body: { scope } });
+      toast({ title: 'История очищена', description: `Удалено записей: ${r.removed ?? 0}` });
+      await load(status);
+    } catch {
+      toast({ title: 'Не получилось очистить' });
+    } finally {
+      setBusy(false);
+      setClearScope('');
+    }
+  };
+
   return (
     <div>
+      <div className="mb-5 flex flex-wrap items-center gap-2 rounded-3xl border border-line bg-surface p-4">
+        <span className="mr-2 text-sm text-muted-foreground">Очистить историю:</span>
+        <button
+          disabled={busy}
+          onClick={() => setClearScope('cancelled')}
+          className="rounded-full border border-line px-5 py-2 text-sm transition-colors hover:border-destructive/60 hover:text-destructive disabled:opacity-60"
+        >
+          Отменённые
+        </button>
+        <button
+          disabled={busy}
+          onClick={() => setClearScope('done')}
+          className="rounded-full border border-line px-5 py-2 text-sm transition-colors hover:border-destructive/60 hover:text-destructive disabled:opacity-60"
+        >
+          Завершённые
+        </button>
+        <button
+          disabled={busy}
+          onClick={() => setClearScope('all_closed')}
+          className="rounded-full border border-line px-5 py-2 text-sm transition-colors hover:border-destructive/60 hover:text-destructive disabled:opacity-60"
+        >
+          Все закрытые
+        </button>
+      </div>
+
       <div className="flex flex-wrap gap-2">
         {filters.map((f) => (
           <button
@@ -172,6 +237,14 @@ const AdminJobs = () => {
                   </SelectContent>
                 </Select>
                 <button
+                  disabled={busy}
+                  onClick={() => setToDelete(j)}
+                  className="flex items-center gap-1.5 rounded-full border border-line px-4 py-2 text-sm transition-colors hover:border-destructive/60 hover:text-destructive disabled:opacity-60"
+                >
+                  <Icon name="Trash2" size={15} />
+                  Удалить
+                </button>
+                <button
                   onClick={() => {
                     setEdit(j);
                     setForm({
@@ -189,6 +262,52 @@ const AdminJobs = () => {
           ))}
         </div>
       )}
+
+      <AlertDialog open={!!toDelete} onOpenChange={() => setToDelete(null)}>
+        <AlertDialogContent className="border-line bg-surface text-foreground">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-head text-xl font-medium">
+              Удалить заказ навсегда?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              «{toDelete?.title}» будет удалён вместе с откликами, перепиской и отзывами.
+              Восстановить не получится.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-full border-line">Отмена</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => toDelete && removeJob(toDelete.id)}
+              className="rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!clearScope} onOpenChange={() => setClearScope('')}>
+        <AlertDialogContent className="border-line bg-surface text-foreground">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-head text-xl font-medium">
+              Очистить историю заказов?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              Будут удалены все заказы выбранной группы вместе с откликами, чатами и отзывами.
+              Рейтинги пользователей пересчитаются.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-full border-line">Отмена</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => clearHistory(clearScope)}
+              className="rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Очистить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={!!edit} onOpenChange={() => setEdit(null)}>
         <DialogContent className="border-line bg-surface text-foreground sm:max-w-[480px]">

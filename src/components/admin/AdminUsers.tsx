@@ -21,7 +21,7 @@ const filters = [
   { id: 'executor', label: 'Исполнители' },
 ];
 
-const AdminUsers = () => {
+const AdminUsers = ({ onProfile }: { onProfile: (id: number) => void }) => {
   const [role, setRole] = useState('all');
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,7 +93,7 @@ const AdminUsers = () => {
               key={u.id}
               className="flex flex-wrap items-center gap-4 rounded-3xl border border-line bg-surface p-5"
             >
-              <Avatar src={u.avatar} name={u.name} size={48} />
+              <Avatar src={u.avatar} name={u.name} size={48} online={u.online} />
               <div className="min-w-0 flex-1">
                 <p className="flex flex-wrap items-center gap-2 font-medium">
                   {u.name}
@@ -111,8 +111,21 @@ const AdminUsers = () => {
                   ★ {u.rating.toFixed(1)} · {u.doneCount} работ · {u.reviewsCount} отзывов
                   {u.skill ? ` · ${u.skill}` : ''}
                 </p>
+                <p className="mt-0.5 text-xs text-chip">
+                  {u.phone || 'телефон не указан'} · {u.contact || 'контакт не указан'}
+                </p>
+                {u.about && (
+                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{u.about}</p>
+                )}
               </div>
               <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => onProfile(u.id)}
+                  className="flex items-center gap-1.5 rounded-full border border-line px-4 py-2 text-sm transition-colors hover:border-primary/50"
+                >
+                  <Icon name="IdCard" size={15} />
+                  Профиль и отзывы
+                </button>
                 <button
                   disabled={busy}
                   onClick={() =>

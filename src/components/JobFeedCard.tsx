@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -13,13 +13,16 @@ import { JobItem } from '@/lib/api';
 import { money } from '@/data/mock';
 import { toast } from '@/hooks/use-toast';
 
-const ago = (iso: string) => {
-  const min = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-  if (min < 1) return 'только что';
-  if (min < 60) return `${min} мин назад`;
-  const h = Math.floor(min / 60);
-  if (h < 24) return `${h} ч назад`;
-  return `${Math.floor(h / 24)} дн назад`;
+const since = (iso: string) => {
+  const sec = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  if (h >= 24) {
+    const d = Math.floor(h / 24);
+    return { value: `${d} дн ${h % 24} ч`, fresh: false };
+  }
+  if (h > 0) return { value: `${h} ч ${m} мин`, fresh: h < 2 };
+  return { value: `${m} мин`, fresh: true };
 };
 
 interface Props {
@@ -34,6 +37,14 @@ const JobFeedCard = ({ job, responded, canRespond, readOnly }: Props) => {
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const id = window.setInterval(() => setTick((v) => v + 1), 30000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const posted = since(job.bumpedAt || job.createdAt);
 
   const send = async () => {
     setBusy(true);
@@ -71,6 +82,24 @@ const JobFeedCard = ({ job, responded, canRespond, readOnly }: Props) => {
 
         <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">{job.description}</p>
 
+        <div className="mt-4 flex items-center gap-3 rounded-2xl border border-line bg-tile px-4 py-3">
+          <Icon
+            name="Timer"
+            size={20}
+            className={posted.fresh ? 'text-primary' : 'text-chip'}
+          />
+          <div>
+            <p
+              className={`font-head text-xl font-semibold leading-none sm:text-2xl ${
+                posted.fresh ? 'text-primary' : 'text-foreground'
+              }`}
+            >
+              {posted.value}
+            </p>
+            <p className="mt-1 text-xs text-chip">в ленте</p>
+          </div>
+        </div>
+
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-chip">
           <span className="flex items-center gap-1.5">
             <Icon name="MapPin" size={14} />
@@ -84,10 +113,7 @@ const JobFeedCard = ({ job, responded, canRespond, readOnly }: Props) => {
             <Icon name="Tag" size={14} />
             {job.category}
           </span>
-          <span className="flex items-center gap-1.5">
-            <Icon name="Radio" size={14} />
-            {ago(job.createdAt)}
-          </span>
+
         </div>
 
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">

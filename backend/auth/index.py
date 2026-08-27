@@ -170,7 +170,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 FROM {SCHEMA}.reviews r
                 JOIN {SCHEMA}.users u ON u.id = r.author_id
                 JOIN {SCHEMA}.jobs j ON j.id = r.job_id
-                WHERE r.target_id = {uid}
+                WHERE r.target_id = {uid} AND r.hidden = FALSE
                 ORDER BY r.created_at DESC LIMIT 30"""
         )
         reviews = [dict(r) for r in cur.fetchall()]

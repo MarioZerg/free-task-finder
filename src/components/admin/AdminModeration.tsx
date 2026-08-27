@@ -16,7 +16,7 @@ const AdminModeration = () => {
       const r = await api.jobs('admin_jobs', { method: 'POST', body: { status: 'moderation' } });
       setJobs(r.jobs || []);
     } catch {
-      toast({ title: 'Не удалось загрузить очередь' });
+      /* тихо: обновление по таймеру */
     } finally {
       setLoading(false);
     }
@@ -24,8 +24,9 @@ const AdminModeration = () => {
 
   useEffect(() => {
     load();
-    const id = window.setInterval(load, 15000);
+    const id = window.setInterval(load, 30000);
     return () => window.clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const decide = async (job: JobItem, approved: boolean) => {
