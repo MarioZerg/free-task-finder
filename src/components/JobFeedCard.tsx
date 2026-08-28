@@ -12,6 +12,7 @@ import PhotoViewer from '@/components/PhotoViewer';
 import { useAppState } from '@/hooks/use-app-state';
 import { JobItem } from '@/lib/api';
 import { money } from '@/data/mock';
+import { categoryMeta } from '@/data/categories';
 import { toast } from '@/hooks/use-toast';
 
 const since = (iso: string) => {
@@ -20,10 +21,10 @@ const since = (iso: string) => {
   const m = Math.floor((sec % 3600) / 60);
   if (h >= 24) {
     const d = Math.floor(h / 24);
-    return { value: `${d} дн ${h % 24} ч`, fresh: false };
+    return { value: `${d} дн ${h % 24} ч`, fresh: false, isNew: false };
   }
-  if (h > 0) return { value: `${h} ч ${m} мин`, fresh: h < 2 };
-  return { value: `${m} мин`, fresh: true };
+  if (h > 0) return { value: `${h} ч ${m} мин`, fresh: h < 2, isNew: false };
+  return { value: `${m} мин`, fresh: true, isNew: m < 15 };
 };
 
 interface Props {
@@ -38,6 +39,7 @@ const JobFeedCard = ({ job, responded, canRespond, readOnly }: Props) => {
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -46,6 +48,7 @@ const JobFeedCard = ({ job, responded, canRespond, readOnly }: Props) => {
   }, []);
 
   const posted = since(job.bumpedAt || job.createdAt);
+  const cat = categoryMeta(job.category);
 
   const responses = job.responses || [];
   const knownResponders = useRef<Set<number> | null>(null);
@@ -101,103 +104,123 @@ const JobFeedCard = ({ job, responded, canRespond, readOnly }: Props) => {
     }
   };
 
+  const stop = (e: React.MouseEvent) => e.stopPropagation();
+  const long = (job.description || '').length > 90;
+
   return (
-    <article className="overflow-hidden rounded-3xl border border-line bg-surface">
-      <div className="p-5 sm:p-6">
+    <article
+      onClick={() => long && setExpanded((v) => !v)}
+      className={`overflow-hidden rounded-3xl border border-line bg-surface transition-colors ${
+        long ? 'cursor-pointer hover:border-primary/40' : ''
+      }`}
+    >
+      <div className="p-4 sm:p-5">
         <div className="flex items-start gap-3">
-          {job.photo && (
-            <PhotoViewer
-              jobId={job.id}
-              title={job.title}
-              thumb={job.photo}
-              hasFull={job.hasFullPhoto}
-              className="h-16 w-16 shrink-0 rounded-2xl border border-line sm:h-20 sm:w-20"
-              compact
-            />
-          )}
-          <div className="flex min-w-0 flex-1 items-start justify-between gap-3">
-            <h3 className="min-w-0 break-words font-head text-lg font-medium leading-snug sm:text-xl">
-              {job.title}
-            </h3>
-            <span className="shrink-0 whitespace-nowrap font-head text-2xl font-semibold leading-none tracking-tight text-primary sm:text-3xl">
-              {money(job.price)}
-            </span>
-          </div>
-        </div>
-
-        <p className="mt-2.5 break-words text-sm leading-relaxed text-muted-foreground">
-          {job.description}
-        </p>
-
-        <div className="mt-4 flex items-center gap-3 rounded-2xl border border-line bg-tile px-4 py-3">
-          <Icon
-            name="Timer"
-            size={20}
-            className={posted.fresh ? 'text-primary' : 'text-chip'}
-          />
-          <div>
-            <p
-              className={`font-head text-xl font-semibold leading-none sm:text-2xl ${
-                posted.fresh ? 'text-primary' : 'text-foreground'
-              }`}
-            >
-              {posted.value}
-            </p>
-            <p className="mt-1 text-xs text-chip">в ленте</p>
-          </div>
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-chip">
-          <span className="flex min-w-0 items-center gap-1.5">
-            <Icon name="MapPin" size={14} className="shrink-0" />
-            <span className="break-words">{job.city}</span>
+          <span
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border ${cat.tone}`}
+          >
+            <Icon name={cat.icon} size={19} />
           </span>
-          <span className="flex items-center gap-1.5">
-            <Icon name="Clock" size={14} />
-            {job.when}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Icon name="Tag" size={14} />
-            {job.category}
-          </span>
-        </div>
 
-        {responses.length > 0 && (
-          <div className="mt-4 flex items-center gap-3">
-            <div className="flex items-center">
-              {shown.map((r, i) => (
-                <span
-                  key={r.executorId}
-                  style={
-                    freshResponders.includes(r.executorId)
-                      ? { animationDelay: `${i * 80}ms` }
-                      : undefined
-                  }
-                  className={`${i > 0 ? '-ml-2 sm:-ml-3' : ''} rounded-full border-2 border-surface ${
-                    freshResponders.includes(r.executorId) ? 'animate-pop-in' : ''
-                  }`}
-                >
-                  <Avatar src={r.avatar} name={r.name} size={28} />
-                </span>
-              ))}
-              {rest > 0 && (
-                <span className="-ml-2 flex h-7 w-7 items-center justify-center rounded-full border-2 border-surface bg-primary/15 text-[10px] font-semibold text-primary sm:-ml-3">
-                  +{rest}
-                </span>
-              )}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-3">
+              <h3 className="min-w-0 break-words font-head text-base font-medium leading-snug sm:text-lg">
+                {job.title}
+              </h3>
+              <span className="shrink-0 whitespace-nowrap font-head text-xl font-semibold leading-none tracking-tight text-primary sm:text-2xl">
+                {money(job.price)}
+              </span>
             </div>
-            <span className="text-xs text-chip">
-              {responses.length} {respWord(responses.length)}
-            </span>
+
+            <p className="mt-1 truncate text-xs text-chip">
+              {job.city} · {job.when}
+            </p>
           </div>
+        </div>
+
+        <div className="mt-3 flex items-start gap-3">
+          {job.photo && (
+            <div onClick={stop} className="shrink-0">
+              <PhotoViewer
+                jobId={job.id}
+                title={job.title}
+                thumb={job.photo}
+                hasFull={job.hasFullPhoto}
+                className="h-14 w-14 rounded-2xl border border-line sm:h-16 sm:w-16"
+                compact
+              />
+            </div>
+          )}
+          <p
+            className={`min-w-0 flex-1 break-words text-sm leading-relaxed text-muted-foreground transition-all ${
+              expanded ? '' : 'line-clamp-2'
+            }`}
+          >
+            {job.description}
+          </p>
+        </div>
+
+        {long && (
+          <p className="mt-1.5 text-xs text-chip">{expanded ? 'Свернуть' : 'Показать полностью'}</p>
         )}
 
-        <div className="mt-5 flex flex-col gap-3 border-t border-line pt-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-          <span className="flex min-w-0 items-center gap-2 text-sm text-chip">
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${cat.tone}`}
+          >
+            <Icon name={cat.icon} size={13} />
+            {cat.short}
+          </span>
+          {posted.isNew ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+              <Icon name="Sparkles" size={13} />
+              Новое
+            </span>
+          ) : (
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-xs ${
+                posted.fresh ? 'text-primary' : 'text-chip'
+              }`}
+            >
+              <Icon name="Timer" size={13} />
+              {posted.value} в ленте
+            </span>
+          )}
+          {responses.length > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-xs text-chip">
+              <span className="flex items-center">
+                {shown.map((r, i) => (
+                  <span
+                    key={r.executorId}
+                    style={
+                      freshResponders.includes(r.executorId)
+                        ? { animationDelay: `${i * 80}ms` }
+                        : undefined
+                    }
+                    className={`${i > 0 ? '-ml-1.5' : ''} rounded-full border-2 border-surface ${
+                      freshResponders.includes(r.executorId) ? 'animate-pop-in' : ''
+                    }`}
+                  >
+                    <Avatar src={r.avatar} name={r.name} size={20} />
+                  </span>
+                ))}
+                {rest > 0 && (
+                  <span className="-ml-1.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-surface bg-primary/15 text-[9px] font-semibold text-primary">
+                    +{rest}
+                  </span>
+                )}
+              </span>
+              {responses.length} {respWord(responses.length)}
+            </span>
+          )}
+        </div>
+
+        <div className="mt-3 flex flex-col gap-2.5 border-t border-line pt-3 sm:flex-row sm:items-center sm:justify-between">
+          <span className="flex min-w-0 items-center gap-2 text-xs text-chip">
             <Avatar
               src={job.ownerAvatar}
               name={job.ownerName}
-              size={28}
+              size={24}
               online={job.ownerOnline}
             />
             <span className="truncate">
@@ -206,26 +229,29 @@ const JobFeedCard = ({ job, responded, canRespond, readOnly }: Props) => {
           </span>
 
           {responded ? (
-            <span className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border border-line bg-tile px-5 py-2.5 text-sm text-muted-foreground sm:w-auto">
-              <Icon name="CheckCheck" size={16} className="text-primary" />
+            <span className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border border-line bg-tile px-4 py-2 text-sm text-muted-foreground sm:min-h-0 sm:w-auto sm:py-2">
+              <Icon name="CheckCheck" size={15} className="text-primary" />
               Отклик отправлен
             </span>
           ) : readOnly ? (
             <span
               title="Просмотр глазами роли"
-              className="flex min-h-[44px] w-full items-center justify-center rounded-full border border-line px-5 py-2.5 text-sm text-chip sm:w-auto"
+              className="flex min-h-[44px] w-full items-center justify-center rounded-full border border-line px-4 py-2 text-sm text-chip sm:min-h-0 sm:w-auto"
             >
               Готов взяться
             </span>
           ) : canRespond ? (
             <button
-              onClick={() => setOpen(true)}
-              className="min-h-[44px] w-full rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03] sm:w-auto"
+              onClick={(e) => {
+                stop(e);
+                setOpen(true);
+              }}
+              className="min-h-[44px] w-full rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03] sm:min-h-0 sm:w-auto sm:py-2.5"
             >
               Готов взяться
             </button>
           ) : (
-            <span className="flex min-h-[44px] w-full items-center justify-center rounded-full border border-line px-5 py-2.5 text-center text-xs text-chip sm:w-auto">
+            <span className="flex min-h-[44px] w-full items-center justify-center rounded-full border border-line px-4 py-2 text-center text-xs text-chip sm:min-h-0 sm:w-auto">
               Сначала завершите текущий заказ
             </span>
           )}
@@ -233,7 +259,10 @@ const JobFeedCard = ({ job, responded, canRespond, readOnly }: Props) => {
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="border-line bg-surface text-foreground sm:max-w-[460px]">
+        <DialogContent
+          onClick={stop}
+          className="border-line bg-surface text-foreground sm:max-w-[460px]"
+        >
           <DialogHeader>
             <DialogTitle className="font-head text-2xl font-medium tracking-tight">
               Отклик на «{job.title}»

@@ -8,6 +8,12 @@ from typing import Any, Dict, Optional
 import psycopg2
 import psycopg2.extras
 
+try:
+    from push import send_push
+except ImportError:  # pragma: no cover
+    def send_push(*args, **kwargs) -> int:
+        return 0
+
 CORS = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
@@ -424,7 +430,24 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     sets.append("expires_at = NOW() + INTERVAL '24 hours'")
             if not sets or not jid:
                 return _resp(400, {'error': 'nothing_to_update'})
-            cur.execute(f"UPDATE {SCHEMA}.jobs SET {', '.join(sets)} WHERE id = {jid}")
+            cur.execute(
+                f"UPDATE {SCHEMA}.jobs SET {', '.join(sets)} WHERE id = {jid} "
+                f'RETURNING owner_id, title'
+            )
+            updated = cur.fetchone()
+            if updated and moderation == 'approved':
+                send_push(
+                    cur, SCHEMA, updated['owner_id'], 'status', 'Задание одобрено',
+                    f"Ваше задание «{updated['title']}» появилось в ленте заказов",
+                    url='/dashboard', job_id=jid, esc=_esc,
+                )
+            elif updated and moderation == 'rejected':
+                send_push(
+                    cur, SCHEMA, updated['owner_id'], 'status', 'Задание отклонено',
+                    f"Модератор отклонил «{updated['title']}». "
+                    f'Разместите новое с более точным описанием.',
+                    url='/dashboard', job_id=jid, esc=_esc,
+                )
             return _resp(200, {'ok': True})
 
         if method == 'POST' and action == 'admin_delete_job':
@@ -618,6 +641,11 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             f"{me['name']} приглашает вас на заказ «{target_job['title']}» "
             f"за {target_job['price']} ₽. Откройте ленту Доделай.ру и откликнитесь.",
         )
+        send_push(
+            cur, SCHEMA, executor_id, 'responses', 'Приглашение на заказ',
+            f"{me['name']} зовёт вас на «{target_job['title']}» за {target_job['price']} ₽",
+            url='/dashboard', job_id=jid, esc=_esc,
+        )
         return _resp(200, {'ok': True})
 
     if method == 'POST' and action == 'my_open_jobs':
@@ -656,6 +684,11 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             f"Новый отклик на «{job['title']}»: {me['name']}. "
             f'Откройте кабинет Доделай.ру, чтобы выбрать исполнителя.',
         )
+        send_push(
+            cur, SCHEMA, job['owner_id'], 'responses', 'Новый отклик',
+            f"{me['name']} готов взяться за «{job['title']}»",
+            url='/dashboard', job_id=job_id, esc=_esc,
+        )
         return _resp(200, {'ok': True})
 
     if method == 'POST' and action == 'assign':
@@ -689,6 +722,16 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             f"Вы назначили исполнителя на «{job['title']}»: {ex['name'] if ex else ''}. "
             f'На выполнение — 48 часов.',
         )
+        send_push(
+            cur, SCHEMA, executor_id, 'status', 'Вас выбрали исполнителем',
+            f"Заказ «{job['title']}» ваш. На работу — 48 часов.",
+            url='/dashboard', job_id=job_id, esc=_esc,
+        )
+        send_push(
+            cur, SCHEMA, me['id'], 'status', 'Исполнитель назначен',
+            f"{ex['name'] if ex else 'Исполнитель'} взялся за «{job['title']}». На работу — 48 часов.",
+            url='/dashboard', job_id=job_id, esc=_esc,
+        )
         return _resp(200, {'ok': True})
 
     if method == 'POST' and action == 'share_contact':
@@ -707,6 +750,11 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             _notify(
                 row['max_user_id'] if row else None,
                 f"{me['name']} открыл контакты по заказу «{job['title']}».",
+            )
+            send_push(
+                cur, SCHEMA, other, 'status', 'Контакты открыты',
+                f"{me['name']} открыл контакты по заказу «{job['title']}»",
+                url='/dashboard', job_id=job_id, esc=_esc,
             )
         return _resp(200, {'ok': True})
 
@@ -742,6 +790,11 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             f"Заказ «{job['title']}» завершён на сумму {final_price} ₽. "
             f'Оставьте отзыв о заказчике в кабинете Доделай.ру.',
         )
+        send_push(
+            cur, SCHEMA, job['assigned_executor_id'], 'status', 'Заказ завершён',
+            f"«{job['title']}» закрыт на {final_price} ₽. Оставьте отзыв о заказчике.",
+            url='/dashboard', job_id=job_id, esc=_esc,
+        )
         return _resp(200, {'ok': True})
 
     if method == 'POST' and action == 'cancel':
@@ -772,6 +825,11 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 f"Исполнитель {me['name']} отказался от заказа «{job['title']}». "
                 f'Задание снова в ленте — выберите другого исполнителя.',
             )
+            send_push(
+                cur, SCHEMA, job['owner_id'], 'status', 'Исполнитель отказался',
+                f"{me['name']} отказался от «{job['title']}». Задание снова в ленте.",
+                url='/dashboard', job_id=job_id, esc=_esc,
+            )
             return _resp(200, {'ok': True, 'returnedToFeed': True})
 
         cur.execute(f"UPDATE {SCHEMA}.jobs SET status = 'cancelled' WHERE id = {job_id}")
@@ -783,6 +841,11 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             _notify(
                 row['max_user_id'] if row else None,
                 f"Заказчик отменил заказ «{job['title']}».",
+            )
+            send_push(
+                cur, SCHEMA, job['assigned_executor_id'], 'status', 'Заказ отменён',
+                f"Заказчик отменил «{job['title']}»",
+                url='/dashboard', job_id=job_id, esc=_esc,
             )
         return _resp(200, {'ok': True})
 
@@ -805,6 +868,11 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             _notify(
                 row['max_user_id'] if row else None,
                 f"Новое сообщение по заказу «{job['title']}» от {me['name']}: {text[:120]}",
+            )
+            send_push(
+                cur, SCHEMA, other, 'messages', f"Сообщение по «{job['title']}»",
+                f"{me['name']}: {text[:100]}",
+                url='/dashboard', job_id=job_id, esc=_esc,
             )
         return _resp(200, {'ok': True})
 
@@ -834,6 +902,11 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 ON CONFLICT (job_id, author_id) DO UPDATE SET rating = EXCLUDED.rating, text = EXCLUDED.text"""
         )
         _recalc(cur, target)
+        send_push(
+            cur, SCHEMA, target, 'status', 'Новый отзыв о вас',
+            f"{me['name']} поставил {rating} из 5",
+            url='/dashboard', job_id=job_id, esc=_esc,
+        )
         return _resp(200, {'ok': True})
 
     return _resp(404, {'error': 'unknown_action'})

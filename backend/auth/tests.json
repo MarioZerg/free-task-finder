@@ -26,6 +26,14 @@
       "expectedStatus": 403
     },
     {
+      "name": "Push config",
+      "method": "GET",
+      "path": "/?action=push_config",
+      "expectedStatus": 200,
+      "expectedBody": {"publicKey": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
       "name": "Неизвестное действие",
       "method": "GET",
       "path": "/?action=nope",

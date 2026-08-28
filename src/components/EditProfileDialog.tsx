@@ -9,6 +9,7 @@ import {
 import Icon from '@/components/ui/icon';
 import Avatar from '@/components/Avatar';
 import SubscriptionDialog from '@/components/SubscriptionDialog';
+import NotificationSettings from '@/components/NotificationSettings';
 import { useAppState } from '@/hooks/use-app-state';
 import { CITIES } from '@/data/mock';
 import { toast } from '@/hooks/use-toast';
@@ -224,6 +225,14 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
           >
             {user.isPro ? 'Управлять подпиской' : 'Подключить PRO'}
           </button>
+        </div>
+
+        <div className="space-y-3">
+          <p className="flex items-center gap-2 font-head text-base font-medium">
+            <Icon name="Bell" size={16} className="text-primary" />
+            Уведомления
+          </p>
+          <NotificationSettings />
         </div>
 
         <button

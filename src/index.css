@@ -38,6 +38,9 @@
     --screen: 100 10% 16%;
     --tile: 90 22% 96%;
 
+    --role-accent: 96 26% 34%;
+    --role-accent-soft: 96 26% 34%;
+
     --hero-size-head: 34px;
     --hero-size-body: 17px;
 
@@ -191,6 +194,36 @@
   .story-link:hover::after {
     transform: scaleX(1);
     transform-origin: left;
+  }
+
+  .role-customer {
+    --role-accent: 96 26% 34%;
+  }
+
+  .role-executor {
+    --role-accent: 24 42% 42%;
+  }
+
+  .role-accent-text {
+    color: hsl(var(--role-accent));
+  }
+
+  .role-accent-bg {
+    background-color: hsl(var(--role-accent));
+    color: hsl(var(--primary-foreground));
+  }
+
+  .role-accent-soft {
+    background-color: hsl(var(--role-accent) / 0.08);
+    border-color: hsl(var(--role-accent) / 0.3);
+  }
+
+  .role-accent-bar {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--role-accent)) 0%,
+      hsl(var(--role-accent) / 0.15) 100%
+    );
   }
 
   .photo-stub {

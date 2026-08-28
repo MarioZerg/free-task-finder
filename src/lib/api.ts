@@ -61,7 +61,40 @@ export interface User {
   subscriptionUntil?: string | null;
   autoRenew?: boolean;
   isPro?: boolean;
+  notifyMessages?: boolean;
+  notifyResponses?: boolean;
+  notifyStatus?: boolean;
 }
+
+export interface PushConfig {
+  publicKey: string;
+  enabled: boolean;
+}
+
+export const pushConfig = (): Promise<PushConfig> =>
+  api.auth('push_config') as Promise<PushConfig>;
+
+export const pushSubscribe = (
+  sub: { endpoint: string; keys: { p256dh: string; auth: string } },
+  userAgent: string,
+) =>
+  api.auth('push_subscribe', {
+    method: 'POST',
+    body: { endpoint: sub.endpoint, keys: sub.keys, userAgent },
+  });
+
+export const pushUnsubscribe = (endpoint: string) =>
+  api.auth('push_unsubscribe', { method: 'POST', body: { endpoint } });
+
+export const pushTest = (): Promise<{ ok: boolean; sent: number }> =>
+  api.auth('push_test', { method: 'POST', body: {} }) as Promise<{ ok: boolean; sent: number }>;
+
+export const updateNotifyPrefs = (prefs: {
+  messages: boolean;
+  responses: boolean;
+  status: boolean;
+}): Promise<{ user: User }> =>
+  api.auth('notify_prefs', { method: 'PUT', body: prefs }) as Promise<{ user: User }>;
 
 export interface SupportTicket {
   id: number;

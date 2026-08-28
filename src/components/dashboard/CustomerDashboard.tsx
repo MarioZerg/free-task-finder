@@ -20,10 +20,11 @@ const CustomerDashboard = () => {
   const left = hoursLeft(limits.activeExpiresAt);
 
   return (
-    <div className="safe-x safe-bottom mx-auto w-full max-w-[1400px] px-5 py-8 md:px-10 md:py-12 lg:px-16">
+    <div className="role-customer safe-x safe-bottom mx-auto w-full max-w-[1400px] px-5 py-8 md:px-10 md:py-12 lg:px-16">
+      <span className="role-accent-bar mb-5 block h-1 w-24 rounded-full" />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-chip">Кабинет заказчика</p>
+          <p className="role-accent-text text-xs uppercase tracking-[0.2em]">Кабинет заказчика</p>
           <h1 className="mt-2 font-head text-2xl font-normal tracking-tight md:text-4xl">
             Задания и лента
           </h1>
@@ -40,9 +41,9 @@ const CustomerDashboard = () => {
             }
             setCreateOpen(true);
           }}
-          className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-60 sm:w-auto sm:px-7"
+          className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-primary px-7 py-4 text-base font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-transform hover:scale-[1.03] disabled:opacity-60 sm:w-auto sm:px-8 sm:text-lg"
         >
-          <Icon name="Plus" size={18} />
+          <Icon name="Plus" size={20} />
           Выставить задачу
         </button>
       </div>
@@ -83,12 +84,44 @@ const CustomerDashboard = () => {
           tab !== 'people' &&
           ((tab === 'jobs' ? active : finished).length === 0 ? (
             <div className="rounded-3xl border border-line bg-surface p-6 text-center sm:p-10">
-              <p className="font-head text-lg">
+              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                <Icon name={tab === 'jobs' ? 'ClipboardList' : 'Archive'} size={24} />
+              </span>
+              <p className="mt-4 font-head text-lg">
                 {tab === 'jobs' ? 'Активных заданий нет' : 'Завершённых заданий пока нет'}
               </p>
-              <p className="mt-2 text-sm text-chip">
-                Выставите задачу — после проверки модератором она появится в ленте заказов.
+              <p className="mx-auto mt-2 max-w-md text-sm text-chip">
+                {tab === 'jobs'
+                  ? 'Опишите, что нужно сделать, и назначьте свою цену. После проверки модератором задание появится в ленте — исполнители откликнутся сами.'
+                  : 'Здесь появятся задания, которые вы завершили или отменили.'}
               </p>
+              {tab === 'jobs' && (
+                <button
+                  onClick={() => {
+                    if (!limits.canCreate && !limits.pro) {
+                      toast({
+                        title: 'Уже есть активное задание',
+                        description: 'Новое можно выставить после завершения текущего.',
+                      });
+                      return;
+                    }
+                    setCreateOpen(true);
+                  }}
+                  className="mx-auto mt-5 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02] sm:w-auto"
+                >
+                  <Icon name="Plus" size={18} />
+                  Выставить задачу
+                </button>
+              )}
+              {tab === 'done' && (
+                <button
+                  onClick={() => setTab('feed')}
+                  className="mx-auto mt-5 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full border border-line px-6 text-base font-medium text-muted-foreground transition-colors hover:border-primary/50 sm:w-auto"
+                >
+                  <Icon name="Radio" size={18} />
+                  Открыть ленту заказов
+                </button>
+              )}
             </div>
           ) : (
             <div className="space-y-4">

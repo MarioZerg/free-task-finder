@@ -30,7 +30,7 @@ const DashTabs = ({
         key={t.id}
         onClick={() => onChange(t.id)}
         className={`min-h-[44px] shrink-0 whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-medium transition-colors sm:px-6 ${
-          value === t.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
+          value === t.id ? 'role-accent-bg' : 'text-muted-foreground'
         }`}
       >
         {t.label}

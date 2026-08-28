@@ -18,6 +18,7 @@ import Avatar, { OnlineBadge } from '@/components/Avatar';
 import PhotoViewer from '@/components/PhotoViewer';
 import { toast } from '@/hooks/use-toast';
 import { hoursLeft, statusLabel } from '@/components/dashboard/DashTabs';
+import { categoryMeta } from '@/data/categories';
 
 const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: number) => void }) => {
   const { assign, removeJob, bumpJob, limits } = useAppState();
@@ -79,6 +80,7 @@ const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: num
 
   const left = hoursLeft(job.expiresAt);
   const pending = job.moderation === 'pending';
+  const cat = categoryMeta(job.category);
 
   return (
     <article className="overflow-hidden rounded-3xl border border-line bg-surface">
@@ -108,21 +110,17 @@ const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: num
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-chip">
-        <span className="flex min-w-0 items-center gap-1.5">
-          <Icon name="MapPin" size={14} className="shrink-0" />
-          <span className="break-words">{job.city}</span>
+      <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-chip">
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 ${cat.tone}`}
+        >
+          <Icon name={cat.icon} size={13} />
+          {cat.short}
         </span>
-        <span className="flex items-center gap-1.5">
-          <Icon name="Clock" size={14} />
-          {job.when}
+        <span className="min-w-0 break-words">
+          {job.city} · {job.when}
+          {left ? ` · активно ещё ${left}` : ''}
         </span>
-        {left && (
-          <span className="flex items-center gap-1.5">
-            <Icon name="Timer" size={14} />
-            активно ещё {left}
-          </span>
-        )}
       </div>
 
       {pending && (

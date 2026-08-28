@@ -56,6 +56,7 @@ interface AppState {
   }) => Promise<User>;
   startMaxLogin: () => Promise<{ code: string; botLink: string; botName: string }>;
   updateProfile: (payload: ProfilePayload) => Promise<void>;
+  setUserData: (user: User) => void;
   subscribe: (months: number) => Promise<void>;
   startPayment: (months: number) => Promise<{
     paymentsEnabled: boolean;
@@ -205,6 +206,10 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     setUser(r.user);
   }, []);
 
+  const setUserData = useCallback<AppState['setUserData']>((next) => {
+    setUser((prev) => (prev ? { ...prev, ...next } : next));
+  }, []);
+
   const subscribe = useCallback<AppState['subscribe']>(
     async (months) => {
       const r = await api.auth('subscribe', { method: 'POST', body: { months } });
@@ -259,6 +264,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       signIn,
       startMaxLogin,
       updateProfile,
+      setUserData,
       subscribe,
       startPayment,
       unsubscribe,
@@ -289,6 +295,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       signIn,
       startMaxLogin,
       updateProfile,
+      setUserData,
       subscribe,
       startPayment,
       unsubscribe,

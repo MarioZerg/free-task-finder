@@ -12,6 +12,17 @@ import boto3
 import psycopg2
 import psycopg2.extras
 
+try:
+    from push import VAPID_PUBLIC_KEY, push_enabled, send_push
+except ImportError:  # pragma: no cover
+    VAPID_PUBLIC_KEY = ''
+
+    def push_enabled() -> bool:
+        return False
+
+    def send_push(*args, **kwargs) -> int:
+        return 0
+
 CORS = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
@@ -78,6 +89,9 @@ def _user_row(row: Dict[str, Any], private: bool = False) -> Dict[str, Any]:
         data['contact'] = row['contact']
         data['token'] = row['token']
         data['isAdmin'] = bool(row.get('is_admin'))
+        data['notifyMessages'] = bool(row.get('notify_messages', True))
+        data['notifyResponses'] = bool(row.get('notify_responses', True))
+        data['notifyStatus'] = bool(row.get('notify_status', True))
     return data
 
 
@@ -156,6 +170,9 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
 
     if method == 'GET' and action == 'config':
         return _resp(200, {'maxEnabled': bool(BOT_TOKEN), 'botName': BOT_NAME})
+
+    if method == 'GET' and action == 'push_config':
+        return _resp(200, {'publicKey': VAPID_PUBLIC_KEY, 'enabled': push_enabled()})
 
     if method == 'GET' and action == 'me':
         row = _me(cur, token)
@@ -481,6 +498,67 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 phone = '{_esc(phone)}', contact = '{_esc(contact)}',
                 skill = '{_esc(skill)}', about = '{_esc(about)}'{avatar_sql}
                 WHERE id = {row['id']} RETURNING *"""
+        )
+        return _resp(200, {'user': _user_row(cur.fetchone(), True)})
+
+    if method == 'POST' and action == 'push_subscribe':
+        me = _me(cur, token)
+        if not me:
+            return _resp(401, {'error': 'no_token'})
+        endpoint = str(body.get('endpoint', '')).strip()[:500]
+        keys = body.get('keys') or {}
+        p256dh = str(keys.get('p256dh', '')).strip()[:300]
+        auth_key = str(keys.get('auth', '')).strip()[:300]
+        user_agent = str(body.get('userAgent', '')).strip()[:300]
+        if not endpoint.startswith('http') or not p256dh or not auth_key:
+            return _resp(400, {'error': 'bad_subscription'})
+        cur.execute(
+            f"""INSERT INTO {SCHEMA}.push_subscriptions
+                  (user_id, endpoint, p256dh, auth, user_agent)
+                VALUES ({me['id']}, '{_esc(endpoint)}', '{_esc(p256dh)}',
+                        '{_esc(auth_key)}', '{_esc(user_agent)}')
+                ON CONFLICT (endpoint) DO UPDATE
+                SET user_id = EXCLUDED.user_id, p256dh = EXCLUDED.p256dh,
+                    auth = EXCLUDED.auth, failed_count = 0"""
+        )
+        return _resp(200, {'ok': True})
+
+    if method == 'POST' and action == 'push_unsubscribe':
+        me = _me(cur, token)
+        if not me:
+            return _resp(401, {'error': 'no_token'})
+        endpoint = str(body.get('endpoint', '')).strip()[:500]
+        if not endpoint:
+            return _resp(400, {'error': 'no_endpoint'})
+        cur.execute(
+            f"""UPDATE {SCHEMA}.push_subscriptions SET failed_count = 99
+                WHERE user_id = {me['id']} AND endpoint = '{_esc(endpoint)}'"""
+        )
+        return _resp(200, {'ok': True})
+
+    if method == 'POST' and action == 'push_test':
+        me = _me(cur, token)
+        if not me:
+            return _resp(401, {'error': 'no_token'})
+        sent = send_push(
+            cur, SCHEMA, me['id'], 'status', 'Доделай.ру',
+            'Уведомления подключены — так они и будут выглядеть.',
+            url='/dashboard', esc=_esc,
+        )
+        return _resp(200, {'ok': True, 'sent': sent})
+
+    if method == 'PUT' and action == 'notify_prefs':
+        me = _me(cur, token)
+        if not me:
+            return _resp(401, {'error': 'no_token'})
+        messages = 'TRUE' if body.get('messages', True) else 'FALSE'
+        responses = 'TRUE' if body.get('responses', True) else 'FALSE'
+        status_pref = 'TRUE' if body.get('status', True) else 'FALSE'
+        cur.execute(
+            f"""UPDATE {SCHEMA}.users
+                SET notify_messages = {messages}, notify_responses = {responses},
+                    notify_status = {status_pref}
+                WHERE id = {me['id']} RETURNING *"""
         )
         return _resp(200, {'user': _user_row(cur.fetchone(), True)})
 

@@ -89,9 +89,6 @@ const LiveFeed = ({ readOnly }: { readOnly?: boolean }) => {
             Живая лента — новые заказы появляются сами
           </p>
         </div>
-        <span className="rounded-full border border-line bg-tile px-4 py-2 text-sm text-chip">
-          {visible.length} в ленте
-        </span>
       </div>
 
       {cities.length > 0 && (
