@@ -99,6 +99,20 @@ const ProfileDialog = ({ userId, onOpenChange, showDetails = false }: Props) => 
               </div>
             </div>
 
+            {(profile.professions || []).length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {(profile.professions || []).map((p) => (
+                  <span
+                    key={p.id}
+                    className="flex items-center gap-1.5 rounded-full border border-line bg-tile px-3 py-1.5 text-xs text-muted-foreground"
+                  >
+                    <Icon name={p.icon} size={13} fallback="Wrench" />
+                    {p.label}
+                  </span>
+                ))}
+              </div>
+            )}
+
             <div className="grid grid-cols-3 gap-2 rounded-3xl border border-line bg-tile p-4 text-center sm:p-5">
               <div>
                 <p className="font-head text-lg text-primary">★ {profile.rating.toFixed(1)}</p>

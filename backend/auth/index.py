@@ -5,6 +5,8 @@ import os
 import random
 import re
 import secrets
+import ssl
+import urllib.parse
 import urllib.request
 from typing import Any, Dict, Optional
 
@@ -35,14 +37,79 @@ BOT_TOKEN = os.environ.get('MAX_BOT_TOKEN', '')
 BOT_NAME = os.environ.get('MAX_BOT_NAME', 'id760218194200_3_bot')
 TOCHKA_TOKEN = os.environ.get('TOCHKA_MERCHANT_TOKEN', '')
 TOCHKA_CUSTOMER_CODE = os.environ.get('TOCHKA_CUSTOMER_CODE', '')
+TOCHKA_TERMINAL_ID = os.environ.get('TOCHKA_TERMINAL_ID', '')
+TOCHKA_API = 'https://enter.tochka.com/uapi/acquiring/v1.0/payments'
 SITE_URL = os.environ.get('SITE_URL', 'https://dodelay.ru')
-PRO_PRICE = 299
+PRO_PRICE = 990
+PAID_STATUSES = ('approved', 'confirmed', 'paid', 'success', 'succeeded')
+
+FEMALE_NAMES = {
+    'анна', 'елена', 'ольга', 'наталья', 'наталия', 'татьяна', 'ирина', 'светлана',
+    'мария', 'екатерина', 'юлия', 'марина', 'надежда', 'любовь', 'галина', 'валентина',
+    'людмила', 'вера', 'оксана', 'дарья', 'анастасия', 'ксения', 'полина', 'софия',
+    'софья', 'виктория', 'алина', 'диана', 'кристина', 'евгения', 'алёна', 'алена',
+    'лариса', 'нина', 'зоя', 'инна', 'яна', 'василиса', 'маргарита', 'регина', 'элина',
+    'милана', 'арина', 'ульяна', 'варвара', 'эльвира', 'роза', 'гульнара', 'лилия',
+    'альбина', 'сабина', 'камила', 'камилла', 'амина', 'карина', 'кира', 'вероника',
+    'валерия', 'ангелина', 'есения', 'таисия', 'злата', 'эмилия', 'олеся', 'снежана',
+    'жанна', 'аида', 'алиса', 'дина', 'элла', 'эльмира', 'динара', 'земфира', 'нелли',
+    'римма', 'тамара', 'фаина', 'клавдия', 'лидия', 'антонина', 'раиса', 'зинаида',
+    'станислава', 'ярослава', 'мирослава', 'владислава', 'агата', 'ева', 'мила',
+    'сафия', 'лейла', 'малика', 'фатима', 'айгуль', 'алсу', 'гузель', 'юля', 'катя',
+    'таня', 'оля', 'настя', 'даша', 'маша', 'лена', 'света', 'ира', 'наташа', 'люба',
+    'нюра', 'аня', 'ксюша', 'лиза', 'елизавета', 'нонна', 'сара', 'эстер',
+}
+
+MALE_NAMES_ENDING_A = {
+    'никита', 'илья', 'кузьма', 'фома', 'савва', 'лука', 'данила', 'гаврила',
+    'добрыня', 'серёжа', 'сережа', 'слава', 'миша', 'саша', 'женя', 'вася',
+    'коля', 'толя', 'витя', 'петя', 'ваня', 'дима', 'лёша', 'леша', 'гриша',
+    'паша', 'рома', 'жора', 'сила', 'фёдора', 'мустафа', 'муса', 'иса', 'аника',
+}
+
+GENDERS = ('male', 'female', '')
 
 ADMIN_IDS = {
     x.strip().lstrip('@').lower()
     for x in os.environ.get('ADMIN_MAX_IDS', '').split(',')
     if x.strip()
 }
+
+
+def _tochka_call(method: str, url: str, payload: Optional[bytes] = None) -> Dict[str, Any]:
+    headers = {'Authorization': f'Bearer {TOCHKA_TOKEN}', 'Accept': 'application/json'}
+    if payload is not None:
+        headers['Content-Type'] = 'application/json'
+    try:
+        import requests
+
+        try:
+            res = requests.request(
+                method, url, data=payload, headers=headers, timeout=8
+            )
+        except requests.exceptions.SSLError:
+            res = requests.request(
+                method, url, data=payload, headers=headers, timeout=8, verify=False
+            )
+        if res.status_code >= 400:
+            raise urllib.error.HTTPError(url, res.status_code, res.text[:400], None, None)
+        return json.loads(res.text or '{}')
+    except ImportError:
+        pass
+    ctx = ssl.create_default_context()
+    try:
+        req = urllib.request.Request(url, data=payload, headers=headers, method=method)
+        with urllib.request.urlopen(req, timeout=8, context=ctx) as res:
+            return json.loads(res.read().decode() or '{}')
+    except urllib.error.URLError as exc:
+        if not isinstance(getattr(exc, 'reason', None), ssl.SSLError):
+            raise
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        req = urllib.request.Request(url, data=payload, headers=headers, method=method)
+        with urllib.request.urlopen(req, timeout=8, context=ctx) as res:
+            return json.loads(res.read().decode() or '{}')
 
 
 def _conn():
@@ -62,7 +129,73 @@ def _resp(status: int, body: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def _user_row(row: Dict[str, Any], private: bool = False) -> Dict[str, Any]:
+def _guess_gender(name: str) -> str:
+    """Определяет пол по первому слову имени: 'female' или 'male'."""
+    first = re.split(r'[\s,.]+', str(name or '').strip().lower())
+    first = first[0] if first else ''
+    if not first:
+        return 'male'
+    if first in FEMALE_NAMES:
+        return 'female'
+    if first in MALE_NAMES_ENDING_A:
+        return 'male'
+    if first.endswith('а') or first.endswith('я'):
+        return 'female'
+    return 'male'
+
+
+def _default_avatar(gender: str) -> str:
+    if gender == 'female':
+        return '/avatar-female.png'
+    return '/avatar-male.png'
+
+
+def _prof_row(row: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        'id': row['id'],
+        'slug': row['slug'],
+        'label': row['label'],
+        'icon': row.get('icon') or '',
+    }
+
+
+def _professions_map(cur, user_ids) -> Dict[int, list]:
+    """Профессии сразу для пачки пользователей — один запрос, без N+1."""
+    ids = sorted({int(u) for u in user_ids if u})
+    out: Dict[int, list] = {i: [] for i in ids}
+    if not ids:
+        return out
+    try:
+        cur.execute(
+            f"""SELECT up.user_id, p.id, p.slug, p.label, p.icon
+                FROM {SCHEMA}.user_professions up
+                JOIN {SCHEMA}.professions p ON p.id = up.profession_id
+                WHERE up.user_id IN ({','.join(str(i) for i in ids)})
+                ORDER BY p.sort_order, p.id"""
+        )
+        for r in cur.fetchall():
+            out.setdefault(int(r['user_id']), []).append(_prof_row(r))
+    except Exception:
+        pass
+    return out
+
+
+def _user_professions(cur, user_id: Any) -> list:
+    return _professions_map(cur, [user_id]).get(int(user_id), [])
+
+
+def _user_row(
+    row: Dict[str, Any],
+    private: bool = False,
+    profs_map: Optional[Dict[int, list]] = None,
+    cur=None,
+) -> Dict[str, Any]:
+    if profs_map is not None:
+        professions = profs_map.get(int(row['id']), [])
+    elif cur is not None:
+        professions = _user_professions(cur, row['id'])
+    else:
+        professions = []
     data = {
         'id': row['id'],
         'maxId': row['max_id'],
@@ -72,6 +205,8 @@ def _user_row(row: Dict[str, Any], private: bool = False) -> Dict[str, Any]:
         'skill': row['skill'],
         'about': row['about'],
         'avatar': row.get('avatar'),
+        'gender': row.get('gender') or '',
+        'professions': professions,
         'rating': float(row['rating']) if row['rating'] is not None else 0.0,
         'reviewsCount': row['reviews_count'],
         'doneCount': row['done_count'],
@@ -153,6 +288,142 @@ def _bot_send(chat_id: Any, text: str):
     urllib.request.urlopen(req, timeout=4).read()
 
 
+def _notify(max_user_id: Any, text: str):
+    """Сообщение пользователю в мессенджер MAX. Никогда не бросает исключений."""
+    if not BOT_TOKEN or not max_user_id:
+        return
+    try:
+        req = urllib.request.Request(
+            f'https://botapi.max.ru/messages?user_id={max_user_id}',
+            data=json.dumps({'text': text}).encode(),
+            headers={'Content-Type': 'application/json', 'Authorization': BOT_TOKEN},
+        )
+        urllib.request.urlopen(req, timeout=3).read()
+    except Exception:
+        pass
+
+
+def _dig_status(data: Any) -> str:
+    """Достаёт статус операции из ответа Точки по нескольким возможным путям."""
+    if not isinstance(data, dict):
+        return ''
+    root = data.get('Data') if isinstance(data.get('Data'), dict) else data
+    candidates = [root]
+    if isinstance(root, dict):
+        op = root.get('Operation')
+        if isinstance(op, dict):
+            candidates.append(op)
+        if isinstance(op, list) and op and isinstance(op[0], dict):
+            candidates.append(op[0])
+        ops = root.get('Operations')
+        if isinstance(ops, list) and ops and isinstance(ops[0], dict):
+            candidates.append(ops[0])
+        payment = root.get('Payment')
+        if isinstance(payment, dict):
+            candidates.append(payment)
+    candidates.append(data)
+    for item in candidates:
+        if not isinstance(item, dict):
+            continue
+        for key in ('status', 'Status', 'operationStatus', 'paymentStatus'):
+            value = item.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip().lower()
+    return ''
+
+
+def _apply_payment(cur, payment_row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Помечает платёж оплаченным и продлевает подписку. Возвращает строку пользователя."""
+    pid = int(payment_row['id'])
+    uid = int(payment_row['user_id'])
+    months = max(1, min(12, int(payment_row.get('months') or 1)))
+    cur.execute(
+        f"""UPDATE {SCHEMA}.payments SET status = 'paid', paid_at = NOW()
+            WHERE id = {pid} AND status <> 'paid'"""
+    )
+    cur.execute(
+        f"""UPDATE {SCHEMA}.users
+            SET subscription_until = GREATEST(COALESCE(subscription_until, NOW()), NOW())
+                                     + INTERVAL '{months} months',
+                subscription_auto_renew = FALSE, subscription_cancelled_at = NULL
+            WHERE id = {uid} RETURNING *"""
+    )
+    row = cur.fetchone()
+    if not row:
+        return None
+    row = dict(row)
+    until = row.get('subscription_until')
+    until_text = until.strftime('%d.%m.%Y') if hasattr(until, 'strftime') else str(until)
+    _notify(row.get('max_user_id'), f'Оплата прошла. Доделай PRO активен до {until_text}.')
+    send_push(
+        cur, SCHEMA, uid, 'status', 'Доделай PRO активен',
+        f'Оплата прошла. Подписка действует до {until_text}.',
+        url='/dashboard', esc=_esc,
+    )
+    return row
+
+
+def _expire_subscriptions(cur):
+    """Гасит просроченные подписки и напоминает тем, у кого PRO кончается завтра."""
+    try:
+        cur.execute(
+            f"""SELECT id, max_user_id, subscription_until FROM {SCHEMA}.users
+                WHERE subscription_until IS NOT NULL AND subscription_until < NOW()
+                LIMIT 50"""
+        )
+        expired = [dict(r) for r in cur.fetchall()]
+        for user in expired:
+            uid = int(user['id'])
+            cur.execute(
+                f"""UPDATE {SCHEMA}.users
+                    SET subscription_until = NULL, subscription_auto_renew = FALSE
+                    WHERE id = {uid}"""
+            )
+            _notify(
+                user.get('max_user_id'),
+                'Подписка Доделай PRO закончилась. Продлите её в кабинете, '
+                'чтобы снова размещать задания без лимита.',
+            )
+            send_push(
+                cur, SCHEMA, uid, 'status', 'Подписка закончилась',
+                'Доделай PRO больше не активен. Продлите подписку в кабинете.',
+                url='/dashboard', esc=_esc,
+            )
+
+        cur.execute(
+            f"""SELECT id, max_user_id, subscription_until FROM {SCHEMA}.users
+                WHERE subscription_until IS NOT NULL
+                  AND subscription_until > NOW()
+                  AND subscription_until < NOW() + INTERVAL '24 hours'
+                LIMIT 50"""
+        )
+        soon = [dict(r) for r in cur.fetchall()]
+        for user in soon:
+            uid = int(user['id'])
+            cur.execute(
+                f"""SELECT 1 FROM {SCHEMA}.push_log
+                    WHERE user_id = {uid} AND kind = 'status'
+                      AND title = 'Подписка заканчивается'
+                      AND created_at > NOW() - INTERVAL '2 days' LIMIT 1"""
+            )
+            if cur.fetchone():
+                continue
+            until = user.get('subscription_until')
+            until_text = until.strftime('%d.%m.%Y') if hasattr(until, 'strftime') else str(until)
+            _notify(
+                user.get('max_user_id'),
+                f'Подписка Доделай PRO заканчивается завтра, {until_text}. '
+                'Продлите её в кабинете, чтобы не потерять возможности PRO.',
+            )
+            send_push(
+                cur, SCHEMA, uid, 'status', 'Подписка заканчивается',
+                f'Доделай PRO действует до {until_text}. Продлите подписку в кабинете.',
+                url='/dashboard', esc=_esc,
+            )
+    except Exception:
+        pass
+
+
 def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
     """Аккаунты Доделай.ру: вход через мессенджер MAX по коду, профили с аватарками, права администратора."""
     method = event.get('httpMethod', 'GET')
@@ -167,6 +438,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
     conn = _conn()
     conn.autocommit = True
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    _expire_subscriptions(cur)
 
     if method == 'GET' and action == 'config':
         return _resp(200, {'maxEnabled': bool(BOT_TOKEN), 'botName': BOT_NAME})
@@ -178,21 +450,51 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         row = _me(cur, token)
         if not row:
             return _resp(401, {'error': 'no_token'})
-        return _resp(200, {'user': _user_row(row, True)})
+        return _resp(200, {'user': _user_row(row, True, cur=cur)})
+
+    if method == 'GET' and action == 'professions':
+        cur.execute(
+            f"""SELECT id, slug, label, icon FROM {SCHEMA}.professions
+                ORDER BY sort_order, id"""
+        )
+        return _resp(200, {'professions': [_prof_row(r) for r in cur.fetchall()]})
 
     if method == 'GET' and action == 'people':
+        wanted = []
+        multi = str(params.get('professions') or '').split(',')
+        for raw in [params.get('profession') or ''] + multi:
+            piece = str(raw or '').strip().lower()[:60]
+            if piece:
+                wanted.append(piece)
+        prof_join = ''
+        if wanted:
+            slugs = ', '.join(f"'{_esc(w)}'" for w in wanted)
+            ids = [str(_int_safe(w)) for w in wanted if _int_safe(w)]
+            id_cond = f" OR p.id IN ({', '.join(ids)})" if ids else ''
+            prof_join = f"""
+                AND EXISTS (
+                    SELECT 1 FROM {SCHEMA}.user_professions up
+                    JOIN {SCHEMA}.professions p ON p.id = up.profession_id
+                    WHERE up.user_id = users.id
+                      AND (LOWER(p.slug) IN ({slugs}){id_cond})
+                )"""
         cur.execute(
-            f"""SELECT * FROM {SCHEMA}.users WHERE role = 'executor' AND blocked = FALSE
+            f"""SELECT * FROM {SCHEMA}.users
+                WHERE role = 'executor' AND blocked = FALSE{prof_join}
                 ORDER BY (last_seen > NOW() - INTERVAL '3 minutes') DESC,
                          rating DESC, done_count DESC LIMIT 200"""
         )
-        executors = [_user_row(r) for r in cur.fetchall()]
+        executor_rows = [dict(r) for r in cur.fetchall()]
+        ex_profs = _professions_map(cur, [r['id'] for r in executor_rows])
+        executors = [_user_row(r, profs_map=ex_profs) for r in executor_rows]
         cur.execute(
             f"""SELECT * FROM {SCHEMA}.users WHERE role = 'customer' AND blocked = FALSE
                 ORDER BY (last_seen > NOW() - INTERVAL '3 minutes') DESC,
                          last_seen DESC NULLS LAST LIMIT 200"""
         )
-        customers = [_user_row(r) for r in cur.fetchall()]
+        customer_rows = [dict(r) for r in cur.fetchall()]
+        cu_profs = _professions_map(cur, [r['id'] for r in customer_rows])
+        customers = [_user_row(r, profs_map=cu_profs) for r in customer_rows]
         cur.execute(
             f"""SELECT
                  (SELECT COUNT(*) FROM {SCHEMA}.users WHERE role = 'executor' AND blocked = FALSE) AS executors,
@@ -224,7 +526,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 ORDER BY r.created_at DESC LIMIT 30"""
         )
         reviews = [dict(r) for r in cur.fetchall()]
-        return _resp(200, {'user': _user_row(row), 'reviews': reviews})
+        return _resp(200, {'user': _user_row(row, cur=cur), 'reviews': reviews})
 
     if method == 'GET' and action == 'login_status':
         code = re.sub(r'\W', '', params.get('code', ''))[:12]
@@ -325,7 +627,16 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                         max_user_id = {"'" + _esc(max_user_id) + "'" if max_user_id else 'max_user_id'}
                     WHERE id = {row['id']} RETURNING *"""
             )
-            return _resp(200, {'user': _user_row(cur.fetchone(), True), 'created': False})
+            existing = dict(cur.fetchone())
+            if not (existing.get('avatar') or '').strip():
+                gender = existing.get('gender') or _guess_gender(existing.get('name') or '')
+                cur.execute(
+                    f"""UPDATE {SCHEMA}.users
+                        SET gender = '{_esc(gender)}', avatar = '{_esc(_default_avatar(gender))}'
+                        WHERE id = {existing['id']} RETURNING *"""
+                )
+                existing = dict(cur.fetchone())
+            return _resp(200, {'user': _user_row(existing, True, cur=cur), 'created': False})
 
         if not body.get('acceptedTerms'):
             return _resp(400, {'error': 'terms_required'})
@@ -338,18 +649,26 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         skill = str(body.get('skill', '')).strip()[:200]
         about = str(body.get('about', '')).strip()[:1000]
         new_token = secrets.token_urlsafe(32)
+        gender = str(body.get('gender', '')).strip().lower()
+        if gender not in ('male', 'female'):
+            gender = _guess_gender(name)
+        avatar = str(body.get('avatar', '')).strip()
+        if not avatar.startswith('http'):
+            avatar = _default_avatar(gender)
+
 
         cur.execute(
             f"""INSERT INTO {SCHEMA}.users
                   (max_id, max_user_id, role, name, city, phone, contact, skill, about,
-                   accepted_terms, token, is_admin, verified)
+                   accepted_terms, token, is_admin, verified, gender, avatar)
                 VALUES ('{_esc(max_id)}', '{_esc(max_user_id)}', '{role}', '{_esc(name)}',
                         '{_esc(city)}', '{_esc(phone)}', '{_esc(contact)}', '{_esc(skill)}',
                         '{_esc(about)}', TRUE, '{_esc(new_token)}',
-                        {'TRUE' if is_admin else 'FALSE'}, {'TRUE' if code else 'FALSE'})
+                        {'TRUE' if is_admin else 'FALSE'}, {'TRUE' if code else 'FALSE'},
+                        '{_esc(gender)}', '{_esc(avatar)}')
                 RETURNING *"""
         )
-        return _resp(200, {'user': _user_row(cur.fetchone(), True), 'created': True})
+        return _resp(200, {'user': _user_row(cur.fetchone(), True, cur=cur), 'created': True})
 
     if method == 'POST' and action == 'support_create':
         me = _me(cur, token)
@@ -377,7 +696,11 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         return _resp(200, {'tickets': [dict(r) for r in cur.fetchall()]})
 
     if method == 'GET' and action == 'billing_config':
-        return _resp(200, {'paymentsEnabled': bool(TOCHKA_TOKEN), 'price': PRO_PRICE})
+        return _resp(200, {
+            'paymentsEnabled': bool(TOCHKA_TOKEN),
+            'price': PRO_PRICE,
+            'currency': 'RUB',
+        })
 
     if method == 'POST' and action == 'pay_start':
         me = _me(cur, token)
@@ -403,33 +726,24 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             'Data': {
                 'customerCode': TOCHKA_CUSTOMER_CODE,
                 'amount': f'{amount}.00',
-                'purpose': f'Подписка Доделай PRO на {months} мес.',
-                'redirectUrl': f'{SITE_URL}/dashboard?payment=success',
-                'failRedirectUrl': f'{SITE_URL}/dashboard?payment=fail',
+                'purpose': f'Подписка Доделай PRO на {months} мес. Платёж №{payment_id}',
+                'redirectUrl': f'{SITE_URL}/dashboard?payment=success&pid={payment_id}',
+                'failRedirectUrl': f'{SITE_URL}/dashboard?payment=fail&pid={payment_id}',
                 'paymentMode': ['card', 'sbp'],
-                'merchantId': TOCHKA_CUSTOMER_CODE,
+                'merchantId': TOCHKA_TERMINAL_ID or TOCHKA_CUSTOMER_CODE,
                 'preAuthorization': False,
                 'ttl': 60,
             }
         }).encode()
         try:
-            req = urllib.request.Request(
-                'https://enter.tochka.com/uapi/acquiring/v1.0/payments',
-                data=payload,
-                headers={
-                    'Content-Type': 'application/json',
-                    'Authorization': f'Bearer {TOCHKA_TOKEN}',
-                },
-            )
-            with urllib.request.urlopen(req, timeout=8) as res:
-                data = json.loads(res.read().decode() or '{}')
+            data = _tochka_call('POST', TOCHKA_API, payload)
             info = (data.get('Data') or {})
             url = info.get('paymentLink') or info.get('paymentUrl') or ''
             operation = info.get('operationId') or ''
             cur.execute(
                 f"""UPDATE {SCHEMA}.payments
                     SET payment_url = '{_esc(url)}', operation_id = '{_esc(operation)}',
-                        status = 'pending'
+                        provider = 'tochka', status = 'pending'
                     WHERE id = {payment_id}"""
             )
             return _resp(200, {
@@ -437,12 +751,87 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 'paymentId': payment_id,
                 'paymentUrl': url,
                 'amount': amount,
+                'months': months,
             })
-        except Exception:
+        except urllib.error.HTTPError as exc:
+            detail = ''
+            try:
+                detail = exc.read().decode()[:400]
+            except Exception:
+                detail = ''
+            print(f'TOCHKA_HTTP_ERROR {exc.code}: {detail}')
+            cur.execute(
+                f"UPDATE {SCHEMA}.payments SET status = 'failed' WHERE id = {payment_id}"
+            )
+            if exc.code in (401, 403):
+                return _resp(502, {'error': 'payment_auth_error'})
+            return _resp(502, {'error': 'payment_provider_error'})
+        except Exception as exc:
+            print(f'TOCHKA_ERROR {type(exc).__name__}: {exc}')
             cur.execute(
                 f"UPDATE {SCHEMA}.payments SET status = 'failed' WHERE id = {payment_id}"
             )
             return _resp(502, {'error': 'payment_provider_error'})
+
+    if method == 'POST' and action == 'pay_check':
+        me = _me(cur, token)
+        if not me:
+            return _resp(401, {'error': 'no_token'})
+        pid = _int_safe(body.get('paymentId'))
+        if not pid:
+            return _resp(400, {'error': 'no_payment'})
+        cur.execute(
+            f"""SELECT * FROM {SCHEMA}.payments
+                WHERE id = {pid} AND user_id = {me['id']}"""
+        )
+        payment = cur.fetchone()
+        if not payment:
+            return _resp(404, {'error': 'payment_not_found'})
+        payment = dict(payment)
+        if payment.get('status') == 'paid':
+            return _resp(200, {'status': 'paid', 'user': _user_row(me, True, cur=cur)})
+
+        operation = str(payment.get('operation_id') or '').strip()
+        if not operation or not TOCHKA_TOKEN:
+            return _resp(200, {'status': 'pending'})
+        try:
+            data = _tochka_call('GET', f'{TOCHKA_API}/{urllib.parse.quote(operation)}')
+            if _dig_status(data) not in PAID_STATUSES:
+                return _resp(200, {'status': 'pending'})
+            row = _apply_payment(cur, payment)
+            if not row:
+                return _resp(200, {'status': 'pending'})
+            return _resp(200, {'status': 'paid', 'user': _user_row(row, True, cur=cur)})
+        except Exception:
+            return _resp(200, {'status': 'pending'})
+
+    if method == 'POST' and action == 'tochka_webhook':
+        try:
+            payload = body if isinstance(body, dict) else {}
+            root = payload.get('Data') if isinstance(payload.get('Data'), dict) else payload
+            operation = ''
+            for holder in (root, payload):
+                if not isinstance(holder, dict):
+                    continue
+                for key in ('operationId', 'operation_id', 'paymentId', 'id'):
+                    value = holder.get(key)
+                    if isinstance(value, (str, int)) and str(value).strip():
+                        operation = str(value).strip()[:200]
+                        break
+                if operation:
+                    break
+            if operation and _dig_status(payload) in PAID_STATUSES:
+                cur.execute(
+                    f"""SELECT * FROM {SCHEMA}.payments
+                        WHERE operation_id = '{_esc(operation)}' AND status <> 'paid'
+                        ORDER BY id DESC LIMIT 1"""
+                )
+                payment = cur.fetchone()
+                if payment:
+                    _apply_payment(cur, dict(payment))
+        except Exception:
+            pass
+        return _resp(200, {'ok': True})
 
     if method == 'POST' and action == 'unsubscribe':
         me = _me(cur, token)
@@ -462,12 +851,14 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     SET subscription_auto_renew = FALSE, subscription_cancelled_at = NOW()
                     WHERE id = {me['id']} RETURNING *"""
             )
-        return _resp(200, {'user': _user_row(cur.fetchone(), True)})
+        return _resp(200, {'user': _user_row(cur.fetchone(), True, cur=cur)})
 
     if method == 'POST' and action == 'subscribe':
         me = _me(cur, token)
         if not me:
             return _resp(401, {'error': 'no_token'})
+        if not me.get('is_admin'):
+            return _resp(403, {'error': 'payment_required'})
         months = 1 if _int_safe(body.get('months')) < 1 else min(12, _int_safe(body.get('months')))
         cur.execute(
             f"""UPDATE {SCHEMA}.users
@@ -476,7 +867,65 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     subscription_auto_renew = TRUE, subscription_cancelled_at = NULL
                 WHERE id = {me['id']} RETURNING *"""
         )
-        return _resp(200, {'user': _user_row(cur.fetchone(), True)})
+        return _resp(200, {'user': _user_row(cur.fetchone(), True, cur=cur), 'test': True})
+
+    if method == 'PUT' and action == 'my_professions':
+        me = _me(cur, token)
+        if not me:
+            return _resp(401, {'error': 'no_token'})
+        if me.get('role') != 'executor':
+            return _resp(403, {'error': 'only_executor'})
+        raw_ids = body.get('ids')
+        if not isinstance(raw_ids, list):
+            return _resp(400, {'error': 'bad_ids'})
+        wanted = []
+        for item in raw_ids:
+            if isinstance(item, bool) or not isinstance(item, (int, float, str)):
+                continue
+            value = _int_safe(item)
+            if value and value not in wanted:
+                wanted.append(value)
+        wanted = wanted[:8]
+        valid = []
+        if wanted:
+            cur.execute(
+                f"""SELECT id FROM {SCHEMA}.professions
+                    WHERE id IN ({', '.join(str(i) for i in wanted)})"""
+            )
+            existing = {int(r['id']) for r in cur.fetchall()}
+            valid = [i for i in wanted if i in existing]
+        cur.execute(f"DELETE FROM {SCHEMA}.user_professions WHERE user_id = {me['id']}")
+        if valid:
+            values = ', '.join(f"({me['id']}, {i})" for i in valid)
+            cur.execute(
+                f"""INSERT INTO {SCHEMA}.user_professions (user_id, profession_id)
+                    VALUES {values} ON CONFLICT DO NOTHING"""
+            )
+        cur.execute(f"SELECT * FROM {SCHEMA}.users WHERE id = {me['id']}")
+        return _resp(200, {'user': _user_row(cur.fetchone(), True, cur=cur)})
+
+    if method == 'POST' and action == 'backfill_avatars':
+        me = _me(cur, token)
+        if not me:
+            return _resp(401, {'error': 'no_token'})
+        if not me.get('is_admin'):
+            return _resp(403, {'error': 'not_admin'})
+        cur.execute(
+            f"""SELECT id, name, gender FROM {SCHEMA}.users
+                WHERE avatar IS NULL OR TRIM(avatar) = '' LIMIT 500"""
+        )
+        updated = 0
+        for r in cur.fetchall():
+            gender = str(r.get('gender') or '').strip().lower()
+            if gender not in ('male', 'female'):
+                gender = _guess_gender(r.get('name') or '')
+            cur.execute(
+                f"""UPDATE {SCHEMA}.users
+                    SET gender = '{_esc(gender)}', avatar = '{_esc(_default_avatar(gender))}'
+                    WHERE id = {int(r['id'])}"""
+            )
+            updated += 1
+        return _resp(200, {'updated': updated})
 
     if method == 'PUT' and action == 'profile':
         row = _me(cur, token)
@@ -493,13 +942,19 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             url = _upload_avatar(str(body['avatar']), row['id'])
             if url:
                 avatar_sql = f", avatar = '{_esc(url)}'"
+        gender_sql = ''
+        if 'gender' in body:
+            gender = str(body.get('gender') or '').strip().lower()
+            if gender not in GENDERS:
+                return _resp(400, {'error': 'bad_gender'})
+            gender_sql = f", gender = '{gender}'"
         cur.execute(
             f"""UPDATE {SCHEMA}.users SET name = '{_esc(name)}', city = '{_esc(city)}',
                 phone = '{_esc(phone)}', contact = '{_esc(contact)}',
-                skill = '{_esc(skill)}', about = '{_esc(about)}'{avatar_sql}
+                skill = '{_esc(skill)}', about = '{_esc(about)}'{avatar_sql}{gender_sql}
                 WHERE id = {row['id']} RETURNING *"""
         )
-        return _resp(200, {'user': _user_row(cur.fetchone(), True)})
+        return _resp(200, {'user': _user_row(cur.fetchone(), True, cur=cur)})
 
     if method == 'POST' and action == 'push_subscribe':
         me = _me(cur, token)
@@ -560,7 +1015,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     notify_status = {status_pref}
                 WHERE id = {me['id']} RETURNING *"""
         )
-        return _resp(200, {'user': _user_row(cur.fetchone(), True)})
+        return _resp(200, {'user': _user_row(cur.fetchone(), True, cur=cur)})
 
     if action.startswith('admin_'):
         me = _me(cur, token)
@@ -629,9 +1084,11 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             cur.execute(
                 f"SELECT * FROM {SCHEMA}.users {where} ORDER BY created_at DESC LIMIT 200"
             )
+            rows = [dict(r) for r in cur.fetchall()]
+            profs = _professions_map(cur, [r['id'] for r in rows])
             users = []
-            for r in cur.fetchall():
-                item = _user_row(r, True)
+            for r in rows:
+                item = _user_row(r, True, profs_map=profs)
                 item.pop('token', None)
                 users.append(item)
             return _resp(200, {'users': users})
@@ -661,7 +1118,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                         RETURNING *"""
                 )
                 row = cur.fetchone()
-            return _resp(200, {'user': _user_row(row, True)})
+            return _resp(200, {'user': _user_row(row, True, cur=cur)})
 
         if method == 'POST' and action == 'admin_update_user':
             uid = re.sub(r'\D', '', str(body.get('userId', ''))) or '0'
@@ -684,7 +1141,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             updated = cur.fetchone()
             if not updated:
                 return _resp(404, {'error': 'not_found'})
-            item = _user_row(updated, True)
+            item = _user_row(updated, True, cur=cur)
             item.pop('token', None)
             return _resp(200, {'user': item})
 

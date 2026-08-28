@@ -18,10 +18,14 @@ import {
 } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
-import { api } from '@/lib/api';
+import { billingConfig } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
 
-export const PRO_PRICE = 299;
+export const PRO_PRICE = 990;
+
+const MONTHS = [1, 3, 6];
+
+const monthWord = (n: number) => (n === 1 ? 'месяц' : n < 5 ? 'месяца' : 'месяцев');
 
 const PERKS = [
   'Публикация без лимита — новое задание каждый час вместо одного активного',
@@ -42,34 +46,56 @@ interface Props {
 const SubscriptionDialog = ({ open, onOpenChange, hint }: Props) => {
   const { user, subscribe, startPayment, unsubscribe } = useAppState();
   const [busy, setBusy] = useState(false);
-  const [payEnabled, setPayEnabled] = useState(false);
+  const [payEnabled, setPayEnabled] = useState(true);
+  const [price, setPrice] = useState(PRO_PRICE);
+  const [months, setMonths] = useState(1);
   const [cancelOpen, setCancelOpen] = useState(false);
   const isPro = !!user?.isPro;
+  const isAdmin = !!user?.isAdmin;
   const autoRenew = user?.autoRenew !== false;
+  const total = price * months;
 
   useEffect(() => {
     if (!open) return;
-    api
-      .auth('billing_config')
-      .then((r) => setPayEnabled(!!r.paymentsEnabled))
-      .catch(() => setPayEnabled(false));
+    billingConfig()
+      .then((r) => {
+        setPayEnabled(!!r.paymentsEnabled);
+        setPrice(r.price || PRO_PRICE);
+      })
+      .catch(() => setPrice(PRO_PRICE));
   }, [open]);
 
   const buy = async () => {
     setBusy(true);
     try {
-      const r = await startPayment(1);
+      const r = await startPayment(months);
       if (r.paymentsEnabled && r.paymentUrl) {
         window.location.href = r.paymentUrl;
         return;
       }
-      await subscribe(1);
       toast({
-        title: 'Подписка активна',
-        description: 'Доделай PRO подключён на месяц.',
+        title: 'Оплата пока не подключена',
+        description: 'Напишите в поддержку — поможем оформить подписку.',
       });
+    } catch (e) {
+      const code = (e as Error).message;
+      toast(
+        code === 'payment_required'
+          ? { title: 'Подписка оформляется только после оплаты' }
+          : { title: 'Не удалось оформить', description: 'Попробуйте ещё раз чуть позже.' },
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const testActivate = async () => {
+    setBusy(true);
+    try {
+      await subscribe(months);
+      toast({ title: 'Тестовая активация', description: 'Доделай PRO включён без оплаты.' });
     } catch {
-      toast({ title: 'Не удалось оформить', description: 'Попробуйте ещё раз чуть позже.' });
+      toast({ title: 'Не удалось активировать', description: 'Попробуйте ещё раз.' });
     } finally {
       setBusy(false);
     }
@@ -113,7 +139,7 @@ const SubscriptionDialog = ({ open, onOpenChange, hint }: Props) => {
             <div className="min-w-0">
               <p className="font-head text-lg font-medium">Доделай PRO</p>
               <p className="text-sm text-chip">
-                <span className="font-head text-xl text-foreground">{PRO_PRICE} ₽</span> / месяц
+                <span className="font-head text-xl text-foreground">{price} ₽</span> / месяц
               </p>
             </div>
           </div>
@@ -128,7 +154,7 @@ const SubscriptionDialog = ({ open, onOpenChange, hint }: Props) => {
           </ul>
         </div>
 
-        {isPro ? (
+        {isPro && (
           <div className="space-y-3">
             <p className="flex items-center justify-center gap-2 rounded-2xl border border-line bg-tile px-4 py-3.5 text-center text-sm text-muted-foreground">
               <Icon name="BadgeCheck" size={16} className="text-primary" />
@@ -141,16 +167,71 @@ const SubscriptionDialog = ({ open, onOpenChange, hint }: Props) => {
                 Продление отменено. PRO работает до конца оплаченного периода.
               </p>
             )}
+          </div>
+        )}
 
+        <div className="space-y-3">
+          <div className="scrollbar-none -mx-1 flex gap-2 overflow-x-auto px-1">
+            {MONTHS.map((m) => (
+              <button
+                key={m}
+                onClick={() => setMonths(m)}
+                className={`min-h-[44px] flex-1 shrink-0 whitespace-nowrap rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${
+                  months === m
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-line bg-tile text-muted-foreground hover:border-primary/50'
+                }`}
+              >
+                {m} {monthWord(m)}
+              </button>
+            ))}
+          </div>
+
+          <p className="text-center text-sm text-chip">
+            {price} ₽ × {months} мес ={' '}
+            <span className="font-head text-lg text-foreground">{total} ₽</span>
+          </p>
+
+          {payEnabled ? (
             <button
               onClick={buy}
               disabled={busy}
               className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-60"
             >
-              <Icon name="RefreshCw" size={18} />
-              {busy ? 'Продлеваем…' : 'Продлить на месяц'}
+              <Icon name={isPro ? 'RefreshCw' : 'Crown'} size={18} />
+              {busy
+                ? 'Переходим к оплате…'
+                : isPro
+                  ? `Продлить за ${total} ₽`
+                  : `Оформить за ${total} ₽`}
             </button>
+          ) : (
+            <p className="flex items-start gap-2.5 rounded-2xl border border-line bg-tile px-4 py-3.5 text-sm text-muted-foreground">
+              <Icon name="Info" size={16} className="mt-0.5 shrink-0 text-primary" />
+              Оплата пока не подключена. Напишите в поддержку.
+            </p>
+          )}
 
+          {isAdmin && (
+            <button
+              onClick={testActivate}
+              disabled={busy}
+              className="min-h-[44px] w-full rounded-full border border-line bg-tile py-3 text-sm text-muted-foreground transition-colors hover:border-primary/60 disabled:opacity-60"
+            >
+              Тестовая активация без оплаты (админ)
+            </button>
+          )}
+
+          <p className="flex items-center justify-center gap-1.5 text-center text-xs text-chip">
+            <Icon name="ShieldCheck" size={13} />
+            Оплата картой или через СБП — эквайринг Точка Банка
+          </p>
+          <p className="text-center text-xs text-chip">
+            Автоматических списаний нет. Подписка действует оплаченный период и по окончании
+            отключается сама — за день до этого придёт напоминание.
+          </p>
+
+          {isPro && (
             <button
               onClick={() => setCancelOpen(true)}
               disabled={busy}
@@ -158,28 +239,8 @@ const SubscriptionDialog = ({ open, onOpenChange, hint }: Props) => {
             >
               Отказаться от подписки
             </button>
-          </div>
-        ) : (
-          <div>
-            <button
-              onClick={buy}
-              disabled={busy}
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-60"
-            >
-              <Icon name="Crown" size={18} />
-              {busy ? 'Оформляем…' : `Оформить за ${PRO_PRICE} ₽`}
-            </button>
-            <p className="mt-2 flex items-center justify-center gap-1.5 text-center text-xs text-chip">
-              <Icon name="ShieldCheck" size={13} />
-              {payEnabled
-                ? 'Оплата картой или через СБП — эквайринг Точка Банка'
-                : 'Оплата через Точку подключается — пока подписка активируется сразу'}
-            </p>
-            <p className="mt-1.5 text-center text-xs text-chip">
-              Отказаться можно в любой момент — деньги за неиспользованный период не списываются.
-            </p>
-          </div>
-        )}
+          )}
+        </div>
       </DialogContent>
 
       <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>

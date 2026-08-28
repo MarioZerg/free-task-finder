@@ -8,7 +8,7 @@ import {
   useState,
   ReactNode,
 } from 'react';
-import { api, clearToken, getToken, JobItem, setToken, User } from '@/lib/api';
+import { api, clearToken, getToken, JobItem, payStart, setToken, User } from '@/lib/api';
 
 export type Role = 'customer' | 'executor';
 
@@ -20,6 +20,7 @@ export interface ProfilePayload {
   skill?: string;
   about?: string;
   avatar?: string;
+  gender?: string;
 }
 
 export interface Limits {
@@ -61,6 +62,7 @@ interface AppState {
   startPayment: (months: number) => Promise<{
     paymentsEnabled: boolean;
     paymentUrl?: string;
+    paymentId?: number;
     amount: number;
   }>;
   unsubscribe: (immediate: boolean) => Promise<void>;
@@ -220,10 +222,11 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const startPayment = useCallback<AppState['startPayment']>(async (months) => {
-    const r = await api.auth('pay_start', { method: 'POST', body: { months } });
+    const r = await payStart(months);
     return {
       paymentsEnabled: !!r.paymentsEnabled,
       paymentUrl: r.paymentUrl,
+      paymentId: r.paymentId,
       amount: r.amount ?? 0,
     };
   }, []);

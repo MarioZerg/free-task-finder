@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { initials } from '@/data/mock';
 
 interface Props {
@@ -11,9 +12,20 @@ interface Props {
 const Avatar = ({ src, name, size = 44, className = '', online }: Props) => {
   const style = { width: size, height: size, fontSize: Math.max(11, Math.round(size * 0.32)) };
   const dot = Math.max(8, Math.round(size * 0.26));
+  const [broken, setBroken] = useState(false);
 
-  const inner = src ? (
-    <img src={src} alt={name} style={style} className="rounded-full object-cover" />
+  useEffect(() => {
+    setBroken(false);
+  }, [src]);
+
+  const inner = src && !broken ? (
+    <img
+      src={src}
+      alt={name}
+      style={style}
+      onError={() => setBroken(true)}
+      className="rounded-full object-cover"
+    />
   ) : (
     <span
       style={style}

@@ -64,7 +64,75 @@ export interface User {
   notifyMessages?: boolean;
   notifyResponses?: boolean;
   notifyStatus?: boolean;
+  gender?: string;
+  professions?: Profession[];
 }
+
+export interface Profession {
+  id: number;
+  slug: string;
+  label: string;
+  icon: string;
+}
+
+export interface BillingConfig {
+  paymentsEnabled: boolean;
+  price: number;
+  currency: string;
+}
+
+export interface PeopleCounts {
+  executors: number;
+  customers: number;
+  online: number;
+}
+
+export const billingConfig = (): Promise<BillingConfig> =>
+  api.auth('billing_config') as Promise<BillingConfig>;
+
+export const listProfessions = (): Promise<{ professions: Profession[] }> =>
+  api.auth('professions') as Promise<{ professions: Profession[] }>;
+
+export const updateMyProfessions = (ids: number[]): Promise<{ user: User }> =>
+  api.auth('my_professions', { method: 'PUT', body: { ids } }) as Promise<{ user: User }>;
+
+export const payStart = (
+  months: number,
+): Promise<{
+  paymentsEnabled: boolean;
+  paymentId?: number;
+  paymentUrl?: string;
+  amount: number;
+}> =>
+  api.auth('pay_start', { method: 'POST', body: { months } }) as Promise<{
+    paymentsEnabled: boolean;
+    paymentId?: number;
+    paymentUrl?: string;
+    amount: number;
+  }>;
+
+export const payCheck = (paymentId: number): Promise<{ status: 'paid' | 'pending'; user?: User }> =>
+  api.auth('pay_check', { method: 'POST', body: { paymentId } }) as Promise<{
+    status: 'paid' | 'pending';
+    user?: User;
+  }>;
+
+export const people = (options: {
+  role?: string;
+  city?: string;
+  professions?: string[];
+} = {}): Promise<{ executors: User[]; customers: User[]; counts: PeopleCounts }> => {
+  const params: Record<string, string> = {};
+  if (options.role) params.role = options.role;
+  if (options.city) params.city = options.city;
+  if (options.professions && options.professions.length)
+    params.professions = options.professions.join(',');
+  return api.auth('people', { params }) as Promise<{
+    executors: User[];
+    customers: User[];
+    counts: PeopleCounts;
+  }>;
+};
 
 export interface PushConfig {
   publicKey: string;

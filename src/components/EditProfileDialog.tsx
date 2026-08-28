@@ -14,6 +14,14 @@ import { useAppState } from '@/hooks/use-app-state';
 import { CITIES } from '@/data/mock';
 import { toast } from '@/hooks/use-toast';
 import { formatPhone, isPhoneValid, phoneDigits } from '@/lib/phone';
+import { listProfessions, Profession, updateMyProfessions } from '@/lib/api';
+
+const MAX_PROFESSIONS = 8;
+
+const GENDERS: { value: string; label: string; icon: string }[] = [
+  { value: 'male', label: 'Мужской', icon: 'User' },
+  { value: 'female', label: 'Женский', icon: 'User' },
+];
 
 interface Props {
   open: boolean;
@@ -57,7 +65,7 @@ const compress = (file: File) =>
   });
 
 const EditProfileDialog = ({ open, onOpenChange }: Props) => {
-  const { user, updateProfile } = useAppState();
+  const { user, updateProfile, setUserData } = useAppState();
   const fileRef = useRef<HTMLInputElement>(null);
   const [avatar, setAvatar] = useState<string>('');
   const [name, setName] = useState('');
@@ -66,8 +74,11 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
   const [contact, setContact] = useState('');
   const [skill, setSkill] = useState('');
   const [about, setAbout] = useState('');
+  const [gender, setGender] = useState('');
   const [busy, setBusy] = useState(false);
   const [proOpen, setProOpen] = useState(false);
+  const [professions, setProfessions] = useState<Profession[]>([]);
+  const [selected, setSelected] = useState<number[]>([]);
 
   useEffect(() => {
     if (!open || !user) return;
@@ -78,9 +89,37 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
     setContact(user.contact || '');
     setSkill(user.skill || '');
     setAbout(user.about || '');
+    setGender(user.gender || '');
+    setSelected((user.professions || []).map((p) => p.id));
   }, [open, user]);
 
+  useEffect(() => {
+    if (!open || user?.role !== 'executor') return;
+    let alive = true;
+    listProfessions()
+      .then((r) => {
+        if (alive) setProfessions(r.professions || []);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [open, user?.role]);
+
   if (!user) return null;
+
+  const isExecutor = user.role === 'executor';
+
+  const toggleProfession = (id: number) => {
+    setSelected((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      if (prev.length >= MAX_PROFESSIONS) {
+        toast({ title: `Можно выбрать до ${MAX_PROFESSIONS} специальностей` });
+        return prev;
+      }
+      return [...prev, id];
+    });
+  };
 
   const pick = async (file?: File | null) => {
     if (!file) return;
@@ -105,8 +144,13 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
         contact: contact.trim(),
         skill: skill.trim(),
         about: about.trim(),
+        gender,
         ...(avatar && avatar !== user.avatar ? { avatar } : {}),
       });
+      if (isExecutor) {
+        const r = await updateMyProfessions(selected).catch(() => null);
+        if (r?.user) setUserData(r.user);
+      }
       toast({ title: 'Профиль сохранён' });
       onOpenChange(false);
     } catch {
@@ -191,14 +235,19 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
             placeholder="Контакт для связи: MAX, Telegram"
             className={field}
           />
-          {user.role === 'executor' && (
+          {isExecutor && (
             <>
-              <input
-                value={skill}
-                onChange={(e) => setSkill(e.target.value)}
-                placeholder="Чем занимаетесь"
-                className={field}
-              />
+              <div>
+                <input
+                  value={skill}
+                  onChange={(e) => setSkill(e.target.value)}
+                  placeholder="Коротко о себе как о специалисте"
+                  className={field}
+                />
+                <p className="mt-1 px-1 text-xs text-chip">
+                  Одна строка в карточке — например «Электрик с допуском, работаю по области».
+                </p>
+              </div>
               <textarea
                 value={about}
                 onChange={(e) => setAbout(e.target.value)}
@@ -207,7 +256,68 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
               />
             </>
           )}
+
+          <div>
+            <p className="px-1 text-sm font-medium">Пол</p>
+            <p className="mt-0.5 px-1 text-xs text-chip">
+              Пол — нужен только для аватара по умолчанию.
+            </p>
+            <div className="mt-2 flex gap-2">
+              {GENDERS.map((g) => (
+                <button
+                  key={g.value}
+                  type="button"
+                  onClick={() => setGender(gender === g.value ? '' : g.value)}
+                  className={`flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-sm transition-colors ${
+                    gender === g.value
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-line bg-tile text-muted-foreground hover:border-primary/50'
+                  }`}
+                >
+                  <Icon name={g.icon} size={15} fallback="Wrench" />
+                  {g.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
+
+        {isExecutor && (
+          <div className="border-t border-line pt-4">
+            <p className="flex items-center gap-2 font-head text-base font-medium">
+              <Icon name="Wrench" size={16} className="text-primary" />
+              Что вы умеете
+            </p>
+            <p className="mt-1 text-sm text-chip">
+              Выберите специальности — заказчики найдут вас по ним во вкладке «Люди». Выбрано{' '}
+              {selected.length} из {MAX_PROFESSIONS}.
+            </p>
+            {professions.length === 0 ? (
+              <p className="mt-3 text-sm text-chip">Загружаем список…</p>
+            ) : (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {professions.map((p) => {
+                  const on = selected.includes(p.id);
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => toggleProfession(p.id)}
+                      className={`flex min-h-[44px] items-center gap-2 rounded-full border px-4 py-2.5 text-sm transition-colors ${
+                        on
+                          ? 'border-primary bg-primary text-primary-foreground'
+                          : 'border-line bg-tile text-muted-foreground hover:border-primary/50'
+                      }`}
+                    >
+                      <Icon name={p.icon} size={15} fallback="Wrench" />
+                      {p.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="rounded-3xl border border-line bg-tile p-4">
           <p className="flex items-center gap-2 font-head text-base font-medium">

@@ -22,7 +22,9 @@
       "name": "Админка закрыта без прав",
       "method": "POST",
       "path": "/?action=admin_users",
-      "body": {"role": "executor"},
+      "body": {
+        "role": "executor"
+      },
       "expectedStatus": 403
     },
     {
@@ -30,8 +32,16 @@
       "method": "GET",
       "path": "/?action=push_config",
       "expectedStatus": 200,
-      "expectedBody": {"publicKey": "string"},
+      "expectedBody": {
+        "publicKey": "string"
+      },
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "Список профессий",
+      "method": "GET",
+      "path": "/?action=professions",
+      "expectedStatus": 200
     },
     {
       "name": "Неизвестное действие",
