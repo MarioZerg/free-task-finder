@@ -35,9 +35,9 @@ CORS = {
 SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 'public')
 BOT_TOKEN = os.environ.get('MAX_BOT_TOKEN', '')
 BOT_NAME = os.environ.get('MAX_BOT_NAME', 'id760218194200_3_bot')
-TOCHKA_TOKEN = os.environ.get('TOCHKA_MERCHANT_TOKEN', '')
-TOCHKA_CUSTOMER_CODE = os.environ.get('TOCHKA_CUSTOMER_CODE', '')
-TOCHKA_TERMINAL_ID = os.environ.get('TOCHKA_TERMINAL_ID', '')
+TOCHKA_TOKEN = os.environ.get('TOCHKA_MERCHANT_TOKEN', '').strip()
+TOCHKA_CUSTOMER_CODE = os.environ.get('TOCHKA_CUSTOMER_CODE', '').strip()
+TOCHKA_TERMINAL_ID = os.environ.get('TOCHKA_TERMINAL_ID', '').strip()
 TOCHKA_API = 'https://enter.tochka.com/uapi/acquiring/v1.0/payments'
 SITE_URL = os.environ.get('SITE_URL', 'https://dodelay.ru')
 PRO_PRICE = 990
@@ -694,6 +694,35 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 ORDER BY created_at DESC LIMIT 30"""
         )
         return _resp(200, {'tickets': [dict(r) for r in cur.fetchall()]})
+
+    if method == 'GET' and action == 'tochka_debug':
+        me = _me(cur, token)
+        if not me or not me.get('is_admin'):
+            return _resp(403, {'error': 'admin_only'})
+        out: Dict[str, Any] = {
+            'hasToken': bool(TOCHKA_TOKEN),
+            'tokenLen': len(TOCHKA_TOKEN),
+            'looksLikeJwt': TOCHKA_TOKEN.count('.') == 2 and TOCHKA_TOKEN[:3] == 'eyJ',
+            'customerCode': TOCHKA_CUSTOMER_CODE,
+            'terminalId': TOCHKA_TERMINAL_ID,
+        }
+        probes = [
+            ('customers', 'https://enter.tochka.com/uapi/open-banking/v1.0/customers'),
+            ('retailers', 'https://enter.tochka.com/uapi/acquiring/v1.0/retailers'),
+        ]
+        for name, url in probes:
+            try:
+                out[name] = _tochka_call('GET', url)
+            except urllib.error.HTTPError as exc:
+                body_text = ''
+                try:
+                    body_text = exc.read().decode()[:500]
+                except Exception:
+                    body_text = str(exc.reason)[:500] if hasattr(exc, 'reason') else ''
+                out[name] = {'httpError': exc.code, 'detail': body_text}
+            except Exception as exc:
+                out[name] = {'error': f'{type(exc).__name__}: {exc}'[:300]}
+        return _resp(200, out)
 
     if method == 'GET' and action == 'billing_config':
         return _resp(200, {
