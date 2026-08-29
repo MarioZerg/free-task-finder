@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
 import InstallPwa from '@/components/InstallPwa';
@@ -6,6 +6,9 @@ import { CITY_PAGES } from '@/data/cityPages';
 
 const Footer = () => {
   const { openLogin } = useAppState();
+  const { pathname } = useLocation();
+  const onHome = pathname === '/';
+  const prefix = onHome ? '' : '/';
 
   return (
     <footer className="overflow-hidden bg-tile pt-20 md:pt-28">
@@ -65,13 +68,13 @@ const Footer = () => {
         <div className="flex flex-wrap items-center justify-between gap-6 py-10 text-sm text-chip">
           <p>Бесплатный сервис поиска подработки в Ярославской области. Вход через MAX.</p>
           <nav className="flex flex-wrap items-center gap-x-6 gap-y-4">
-            <a href="#roles" className="story-link">Роли</a>
-            <a href="#how" className="story-link">Как это работает</a>
+            <a href={`${prefix}#roles`} className="story-link">Роли</a>
+            <a href={`${prefix}#how`} className="story-link">Как это работает</a>
             <Link to="/privacy" className="story-link">Конфиденциальность</Link>
             <Link to="/terms" className="story-link">Условия (оферта)</Link>
             <Link to="/contacts" className="story-link">Контакты</Link>
             <InstallPwa variant="link" />
-            <a href="#top" className="story-link">Наверх</a>
+            <a href={onHome ? '#top' : '/'} className="story-link">Наверх</a>
           </nav>
         </div>
 

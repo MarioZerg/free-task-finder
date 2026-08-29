@@ -1,19 +1,24 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
 import Avatar from '@/components/Avatar';
 import InstallPwa from '@/components/InstallPwa';
 
-const links = [
-  { href: '#roles', label: 'Роли' },
-  { href: '#how', label: 'Как это работает' },
-  { href: '#executors', label: 'Исполнителям' },
+const anchors = [
+  { id: 'roles', label: 'Роли' },
+  { id: 'how', label: 'Как это работает' },
+  { id: 'executors', label: 'Исполнителям' },
 ];
 
 const Header = () => {
   const { user, openLogin, logout } = useAppState();
   const [open, setOpen] = useState(false);
+  const { pathname } = useLocation();
+  const onHome = pathname === '/';
+  const prefix = onHome ? '' : '/';
+  const links = anchors.map((a) => ({ href: `${prefix}#${a.id}`, label: a.label }));
+  const topHref = onHome ? '#top' : '/';
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
@@ -25,7 +30,7 @@ const Header = () => {
   return (
     <header className="absolute inset-x-0 top-0 z-40 animate-fade-plain">
       <div className="safe-x safe-top mx-auto flex w-full max-w-[1400px] items-center justify-between gap-3 px-6 py-6 md:px-10 md:py-8 lg:px-16">
-        <a href="#top" className="font-head text-xl font-bold leading-none tracking-tight md:text-2xl">
+        <a href={topHref} className="font-head text-xl font-bold leading-none tracking-tight md:text-2xl">
           ДОДЕЛАЙ<sup className="align-super text-[0.42em] font-normal">.РУ</sup>
         </a>
 
