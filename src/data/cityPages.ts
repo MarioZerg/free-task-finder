@@ -11,6 +11,7 @@ export interface CityPage {
   districts: string[];
   population?: string;
   nearbyCities: string[];
+  image: string;
 }
 
 export const CITY_PAGES: CityPage[] = [
@@ -34,6 +35,7 @@ export const CITY_PAGES: CityPage[] = [
     ],
     population: '≈ 570 тыс. человек',
     nearbyCities: ['rybinsk', 'tutaev', 'rostov'],
+    image: '/img/cities/yaroslavl.jpg',
   },
   {
     slug: 'rybinsk',
@@ -48,6 +50,7 @@ export const CITY_PAGES: CityPage[] = [
     districts: ['Центр', 'Северный', 'Переборы', 'Мариевка', 'Веретье', 'Копаево'],
     population: '≈ 170 тыс. человек',
     nearbyCities: ['yaroslavl', 'tutaev', 'uglich'],
+    image: '/img/cities/rybinsk.jpg',
   },
   {
     slug: 'tutaev',
@@ -62,6 +65,7 @@ export const CITY_PAGES: CityPage[] = [
     districts: ['Левый берег', 'Правый берег'],
     population: '≈ 39 тыс. человек',
     nearbyCities: ['yaroslavl', 'rybinsk'],
+    image: '/img/cities/tutaev.jpg',
   },
   {
     slug: 'pereslavl',
@@ -76,6 +80,7 @@ export const CITY_PAGES: CityPage[] = [
     districts: [],
     population: '≈ 36 тыс. человек',
     nearbyCities: ['rostov', 'uglich', 'yaroslavl'],
+    image: '/img/cities/pereslavl.jpg',
   },
   {
     slug: 'uglich',
@@ -90,6 +95,7 @@ export const CITY_PAGES: CityPage[] = [
     districts: [],
     population: '≈ 31 тыс. человек',
     nearbyCities: ['rybinsk', 'rostov', 'pereslavl'],
+    image: '/img/cities/uglich.jpg',
   },
   {
     slug: 'rostov',
@@ -104,6 +110,7 @@ export const CITY_PAGES: CityPage[] = [
     districts: [],
     population: '≈ 30 тыс. человек',
     nearbyCities: ['pereslavl', 'uglich', 'yaroslavl'],
+    image: '/img/cities/rostov.jpg',
   },
 ];
 
