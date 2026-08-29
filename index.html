@@ -196,7 +196,7 @@
   </head>
 
 <body>
-<div id="root"><div style="max-width:760px;margin:0 auto;padding:32px 20px 64px;background:#ffffff;color:#1c1c1c;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:16px;line-height:1.6">
+<div id="root"><div id="seo-fallback" style="max-width:760px;margin:0 auto;padding:32px 20px 64px;background:#ffffff;color:#1c1c1c;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:16px;line-height:1.6">
     <h1 style="font-size:28px;line-height:1.25;margin:0 0 16px">Доделай.ру — шабашка и подработка в Ярославле</h1>
     <p style="margin:0 0 16px">Доделай.ру — бесплатная доска объявлений о разовой подработке в Ярославской области. Заказчик описывает задачу и сумму, исполнители из своего города видят её в общей ленте и откликаются. Сервис не берёт комиссию: люди договариваются и рассчитываются напрямую. Вход через мессенджер MAX — без анкет, резюме и паролей.</p>
     <p style="margin:0 0 24px">Информация обновлена <time datetime="2026-08-29">29 августа 2026</time>. Проект ведёт команда Доделай.ру, Ярославль.</p>
@@ -266,6 +266,19 @@
 
     <p style="margin:0"><a href="/contacts" style="color:#4A653A">Контакты и реквизиты сервиса</a> · <a href="/terms" style="color:#4A653A">Условия использования и оферта</a> · <a href="/privacy" style="color:#4A653A">Политика конфиденциальности</a></p>
   </div></div>
+<script>
+  (function () {
+    var b = document.getElementById('seo-fallback');
+    if (b) { b.style.display = 'none'; }
+    var r = document.getElementById('root');
+    if (r) {
+      r.insertAdjacentHTML('beforeend',
+        '<div id="boot-splash" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#F7F6F1;z-index:9999">' +
+        '<span style="font:600 30px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;letter-spacing:-0.02em;color:#4A653A">ДОДЕЛАЙ<sup style="font-size:12px">.РУ</sup></span>' +
+        '</div>');
+    }
+  })();
+</script>
 <script type="module" src="/src/main.tsx"></script>
 <script>
   if ('serviceWorker' in navigator) {
