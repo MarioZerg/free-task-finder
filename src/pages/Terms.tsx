@@ -1,5 +1,6 @@
 import LegalLayout, { LegalBlock } from '@/components/LegalLayout';
 import useSeo from '@/hooks/use-seo';
+import useLdJson from '@/hooks/use-ld-json';
 
 const Terms = () => {
   useSeo({
@@ -7,6 +8,16 @@ const Terms = () => {
     description:
       'Правила сервиса Доделай.ру: как размещать задания и откликаться, кто отвечает за оплату и качество работ, условия подписки PRO.',
     canonical: 'https://dodelay.ru/terms',
+  });
+
+  useLdJson('ld-terms-breadcrumbs', {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    '@id': 'https://dodelay.ru/terms#breadcrumbs',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://dodelay.ru/' },
+      { '@type': 'ListItem', position: 2, name: 'Условия использования', item: 'https://dodelay.ru/terms' },
+    ],
   });
 
   return (

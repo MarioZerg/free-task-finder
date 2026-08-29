@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { AppStateProvider, useAppState } from '@/hooks/use-app-state';
 import Header from '@/components/Header';
@@ -7,6 +6,7 @@ import LoginDialog from '@/components/LoginDialog';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import Icon from '@/components/ui/icon';
 import useSeo from '@/hooks/use-seo';
+import useLdJson from '@/hooks/use-ld-json';
 import { CATEGORY_META } from '@/data/categories';
 import { countOpenJobsInCity, getCityPage, getCityPagesBySlug, pluralJobs } from '@/data/cityPages';
 import NotFound from '@/pages/NotFound';
@@ -26,19 +26,6 @@ const PRICE_ROWS = [
   { task: 'Работы на участке', price: 'от 900 до 2 500 ₽' },
   { task: 'Мелкий ремонт и разное', price: 'от 500 до 1 500 ₽' },
 ];
-
-const useLdJson = (id: string, data: Record<string, unknown>) => {
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.type = 'application/ld+json';
-    script.id = id;
-    script.text = JSON.stringify(data);
-    document.head.appendChild(script);
-    return () => {
-      document.getElementById(id)?.remove();
-    };
-  }, [id, JSON.stringify(data)]);
-};
 
 const CityLandingInner = ({ slug }: { slug: string }) => {
   const city = getCityPage(slug)!;
@@ -66,6 +53,54 @@ const CityLandingInner = ({ slug }: { slug: string }) => {
     isPartOf: { '@id': 'https://dodelay.ru/#website' },
     url: `https://dodelay.ru/podrabotka/${city.slug}`,
     ...(openCount > 0 ? { offers: { '@type': 'Offer', availability: 'https://schema.org/InStock', eligibleQuantity: openCount } } : {}),
+  });
+
+  useLdJson(`ld-city-breadcrumbs-${city.slug}`, {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    '@id': `https://dodelay.ru/podrabotka/${city.slug}#breadcrumbs`,
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://dodelay.ru/' },
+      { '@type': 'ListItem', position: 2, name: 'Подработка', item: 'https://dodelay.ru/#cities' },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: city.nameNominative,
+        item: `https://dodelay.ru/podrabotka/${city.slug}`,
+      },
+    ],
+  });
+
+  useLdJson(`ld-city-faq-${city.slug}`, {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    '@id': `https://dodelay.ru/podrabotka/${city.slug}#faq`,
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: `Как найти подработку в ${city.name}?`,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: `Войдите через MAX, выберите роль исполнителя и откройте ленту заказов — там видны все активные задачи города${city.districts.length ? ' с разбивкой по районам' : ''}.`,
+        },
+      },
+      {
+        '@type': 'Question',
+        name: `Сколько стоит шабашка в ${city.name}?`,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Сумму указывает заказчик — в таблице выше приведён ориентир по типовым задачам. Комиссию с оплаты сервис не берёт.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Можно разместить задачу без регистрации на сайте?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Вход только через мессенджер MAX — это заменяет и регистрацию, и пароль. Публикация объявлений бесплатна.',
+        },
+      },
+    ],
   });
 
   return (

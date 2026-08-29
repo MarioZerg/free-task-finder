@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import useSeo from '@/hooks/use-seo';
+import useLdJson from '@/hooks/use-ld-json';
 
 const details = [
   { icon: 'Mail', label: 'Почта', value: 'support@dodelay.ru', href: 'mailto:support@dodelay.ru' },
@@ -15,6 +16,16 @@ const Contacts = () => {
     description:
       'Как связаться с сервисом Доделай.ру: почта поддержки, реквизиты ИП, регион работы и время ответа.',
     canonical: 'https://dodelay.ru/contacts',
+  });
+
+  useLdJson('ld-contacts-breadcrumbs', {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    '@id': 'https://dodelay.ru/contacts#breadcrumbs',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://dodelay.ru/' },
+      { '@type': 'ListItem', position: 2, name: 'Контакты', item: 'https://dodelay.ru/contacts' },
+    ],
   });
 
   return (

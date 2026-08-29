@@ -1,5 +1,6 @@
 import LegalLayout, { LegalBlock } from '@/components/LegalLayout';
 import useSeo from '@/hooks/use-seo';
+import useLdJson from '@/hooks/use-ld-json';
 
 const Privacy = () => {
   useSeo({
@@ -7,6 +8,16 @@ const Privacy = () => {
     description:
       'Какие данные собирает Доделай.ру, зачем они нужны, что видно другим участникам и как удалить аккаунт и объявления.',
     canonical: 'https://dodelay.ru/privacy',
+  });
+
+  useLdJson('ld-privacy-breadcrumbs', {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    '@id': 'https://dodelay.ru/privacy#breadcrumbs',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://dodelay.ru/' },
+      { '@type': 'ListItem', position: 2, name: 'Конфиденциальность', item: 'https://dodelay.ru/privacy' },
+    ],
   });
 
   return (
