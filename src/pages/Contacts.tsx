@@ -111,6 +111,25 @@ const Contacts = () => {
             нарушителей.
           </p>
         </div>
+
+        <section className="mt-6 rounded-3xl border border-line bg-surface p-6 md:p-8">
+          <h2 className="font-head text-xl font-medium tracking-tight md:text-2xl">
+            Семантическое ядро для продвижения
+          </h2>
+          <p className="mt-4 max-w-[640px] text-base text-muted-foreground">
+            Собранные ключевые запросы по тематике шабашки и подработки в Ярославской области — с
+            разбивкой по городам, приоритету и типу интента. Пригодится для SEO и настройки
+            контекстной рекламы.
+          </p>
+          <a
+            href="/files/dodelay-semantic-core.xlsx"
+            download
+            className="mt-6 flex min-h-[44px] w-fit items-center gap-2 rounded-full bg-primary px-6 py-3.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03]"
+          >
+            <Icon name="Download" size={18} />
+            Скачать семантическое ядро (.xlsx)
+          </a>
+        </section>
       </main>
     </div>
   );

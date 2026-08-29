@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
 import InstallPwa from '@/components/InstallPwa';
+import { CITY_PAGES } from '@/data/cityPages';
 
 const Footer = () => {
   const { openLogin } = useAppState();
@@ -39,6 +40,17 @@ const Footer = () => {
             Ленинский, Красноперекопский районы), Рыбинск, Тутаев, Переславль-Залесский, Углич,
             Ростов Великий, Гаврилов-Ям, Данилов, Пошехонье, Мышкин, Некрасовское.
           </p>
+        </div>
+
+        <div className="border-b border-line py-10">
+          <h3 className="font-head text-base font-medium">Города</h3>
+          <nav className="mt-4 flex flex-wrap gap-x-6 gap-y-3 text-sm text-chip">
+            {CITY_PAGES.map((c) => (
+              <Link key={c.slug} to={`/podrabotka/${c.slug}`} className="story-link">
+                Подработка в {c.nameNominative}
+              </Link>
+            ))}
+          </nav>
         </div>
 
         <div className="border-b border-line py-10">

@@ -5,6 +5,7 @@ import RolePreview from '@/components/RolePreview';
 import HowItWorks from '@/components/HowItWorks';
 import ExecutorsCta from '@/components/ExecutorsCta';
 import Reviews from '@/components/Reviews';
+import CityLinks from '@/components/CityLinks';
 import Faq from '@/components/Faq';
 import Footer from '@/components/Footer';
 import LoginDialog from '@/components/LoginDialog';
@@ -28,6 +29,7 @@ const Index = () => {
           <HowItWorks />
           <ExecutorsCta />
           <Reviews />
+          <CityLinks />
           <Faq />
         </main>
         <Footer />
