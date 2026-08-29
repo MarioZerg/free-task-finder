@@ -10,6 +10,7 @@ import useLdJson from '@/hooks/use-ld-json';
 import { CATEGORY_META } from '@/data/categories';
 import { countOpenJobsInCity, getCityPage, getCityPagesBySlug, pluralJobs } from '@/data/cityPages';
 import { FEATURED_PROFESSIONS, getProfessionCityPage } from '@/data/professionCityPages';
+import { getDistrictPagesByCity } from '@/data/districtPages';
 import NotFound from '@/pages/NotFound';
 
 const TASK_HINTS: Record<string, string> = {
@@ -33,6 +34,7 @@ const CityLandingInner = ({ slug }: { slug: string }) => {
   const { openLogin, feed } = useAppState();
   const nearby = getCityPagesBySlug(city.nearbyCities);
   const openCount = countOpenJobsInCity(feed, city.nameNominative);
+  const districtPages = getDistrictPagesByCity(city.slug);
 
   useSeo({
     title: city.title,
@@ -170,14 +172,25 @@ const CityLandingInner = ({ slug }: { slug: string }) => {
               Районы города
             </h2>
             <div className="mt-6 flex flex-wrap gap-2.5">
-              {city.districts.map((d) => (
-                <span
-                  key={d}
-                  className="rounded-full border border-line bg-tile px-4 py-2.5 text-sm text-muted-foreground"
-                >
-                  {d}
-                </span>
-              ))}
+              {city.districts.map((d) => {
+                const districtPage = districtPages.find((dp) => dp.label === d);
+                return districtPage ? (
+                  <Link
+                    key={d}
+                    to={`/podrabotka/${city.slug}/rayon/${districtPage.slug}`}
+                    className="rounded-full border border-line bg-tile px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:border-primary/60 hover:text-primary"
+                  >
+                    {d}
+                  </Link>
+                ) : (
+                  <span
+                    key={d}
+                    className="rounded-full border border-line bg-tile px-4 py-2.5 text-sm text-muted-foreground"
+                  >
+                    {d}
+                  </span>
+                );
+              })}
             </div>
           </section>
         )}
