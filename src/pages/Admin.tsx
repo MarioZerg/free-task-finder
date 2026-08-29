@@ -15,6 +15,7 @@ import AdminDemoAccess from '@/components/admin/AdminDemoAccess';
 import AdminReviews from '@/components/admin/AdminReviews';
 import AdminSupport from '@/components/admin/AdminSupport';
 import ProfileDialog from '@/components/ProfileDialog';
+import useSeo from '@/hooks/use-seo';
 
 type Mode = 'customer' | 'executor' | 'admin';
 
@@ -227,10 +228,19 @@ const AdminInner = () => {
   );
 };
 
-const Admin = () => (
-  <AppStateProvider>
-    <AdminInner />
-  </AppStateProvider>
-);
+const Admin = () => {
+  useSeo({
+    title: 'Администрирование — Доделай.ру',
+    description: 'Служебный раздел сервиса Доделай.ру.',
+    canonical: 'https://dodelay.ru/admin',
+    robots: 'noindex, nofollow',
+  });
+
+  return (
+    <AppStateProvider>
+      <AdminInner />
+    </AppStateProvider>
+  );
+};
 
 export default Admin;

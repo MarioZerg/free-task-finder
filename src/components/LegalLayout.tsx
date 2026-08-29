@@ -1,15 +1,29 @@
 import { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
+import Breadcrumbs from '@/components/Breadcrumbs';
 
 interface Props {
   title: string;
   updated: string;
+  updatedIso?: string;
   intro: string;
   children: ReactNode;
+  eyebrow?: string;
+  updatedPrefix?: string;
+  breadcrumb?: string;
 }
 
-const LegalLayout = ({ title, updated, intro, children }: Props) => (
+const LegalLayout = ({
+  title,
+  updated,
+  updatedIso = '2026-08-29',
+  intro,
+  children,
+  eyebrow = 'Документы',
+  updatedPrefix = 'Редакция от',
+  breadcrumb,
+}: Props) => (
   <div className="min-h-screen overflow-x-hidden bg-background font-body text-foreground">
     <header className="mx-auto flex max-w-[900px] items-center justify-between px-6 py-8 md:px-10">
       <Link to="/" className="font-head text-lg font-bold tracking-tight">
@@ -25,11 +39,14 @@ const LegalLayout = ({ title, updated, intro, children }: Props) => (
     </header>
 
     <main className="mx-auto max-w-[900px] px-6 pb-24 md:px-10">
-      <p className="text-sm uppercase tracking-[0.2em] text-foreground/60">Документы</p>
+      <Breadcrumbs current={breadcrumb || title} />
+      <p className="mt-6 text-sm uppercase tracking-[0.2em] text-foreground/60">{eyebrow}</p>
       <h1 className="mt-4 font-head text-3xl font-normal leading-tight tracking-tight md:text-5xl">
         {title}
       </h1>
-      <p className="mt-3 text-sm text-chip">Редакция от {updated}</p>
+      <p className="mt-3 text-sm text-chip">
+        {updatedPrefix} <time dateTime={updatedIso}>{updated}</time>
+      </p>
       <p className="mt-6 max-w-[640px] text-base text-muted-foreground">{intro}</p>
 
       <div className="mt-12 space-y-4">{children}</div>

@@ -1,9 +1,20 @@
 import LegalLayout, { LegalBlock } from '@/components/LegalLayout';
+import useSeo from '@/hooks/use-seo';
 
-const Privacy = () => (
+const Privacy = () => {
+  useSeo({
+    title: 'Политика конфиденциальности — Доделай.ру',
+    description:
+      'Какие данные собирает Доделай.ру, зачем они нужны, что видно другим участникам и как удалить аккаунт и объявления.',
+    canonical: 'https://dodelay.ru/privacy',
+  });
+
+  return (
   <LegalLayout
     title="Политика конфиденциальности"
+    breadcrumb="Конфиденциальность"
     updated="26 августа 2026 года"
+    updatedIso="2026-08-26"
     intro="Документ объясняет, какие данные сервис «Доделай.ру» (dodelay.ru) получает при пользовании сайтом, зачем они нужны и как вы можете их удалить. Сервис бесплатный, данные не продаются и не передаются третьим лицам в рекламных целях."
   >
     <LegalBlock
@@ -73,6 +84,7 @@ const Privacy = () => (
       ]}
     />
   </LegalLayout>
-);
+  );
+};
 
 export default Privacy;

@@ -57,6 +57,7 @@ const Footer = () => {
             <a href="#how" className="story-link">Как это работает</a>
             <Link to="/privacy" className="story-link">Конфиденциальность</Link>
             <Link to="/terms" className="story-link">Условия (оферта)</Link>
+            <Link to="/contacts" className="story-link">Контакты</Link>
             <InstallPwa variant="link" />
             <a href="#top" className="story-link">Наверх</a>
           </nav>
@@ -64,7 +65,10 @@ const Footer = () => {
 
         <div className="border-t border-line/60 pt-6">
           <p className="text-xs leading-relaxed text-chip/70">
-            ИНН 760218194200 · ОГРНИП 322774600341432
+            Проект ведёт команда Доделай.ру, Ярославль · ИНН 760218194200 · ОГРНИП 322774600341432
+          </p>
+          <p className="mt-1.5 text-xs leading-relaxed text-chip/70">
+            Информация на сайте обновлена <time dateTime="2026-08-29">29 августа 2026</time>
           </p>
           <p className="mt-1.5 text-xs leading-relaxed text-chip/70">
             Оплата подписки Доделай PRO принимается через интернет-эквайринг Точка Банк:

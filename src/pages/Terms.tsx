@@ -1,9 +1,20 @@
 import LegalLayout, { LegalBlock } from '@/components/LegalLayout';
+import useSeo from '@/hooks/use-seo';
 
-const Terms = () => (
+const Terms = () => {
+  useSeo({
+    title: 'Условия использования и оферта — Доделай.ру',
+    description:
+      'Правила сервиса Доделай.ру: как размещать задания и откликаться, кто отвечает за оплату и качество работ, условия подписки PRO.',
+    canonical: 'https://dodelay.ru/terms',
+  });
+
+  return (
   <LegalLayout
     title="Условия использования (оферта)"
+    breadcrumb="Условия использования"
     updated="26 августа 2026 года"
+    updatedIso="2026-08-26"
     intro="«Доделай.ру» (dodelay.ru) — площадка объявлений о подработке в Ярославской области с бесплатным размещением заданий. Сервис только показывает объявления и отклики, но не является участником сделок между заказчиками и исполнителями. Начиная пользоваться сайтом, вы принимаете условия ниже."
   >
     <LegalBlock
@@ -99,6 +110,7 @@ const Terms = () => (
       ]}
     />
   </LegalLayout>
-);
+  );
+};
 
 export default Terms;

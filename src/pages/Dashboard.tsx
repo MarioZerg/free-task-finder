@@ -8,6 +8,7 @@ import ExecutorDashboard from '@/components/dashboard/ExecutorDashboard';
 import Icon from '@/components/ui/icon';
 import { payCheck } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
+import useSeo from '@/hooks/use-seo';
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -97,10 +98,19 @@ const DashboardInner = () => {
   );
 };
 
-const Dashboard = () => (
-  <AppStateProvider>
-    <DashboardInner />
-  </AppStateProvider>
-);
+const Dashboard = () => {
+  useSeo({
+    title: 'Личный кабинет — Доделай.ру',
+    description: 'Личный кабинет сервиса Доделай.ру: ваши задания, отклики и подписка.',
+    canonical: 'https://dodelay.ru/dashboard',
+    robots: 'noindex, nofollow',
+  });
+
+  return (
+    <AppStateProvider>
+      <DashboardInner />
+    </AppStateProvider>
+  );
+};
 
 export default Dashboard;
