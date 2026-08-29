@@ -27,6 +27,10 @@ const Hero = () => {
               Разовые заказы от частных лиц. Ярославль, Рыбинск,
               Тутаев, Переславль, Углич и Ростов. Бесплатно, без комиссий и подписок. Вход через MAX.
             </p>
+            <p className="mt-4 flex items-center gap-2 text-sm text-chip">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+              Проект открылся для вас <time dateTime="2026-09-01">1 сентября 2026 года</time>
+            </p>
           </div>
 
           <div className="flex w-full min-w-0 justify-center">
