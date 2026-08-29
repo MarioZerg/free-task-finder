@@ -170,7 +170,7 @@
 
   .wordmark-fill {
     font-size: min(calc(var(--hero-size-head) * 3.35), 15vw);
-    line-height: 0.78;
+    line-height: 0.9;
     letter-spacing: -0.045em;
   }
 
