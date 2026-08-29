@@ -14,6 +14,7 @@ import Contacts from "./pages/Contacts";
 import CityLanding from "./pages/CityLanding";
 import ProfessionCityLanding from "./pages/ProfessionCityLanding";
 import ScrollToTop from "./components/ScrollToTop";
+import TrailingSlashRedirect from "./components/TrailingSlashRedirect";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <ScrollToTop />
+        <TrailingSlashRedirect />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<Dashboard />} />
