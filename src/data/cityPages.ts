@@ -1,3 +1,5 @@
+import { JobItem } from '@/lib/api';
+
 export interface CityPage {
   slug: string;
   name: string;
@@ -110,3 +112,16 @@ export const getCityPage = (slug?: string): CityPage | undefined =>
 
 export const getCityPagesBySlug = (slugs: string[]): CityPage[] =>
   slugs.map((s) => getCityPage(s)).filter((c): c is CityPage => !!c);
+
+export const countOpenJobsInCity = (feed: JobItem[], nameNominative: string): number => {
+  const target = nameNominative.trim().toLowerCase();
+  return feed.filter((job) => job.city.split(',')[0].trim().toLowerCase() === target).length;
+};
+
+export const pluralJobs = (n: number): string => {
+  const d = n % 10;
+  const h = n % 100;
+  if (d === 1 && h !== 11) return 'заказ';
+  if (d >= 2 && d <= 4 && (h < 12 || h > 14)) return 'заказа';
+  return 'заказов';
+};

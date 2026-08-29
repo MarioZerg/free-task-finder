@@ -8,7 +8,7 @@ import Breadcrumbs from '@/components/Breadcrumbs';
 import Icon from '@/components/ui/icon';
 import useSeo from '@/hooks/use-seo';
 import { CATEGORY_META } from '@/data/categories';
-import { getCityPage, getCityPagesBySlug } from '@/data/cityPages';
+import { countOpenJobsInCity, getCityPage, getCityPagesBySlug, pluralJobs } from '@/data/cityPages';
 import NotFound from '@/pages/NotFound';
 
 const TASK_HINTS: Record<string, string> = {
@@ -42,8 +42,9 @@ const useLdJson = (id: string, data: Record<string, unknown>) => {
 
 const CityLandingInner = ({ slug }: { slug: string }) => {
   const city = getCityPage(slug)!;
-  const { openLogin } = useAppState();
+  const { openLogin, feed } = useAppState();
   const nearby = getCityPagesBySlug(city.nearbyCities);
+  const openCount = countOpenJobsInCity(feed, city.nameNominative);
 
   useSeo({
     title: city.title,
@@ -64,6 +65,7 @@ const CityLandingInner = ({ slug }: { slug: string }) => {
     provider: { '@id': 'https://dodelay.ru/#organization' },
     isPartOf: { '@id': 'https://dodelay.ru/#website' },
     url: `https://dodelay.ru/podrabotka/${city.slug}`,
+    ...(openCount > 0 ? { offers: { '@type': 'Offer', availability: 'https://schema.org/InStock', eligibleQuantity: openCount } } : {}),
   });
 
   return (
@@ -86,6 +88,26 @@ const CityLandingInner = ({ slug }: { slug: string }) => {
           <p className="mt-3 flex items-center gap-2 text-sm text-chip">
             <Icon name="Users" size={16} />
             Население {city.population}
+          </p>
+        )}
+
+        {openCount > 0 ? (
+          <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-line bg-tile px-4 py-2 text-sm text-foreground">
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-70" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+            </span>
+            Сейчас в ленте: {openCount} {pluralJobs(openCount)}
+          </p>
+        ) : (
+          <p className="mt-4 flex flex-wrap items-center gap-2 text-sm text-chip">
+            Заказов пока нет — станьте первым, кто разместит задачу
+            <button
+              onClick={() => openLogin('customer')}
+              className="font-medium text-primary underline-offset-4 hover:underline"
+            >
+              Разместить задачу
+            </button>
           </p>
         )}
 
