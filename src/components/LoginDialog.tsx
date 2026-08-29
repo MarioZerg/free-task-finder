@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,11 @@ import { useAppState, Role } from '@/hooks/use-app-state';
 import { CITIES } from '@/data/mock';
 import { toast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
-import { formatPhone, isPhoneValid, phoneDigits } from '@/lib/phone';
+import { isPhoneValid, phoneDigits } from '@/lib/phone';
+import AdminHintPanel from '@/components/login/AdminHintPanel';
+import CodeStep from '@/components/login/CodeStep';
+import StartStep from '@/components/login/StartStep';
+import RegisterStep from '@/components/login/RegisterStep';
 
 const roleCopy: Record<Role, { title: string; hint: string }> = {
   customer: {
@@ -36,9 +40,6 @@ const errorText: Record<string, string> = {
   blocked: 'Аккаунт заблокирован администратором.',
   request_failed: 'Не получилось связаться с сервером. Попробуйте ещё раз.',
 };
-
-const field =
-  'w-full rounded-2xl border border-line bg-tile px-4 py-3.5 text-base outline-none transition-colors placeholder:text-chip focus:border-primary/60';
 
 const CODE_TTL = 15 * 60;
 
@@ -269,33 +270,13 @@ const LoginDialog = () => {
             {adminHint
               ? 'Доступна панель управления сервисом.'
               : step === 'register'
-                ? 'Аккаунта пока нет — заполните короткую анкету.'
+                ? 'Аккаунта пока нет — заполните анкету, это займёт минуту.'
                 : roleCopy[loginRole].hint}
           </DialogDescription>
         </DialogHeader>
 
         {adminHint ? (
-          <div className="space-y-3">
-            <button
-              onClick={() => {
-                setLoginOpen(false);
-                navigate('/admin');
-              }}
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02]"
-            >
-              <Icon name="ShieldCheck" size={18} />
-              Перейти в админку
-            </button>
-            <button
-              onClick={() => {
-                setLoginOpen(false);
-                navigate('/dashboard');
-              }}
-              className="w-full rounded-full border border-line py-4 text-base font-medium transition-colors hover:border-primary/50"
-            >
-              В обычный кабинет
-            </button>
-          </div>
+          <AdminHintPanel setLoginOpen={setLoginOpen} />
         ) : (
           <>
             <div className="flex gap-2 rounded-full border border-line p-1">
@@ -315,149 +296,39 @@ const LoginDialog = () => {
             </div>
 
             {step === 'code' && (
-              <div className="space-y-4">
-                <div className="rounded-3xl border border-line bg-tile p-6 text-center">
-                  <p className="text-xs uppercase tracking-[0.18em] text-chip">Ваш код входа</p>
-                  <p
-                    ref={codeRef}
-                    onClick={copyCode}
-                    className="mt-3 cursor-pointer select-all break-all font-head text-3xl font-semibold tracking-[0.22em] text-primary sm:text-4xl sm:tracking-[0.3em]"
-                  >
-                    {code}
-                  </p>
-                  <p className="mt-3 text-xs text-chip">
-                    {left > 0 ? `Код действует ещё ${mmss}` : 'Срок кода истёк'}
-                  </p>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Отправьте боту этот код — вход подтвердится автоматически.
-                </p>
-                <a
-                  href={botLink}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02]"
-                >
-                  <Icon name="ExternalLink" size={18} />
-                  Открыть бота в MAX
-                </a>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => copyCode()}
-                    className="min-h-[44px] flex-1 rounded-full border border-line px-3 py-3 text-sm transition-colors hover:border-primary/50"
-                  >
-                    {copied ? 'Код скопирован' : 'Скопировать код'}
-                  </button>
-                  <button
-                    onClick={requestCode}
-                    disabled={busy}
-                    className="min-h-[44px] flex-1 rounded-full border border-line px-3 py-3 text-sm transition-colors hover:border-primary/50 disabled:opacity-60"
-                  >
-                    Получить новый код
-                  </button>
-                </div>
-                <p className="flex items-center justify-center gap-2 text-xs text-chip">
-                  <Icon name="Loader" size={14} />
-                  Ждём подтверждения в MAX…
-                </p>
-              </div>
+              <CodeStep
+                code={code}
+                codeRef={codeRef}
+                copyCode={copyCode}
+                left={left}
+                mmss={mmss}
+                botLink={botLink}
+                copied={copied}
+                requestCode={requestCode}
+                busy={busy}
+              />
             )}
 
             {step === 'start' && !maxEnabled && (
-              <div>
-                <label className="mb-2 block text-sm text-muted-foreground" htmlFor="login-max">
-                  Ваш профиль MAX
-                </label>
-                <input
-                  id="login-max"
-                  value={maxId}
-                  onChange={(e) => setMaxId(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && legacyLogin()}
-                  placeholder="@ivan_yar"
-                  autoComplete="username"
-                  className={field}
-                />
-                <p className="mt-2 text-xs text-chip">
-                  Упрощённый вход: подтверждение через MAX подключается.
-                </p>
-              </div>
+              <StartStep maxId={maxId} setMaxId={setMaxId} legacyLogin={legacyLogin} />
             )}
 
             {step === 'register' && (
-              <div className="space-y-3">
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Как вас зовут"
-                  className={field}
-                />
-                <input
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  placeholder="Город или район области"
-                  list="cities-list"
-                  className={field}
-                />
-                <datalist id="cities-list">
-                  {CITIES.map((c) => (
-                    <option key={c} value={c} />
-                  ))}
-                </datalist>
-                <div>
-                  <input
-                    value={phone}
-                    onFocus={() => !phone && setPhone('+7 (')}
-                    onChange={(e) => setPhone(formatPhone(e.target.value))}
-                    placeholder="+7 (900) 000-00-00"
-                    inputMode="tel"
-                    maxLength={18}
-                    className={field}
-                  />
-                  {phone && !isPhoneValid(phone) && (
-                    <p className="mt-1 text-xs text-destructive">
-                      Номер из 10 цифр после +7
-                    </p>
-                  )}
-                </div>
-                {loginRole === 'executor' && (
-                  <>
-                    <input
-                      value={skill}
-                      onChange={(e) => setSkill(e.target.value)}
-                      placeholder="Чем занимаетесь: грузчик, сборка мебели…"
-                      className={field}
-                    />
-                    <textarea
-                      value={about}
-                      onChange={(e) => setAbout(e.target.value)}
-                      placeholder="О себе: опыт, инструмент, когда свободны"
-                      className={`${field} min-h-[90px] resize-none`}
-                    />
-                  </>
-                )}
-
-                <label className="flex cursor-pointer gap-3 rounded-2xl border border-line bg-tile p-4 text-sm text-muted-foreground">
-                  <input
-                    type="checkbox"
-                    checked={terms}
-                    onChange={(e) => setTerms(e.target.checked)}
-                    className="mt-0.5 h-5 w-5 shrink-0 accent-[hsl(var(--primary))]"
-                  />
-                  <span>
-                    Я принимаю{' '}
-                    <Link to="/terms" className="underline underline-offset-2 hover:text-foreground">
-                      условия оферты
-                    </Link>{' '}
-                    и{' '}
-                    <Link
-                      to="/privacy"
-                      className="underline underline-offset-2 hover:text-foreground"
-                    >
-                      политику конфиденциальности
-                    </Link>
-                  </span>
-                </label>
-              </div>
+              <RegisterStep
+                name={name}
+                setName={setName}
+                city={city}
+                setCity={setCity}
+                phone={phone}
+                setPhone={setPhone}
+                skill={skill}
+                setSkill={setSkill}
+                about={about}
+                setAbout={setAbout}
+                terms={terms}
+                setTerms={setTerms}
+                loginRole={loginRole}
+              />
             )}
 
             {error && <p className="text-sm text-destructive">{error}</p>}
