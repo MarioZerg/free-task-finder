@@ -9,6 +9,7 @@ import useSeo from '@/hooks/use-seo';
 import useLdJson from '@/hooks/use-ld-json';
 import { CATEGORY_META } from '@/data/categories';
 import { countOpenJobsInCity, getCityPage, getCityPagesBySlug, pluralJobs } from '@/data/cityPages';
+import { FEATURED_PROFESSIONS, getProfessionCityPage } from '@/data/professionCityPages';
 import NotFound from '@/pages/NotFound';
 
 const TASK_HINTS: Record<string, string> = {
@@ -200,6 +201,39 @@ const CityLandingInner = ({ slug }: { slug: string }) => {
             ))}
           </div>
         </section>
+
+        {FEATURED_PROFESSIONS.some((p) => getProfessionCityPage(p.slug, city.slug)) && (
+          <section className="mt-16">
+            <p className="text-sm uppercase tracking-[0.2em] text-chip">Специалисты</p>
+            <h2 className="mt-3 font-head text-2xl font-medium tracking-tight md:text-3xl">
+              Ищете специалиста конкретной профессии?
+            </h2>
+            <p className="mt-3 max-w-[620px] text-sm text-muted-foreground">
+              Отдельная страница по каждой профессии — с анкетами исполнителей и ориентиром по
+              ценам в {city.name}.
+            </p>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+              {FEATURED_PROFESSIONS.filter((p) => getProfessionCityPage(p.slug, city.slug)).map(
+                (p) => (
+                  <Link
+                    key={p.slug}
+                    to={`/podrabotka/${city.slug}/${p.slug}`}
+                    className="group flex flex-col items-start gap-3 rounded-3xl border border-line bg-tile p-5 transition-colors hover:border-primary/50"
+                  >
+                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+                      <Icon name={p.icon} size={20} />
+                    </span>
+                    <span className="font-head text-sm font-medium">{p.label}</span>
+                    <span className="flex items-center gap-1 text-xs text-chip transition-transform group-hover:translate-x-1">
+                      Подробнее
+                      <Icon name="ArrowRight" size={12} />
+                    </span>
+                  </Link>
+                ),
+              )}
+            </div>
+          </section>
+        )}
 
         <section className="mt-16">
           <p className="text-sm uppercase tracking-[0.2em] text-chip">Цены</p>

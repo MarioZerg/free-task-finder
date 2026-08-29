@@ -12,6 +12,7 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Contacts from "./pages/Contacts";
 import CityLanding from "./pages/CityLanding";
+import ProfessionCityLanding from "./pages/ProfessionCityLanding";
 import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/contacts" element={<Contacts />} />
+          <Route path="/podrabotka/:citySlug/:professionSlug" element={<ProfessionCityLanding />} />
           <Route path="/podrabotka/:slug" element={<CityLanding />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
