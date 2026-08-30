@@ -10,7 +10,7 @@ import DashTabs, { hoursLeft } from '@/components/dashboard/DashTabs';
 import CustomerJobCard from '@/components/dashboard/CustomerJobCard';
 
 const CustomerDashboard = () => {
-  const { myJobs, limits } = useAppState();
+  const { myJobs, limits, unread } = useAppState();
   const [createOpen, setCreateOpen] = useState(false);
   const [tab, setTab] = useState('feed');
   const [profileId, setProfileId] = useState<number | null>(null);
@@ -71,7 +71,7 @@ const CustomerDashboard = () => {
             { id: 'feed', label: 'Лента заказов' },
             { id: 'jobs', label: `Мои задания · ${active.length}` },
             { id: 'done', label: `Завершённые · ${finished.length}` },
-            { id: 'people', label: 'Люди' },
+            { id: 'people', label: 'Люди', badge: unread.total },
           ]}
         />
       </div>

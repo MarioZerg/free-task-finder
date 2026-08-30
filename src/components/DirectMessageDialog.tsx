@@ -15,11 +15,11 @@ const time = (iso: string) =>
   new Date(iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 
 interface Props {
-  customer: { id: number; name: string; avatar?: string | null } | null;
+  peer: { id: number; name: string; avatar?: string | null } | null;
   onOpenChange: (v: boolean) => void;
 }
 
-const DirectMessageDialog = ({ customer, onOpenChange }: Props) => {
+const DirectMessageDialog = ({ peer, onOpenChange }: Props) => {
   const [messages, setMessages] = useState<DirectMessage[]>([]);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -27,9 +27,9 @@ const DirectMessageDialog = ({ customer, onOpenChange }: Props) => {
   const boxRef = useRef<HTMLDivElement>(null);
 
   const load = async () => {
-    if (!customer) return;
+    if (!peer) return;
     try {
-      const r = await dmThread(customer.id);
+      const r = await dmThread(peer.id);
       setMessages(r.messages || []);
     } catch {
       /* тихо */
@@ -37,7 +37,7 @@ const DirectMessageDialog = ({ customer, onOpenChange }: Props) => {
   };
 
   useEffect(() => {
-    if (!customer) return;
+    if (!peer) return;
     setLoading(true);
     load().finally(() => setLoading(false));
     const id = window.setInterval(() => {
@@ -45,7 +45,7 @@ const DirectMessageDialog = ({ customer, onOpenChange }: Props) => {
     }, 8000);
     return () => window.clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [customer?.id]);
+  }, [peer?.id]);
 
   useEffect(() => {
     boxRef.current?.scrollTo({ top: boxRef.current.scrollHeight });
@@ -53,10 +53,10 @@ const DirectMessageDialog = ({ customer, onOpenChange }: Props) => {
 
   const send = async () => {
     const value = text.trim();
-    if (!value || !customer) return;
+    if (!value || !peer) return;
     setBusy(true);
     try {
-      await dmSend(customer.id, value);
+      await dmSend(peer.id, value);
       setText('');
       await load();
     } catch {
@@ -67,15 +67,15 @@ const DirectMessageDialog = ({ customer, onOpenChange }: Props) => {
   };
 
   return (
-    <Dialog open={!!customer} onOpenChange={onOpenChange}>
+    <Dialog open={!!peer} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[80vh] flex-col border-line bg-surface text-foreground sm:max-w-[460px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2.5 font-head text-xl font-medium tracking-tight">
-            <Avatar src={customer?.avatar} name={customer?.name || ''} size={30} />
-            {customer?.name}
+            <Avatar src={peer?.avatar} name={peer?.name || ''} size={30} />
+            {peer?.name}
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Личные сообщения — доступно по подписке PRO.
+            Личная переписка вне заказа.
           </DialogDescription>
         </DialogHeader>
 

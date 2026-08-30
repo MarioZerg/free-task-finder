@@ -401,7 +401,20 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     'customerAvatar': r['customer_avatar'],
                     'customerRating': float(r['customer_rating'] or 0),
                 })
-        return _resp(200, {'jobs': jobs, 'limits': limits, 'invites': invites})
+        cur.execute(
+            f"""SELECT from_id, COUNT(*) AS c FROM {SCHEMA}.direct_messages
+                WHERE to_id = {me['id']} AND read_at IS NULL
+                GROUP BY from_id"""
+        )
+        unread_rows = cur.fetchall()
+        unread = {
+            'total': sum(r['c'] for r in unread_rows),
+            'byUser': {str(r['from_id']): r['c'] for r in unread_rows},
+        }
+        return _resp(
+            200,
+            {'jobs': jobs, 'limits': limits, 'invites': invites, 'unread': unread},
+        )
 
     if method == 'GET' and action == 'stats':
         cur.execute(
@@ -675,16 +688,24 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         return _resp(200, {'id': cur.fetchone()['id']})
 
     if method == 'POST' and action == 'dm_send':
-        if not _is_pro(me) or me['role'] != 'executor':
-            return _resp(403, {'error': 'pro_executor_required'})
         to_id = _int(body.get('toId'))
         text = str(body.get('text', '')).strip()[:1000]
         if not to_id or not text:
             return _resp(400, {'error': 'bad_message'})
         cur.execute(f"SELECT role, max_user_id, name FROM {SCHEMA}.users WHERE id = {to_id}")
         target = cur.fetchone()
-        if not target or target['role'] != 'customer':
-            return _resp(404, {'error': 'customer_not_found'})
+        if not target:
+            return _resp(404, {'error': 'user_not_found'})
+        if me['role'] == 'executor':
+            if not _is_pro(me) or target['role'] != 'customer':
+                return _resp(403, {'error': 'pro_executor_required'})
+        else:
+            cur.execute(
+                f"""SELECT 1 FROM {SCHEMA}.direct_messages
+                    WHERE from_id = {to_id} AND to_id = {me['id']} LIMIT 1"""
+            )
+            if not cur.fetchone():
+                return _resp(403, {'error': 'no_thread'})
         cur.execute(
             f"""INSERT INTO {SCHEMA}.direct_messages (from_id, to_id, text)
                 VALUES ({me['id']}, {to_id}, '{_esc(text)}')"""
@@ -788,6 +809,36 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 WHERE id = {invite_id} AND executor_id = {me['id']} AND status = 'pending'"""
         )
         return _resp(200, {'ok': True})
+
+    if method == 'GET' and action == 'dm_list':
+        cur.execute(
+            f"""SELECT u.id, u.name, u.avatar, u.role, u.last_seen,
+                       MAX(dm.created_at) AS last_at,
+                       COUNT(*) FILTER (
+                           WHERE dm.to_id = {me['id']} AND dm.read_at IS NULL
+                       ) AS unread,
+                       (ARRAY_AGG(dm.text ORDER BY dm.created_at DESC))[1] AS last_text
+                FROM {SCHEMA}.direct_messages dm
+                JOIN {SCHEMA}.users u
+                  ON u.id = CASE WHEN dm.from_id = {me['id']} THEN dm.to_id ELSE dm.from_id END
+                WHERE dm.from_id = {me['id']} OR dm.to_id = {me['id']}
+                GROUP BY u.id, u.name, u.avatar, u.role, u.last_seen
+                ORDER BY last_at DESC LIMIT 50"""
+        )
+        threads = [
+            {
+                'userId': r['id'],
+                'name': r['name'],
+                'avatar': r['avatar'],
+                'role': r['role'],
+                'online': _online(r['last_seen']),
+                'lastAt': r['last_at'],
+                'lastText': r['last_text'],
+                'unread': r['unread'],
+            }
+            for r in cur.fetchall()
+        ]
+        return _resp(200, {'threads': threads})
 
     if method == 'GET' and action == 'dm_thread':
         if not me:

@@ -203,10 +203,29 @@ export interface DirectMessage {
   mine: boolean;
 }
 
+export interface DirectThread {
+  userId: number;
+  name: string;
+  avatar?: string | null;
+  role: 'customer' | 'executor';
+  online?: boolean;
+  lastAt: string;
+  lastText: string;
+  unread: number;
+}
+
+export interface UnreadInfo {
+  total: number;
+  byUser: Record<string, number>;
+}
+
 export const dmThread = (userId: number): Promise<{ messages: DirectMessage[] }> =>
   api.jobs('dm_thread', { params: { userId: String(userId) } }) as Promise<{
     messages: DirectMessage[];
   }>;
+
+export const dmList = (): Promise<{ threads: DirectThread[] }> =>
+  api.jobs('dm_list') as Promise<{ threads: DirectThread[] }>;
 
 export const dmSend = (toId: number, text: string) =>
   api.jobs('dm_send', { method: 'POST', body: { toId, text } });

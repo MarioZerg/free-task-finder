@@ -6,7 +6,15 @@ import InviteDialog from '@/components/InviteDialog';
 import DirectMessageDialog from '@/components/DirectMessageDialog';
 import SubscriptionDialog from '@/components/SubscriptionDialog';
 import { useAppState } from '@/hooks/use-app-state';
-import { listProfessions, people, PeopleCounts, Profession, User } from '@/lib/api';
+import {
+  dmList,
+  DirectThread,
+  listProfessions,
+  people,
+  PeopleCounts,
+  Profession,
+  User,
+} from '@/lib/api';
 
 const lastSeenText = (u: User) => {
   if (u.online) return 'в сети';
@@ -26,17 +34,23 @@ const PersonCard = memo(
     onOpen,
     onInvite,
     onMessage,
+    unread = 0,
   }: {
     user: User;
     onOpen: (id: number) => void;
     onInvite?: (u: User) => void;
     onMessage?: (u: User) => void;
+    unread?: number;
   }) => {
     const list = user.professions || [];
     const shown = list.slice(0, 3);
     const rest = list.length - shown.length;
     return (
-      <div className="rounded-3xl border border-line bg-surface p-4 transition-colors hover:border-primary/50">
+      <div
+        className={`rounded-3xl border bg-surface p-4 transition-colors hover:border-primary/50 ${
+          unread > 0 ? 'border-primary/50' : 'border-line'
+        }`}
+      >
         <button
           onClick={() => onOpen(user.id)}
           className="flex min-h-[44px] w-full items-center gap-3 text-left"
@@ -47,6 +61,11 @@ const PersonCard = memo(
               {user.name}
               {user.verified && (
                 <Icon name="BadgeCheck" size={15} className="shrink-0 text-primary" />
+              )}
+              {unread > 0 && (
+                <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-semibold leading-none text-destructive-foreground">
+                  {unread > 99 ? '99+' : unread}
+                </span>
               )}
             </p>
             <p className={`mt-0.5 text-xs ${user.online ? 'text-emerald-600' : 'text-chip'}`}>
@@ -107,7 +126,7 @@ PersonCard.displayName = 'PersonCard';
 const PER_PAGE = 15;
 
 const PeopleList = () => {
-  const { user } = useAppState();
+  const { user, unread, refresh } = useAppState();
   const [tab, setTab] = useState<'executor' | 'customer'>('executor');
   const [invite, setInvite] = useState<User | null>(null);
   const [message, setMessage] = useState<User | null>(null);
@@ -120,6 +139,7 @@ const PeopleList = () => {
   const [page, setPage] = useState(1);
   const [professions, setProfessions] = useState<Profession[]>([]);
   const [picked, setPicked] = useState<string[]>([]);
+  const [threads, setThreads] = useState<DirectThread[]>([]);
 
   useEffect(() => {
     let alive = true;
@@ -160,6 +180,22 @@ const PeopleList = () => {
 
   useEffect(() => setPage(1), [tab, key]);
 
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      dmList()
+        .then((r) => alive && setThreads(r.threads || []))
+        .catch(() => undefined);
+    load();
+    const id = window.setInterval(() => {
+      if (document.visibilityState === 'visible') load();
+    }, 30000);
+    return () => {
+      alive = false;
+      window.clearInterval(id);
+    };
+  }, [message, unread.total]);
+
   const toggle = useCallback((slug: string) => {
     setPicked((prev) =>
       prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug],
@@ -173,8 +209,13 @@ const PeopleList = () => {
   const isPro = !!user?.isPro;
   const canInvite = user?.role === 'customer' && tab === 'executor' && isPro;
   const canMessage = user?.role === 'executor' && tab === 'customer' && isPro;
+  const unreadOf = (id: number) => unread.byUser[String(id)] || 0;
   const handleInvite = (u: User) => setInvite(u);
   const handleMessage = (u: User) => setMessage(u);
+  const messageFor = (u: User) => {
+    if (canMessage) return handleMessage;
+    return unreadOf(u.id) > 0 ? handleMessage : undefined;
+  };
 
   return (
     <section>
@@ -251,6 +292,42 @@ const PeopleList = () => {
         </div>
       )}
 
+      {threads.length > 0 && (
+        <div className="mt-5">
+          <p className="flex items-center gap-2 text-sm uppercase tracking-[0.16em] text-chip">
+            <Icon name="MessagesSquare" size={15} />
+            Диалоги
+          </p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {threads.map((t) => (
+              <button
+                key={t.userId}
+                onClick={() =>
+                  setMessage({ id: t.userId, name: t.name, avatar: t.avatar } as User)
+                }
+                className={`flex min-h-[44px] items-center gap-3 rounded-2xl border bg-surface p-3 text-left transition-colors hover:border-primary/50 ${
+                  t.unread > 0 ? 'border-primary/50' : 'border-line'
+                }`}
+              >
+                <Avatar src={t.avatar} name={t.name} size={38} online={t.online} />
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-1.5">
+                    <span className="truncate text-sm font-medium">{t.name}</span>
+                    {t.unread > 0 && (
+                      <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-semibold leading-none text-destructive-foreground">
+                        {t.unread > 99 ? '99+' : t.unread}
+                      </span>
+                    )}
+                  </span>
+                  <span className="mt-0.5 block truncate text-xs text-chip">{t.lastText}</span>
+                </span>
+                <Icon name="ChevronRight" size={16} className="shrink-0 text-chip" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <p className="mt-6 text-sm text-chip">Загружаем…</p>
       ) : list.length === 0 ? (
@@ -281,7 +358,8 @@ const PeopleList = () => {
                 user={u}
                 onOpen={setProfileId}
                 onInvite={canInvite ? handleInvite : undefined}
-                onMessage={canMessage ? handleMessage : undefined}
+                onMessage={messageFor(u)}
+                unread={unreadOf(u.id)}
               />
             ))}
           </div>
@@ -334,7 +412,13 @@ const PeopleList = () => {
 
       <ProfileDialog userId={profileId} onOpenChange={() => setProfileId(null)} />
       <InviteDialog executor={invite} onOpenChange={() => setInvite(null)} />
-      <DirectMessageDialog customer={message} onOpenChange={() => setMessage(null)} />
+      <DirectMessageDialog
+        peer={message}
+        onOpenChange={() => {
+          setMessage(null);
+          refresh();
+        }}
+      />
       <SubscriptionDialog
         open={proOpen}
         onOpenChange={setProOpen}

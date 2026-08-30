@@ -16,6 +16,7 @@ import {
   JobItem,
   payStart,
   setToken,
+  UnreadInfo,
   User,
 } from '@/lib/api';
 
@@ -101,6 +102,7 @@ interface AppState {
   invites: JobInvite[];
   acceptInvite: (inviteId: number) => Promise<void>;
   declineInvite: (inviteId: number) => Promise<void>;
+  unread: UnreadInfo;
 }
 
 const Ctx = createContext<AppState | null>(null);
@@ -126,6 +128,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [loginRole, setLoginRole] = useState<Role>('customer');
   const [maxEnabled, setMaxEnabled] = useState(false);
   const [invites, setInvites] = useState<JobInvite[]>([]);
+  const [unread, setUnread] = useState<UnreadInfo>({ total: 0, byUser: {} });
 
   const loadPublic = useCallback(async () => {
     const f = await api.jobs('feed').catch(() => ({ jobs: [] }));
@@ -142,12 +145,14 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       setMyJobs([]);
       setLimits(emptyLimits);
       setInvites([]);
+      setUnread({ total: 0, byUser: {} });
       return;
     }
     const r = await api.jobs('mine').catch(() => ({ jobs: [], limits: emptyLimits, invites: [] }));
     setMyJobs(r.jobs || []);
     setLimits({ ...emptyLimits, ...(r.limits || {}) });
     setInvites(r.invites || []);
+    setUnread(r.unread || { total: 0, byUser: {} });
   }, []);
 
   const refreshing = useRef(false);
@@ -303,6 +308,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       invites,
       acceptInvite: (inviteId) => act('invite_accept', { inviteId }),
       declineInvite: (inviteId) => act('invite_decline', { inviteId }),
+      unread,
     }),
     [
       user,
@@ -311,6 +317,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       maxEnabled,
       feed,
       invites,
+      unread,
       myJobs,
       stats,
       loginOpen,

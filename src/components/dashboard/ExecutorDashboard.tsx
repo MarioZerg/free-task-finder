@@ -8,7 +8,7 @@ import InviteCard from '@/components/InviteCard';
 import DashTabs from '@/components/dashboard/DashTabs';
 
 const ExecutorDashboard = () => {
-  const { myJobs, feed, limits, invites } = useAppState();
+  const { myJobs, feed, limits, invites, unread } = useAppState();
   const [tab, setTab] = useState('feed');
 
   const working = myJobs.filter(
@@ -66,7 +66,7 @@ const ExecutorDashboard = () => {
           items={[
             { id: 'feed', label: 'Лента заказов' },
             { id: 'mine', label: `Мои отклики · ${working.length + waiting.length}` },
-            { id: 'people', label: 'Люди' },
+            { id: 'people', label: 'Люди', badge: unread.total },
           ]}
         />
       </div>
