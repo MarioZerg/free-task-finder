@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Icon from '@/components/ui/icon';
 import JobFeedCard from '@/components/JobFeedCard';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useAppState } from '@/hooks/use-app-state';
 import { CITY_LIST } from '@/data/mock';
 
@@ -18,6 +19,7 @@ const LiveFeed = ({ readOnly }: { readOnly?: boolean }) => {
   const [city, setCity] = useState(
     () => localStorage.getItem(CITY_KEY) || (user ? cityOf(user.city) : '') || '',
   );
+  const [cityOpen, setCityOpen] = useState(false);
 
   const cities = useMemo(() => {
     const map = new Map<string, number>();
@@ -92,31 +94,58 @@ const LiveFeed = ({ readOnly }: { readOnly?: boolean }) => {
       </div>
 
       {cities.length > 0 && (
-        <div className="scrollbar-none -mx-5 mt-5 flex gap-2 overflow-x-auto px-5 pb-1 md:mx-0 md:flex-wrap md:px-0">
-          <button
-            onClick={() => pick('')}
-            className={`flex min-h-[44px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-4 py-2.5 text-sm transition-colors ${
-              city === ''
-                ? 'border-primary bg-primary text-primary-foreground'
-                : 'border-line bg-surface text-muted-foreground hover:border-primary/50'
-            }`}
-          >
-            <Icon name="Globe" size={15} />
-            Вся область · {feed.length}
-          </button>
-          {cities.map(([name, count]) => (
-            <button
-              key={name}
-              onClick={() => pick(name)}
-              className={`min-h-[44px] shrink-0 whitespace-nowrap rounded-full border px-4 py-2.5 text-sm transition-colors ${
-                city === name
-                  ? 'border-primary bg-primary text-primary-foreground'
-                  : 'border-line bg-surface text-muted-foreground hover:border-primary/50'
-              }`}
+        <div className="mt-5">
+          <Popover open={cityOpen} onOpenChange={setCityOpen}>
+            <PopoverTrigger asChild>
+              <button className="flex min-h-[44px] w-full items-center gap-2 rounded-full border border-line bg-surface px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:border-primary/50 sm:w-auto sm:min-w-[260px]">
+                <Icon name="MapPin" size={15} className="shrink-0 text-primary" />
+                <span className="min-w-0 flex-1 truncate text-left">
+                  {city || 'Вся область'} ·{' '}
+                  {city ? cities.find(([n]) => n === city)?.[1] || 0 : feed.length}
+                </span>
+                <Icon name="ChevronDown" size={16} className="shrink-0" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="start"
+              className="max-h-[320px] w-[min(320px,calc(100vw-2.5rem))] overflow-y-auto border-line bg-surface p-2"
             >
-              {name} · {count}
-            </button>
-          ))}
+              <button
+                onClick={() => {
+                  pick('');
+                  setCityOpen(false);
+                }}
+                className={`flex min-h-[42px] w-full items-center gap-2.5 rounded-xl px-3 text-left text-sm transition-colors ${
+                  city === ''
+                    ? 'bg-primary/10 font-medium text-primary'
+                    : 'text-muted-foreground hover:bg-tile'
+                }`}
+              >
+                <Icon name="Globe" size={15} className="shrink-0" />
+                <span className="min-w-0 flex-1 truncate">Вся область</span>
+                <span className="shrink-0 text-xs text-chip">{feed.length}</span>
+              </button>
+              <div className="my-1 h-px bg-line" />
+              {cities.map(([name, count]) => (
+                <button
+                  key={name}
+                  onClick={() => {
+                    pick(name);
+                    setCityOpen(false);
+                  }}
+                  className={`flex min-h-[42px] w-full items-center gap-2.5 rounded-xl px-3 text-left text-sm transition-colors ${
+                    city === name
+                      ? 'bg-primary/10 font-medium text-primary'
+                      : 'text-muted-foreground hover:bg-tile'
+                  }`}
+                >
+                  <span className="min-w-0 flex-1 truncate">{name}</span>
+                  <span className="shrink-0 text-xs text-chip">{count}</span>
+                  {city === name && <Icon name="Check" size={15} className="shrink-0" />}
+                </button>
+              ))}
+            </PopoverContent>
+          </Popover>
         </div>
       )}
 

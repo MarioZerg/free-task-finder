@@ -224,8 +224,16 @@ export const dmThread = (userId: number): Promise<{ messages: DirectMessage[] }>
     messages: DirectMessage[];
   }>;
 
-export const dmList = (): Promise<{ threads: DirectThread[] }> =>
-  api.jobs('dm_list') as Promise<{ threads: DirectThread[] }>;
+export const dmList = (
+  archived = false,
+): Promise<{ threads: DirectThread[]; archivedCount: number }> =>
+  api.jobs('dm_list', { params: archived ? { archived: '1' } : {} }) as Promise<{
+    threads: DirectThread[];
+    archivedCount: number;
+  }>;
+
+export const dmArchive = (peerId: number, restore = false) =>
+  api.jobs('dm_archive', { method: 'POST', body: { peerId, restore } });
 
 export const dmSend = (toId: number, text: string) =>
   api.jobs('dm_send', { method: 'POST', body: { toId, text } });

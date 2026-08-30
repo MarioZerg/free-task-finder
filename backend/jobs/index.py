@@ -786,6 +786,11 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             f"""INSERT INTO {SCHEMA}.direct_messages (from_id, to_id, text)
                 VALUES ({me['id']}, {to_id}, '{_esc(text)}')"""
         )
+        cur.execute(
+            f"""DELETE FROM {SCHEMA}.dm_archive
+                WHERE (user_id = {to_id} AND peer_id = {me['id']})
+                   OR (user_id = {me['id']} AND peer_id = {to_id})"""
+        )
         _notify(
             target['max_user_id'],
             f"{me['name']} написал вам в Доделай.ру: {text[:120]}",
@@ -887,6 +892,8 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         return _resp(200, {'ok': True})
 
     if method == 'GET' and action == 'dm_list':
+        want_archived = str(params.get('archived', '')) in ('1', 'true')
+        arch_cond = 'EXISTS' if want_archived else 'NOT EXISTS'
         cur.execute(
             f"""SELECT u.id, u.name, u.avatar, u.role, u.last_seen,
                        MAX(dm.created_at) AS last_at,
@@ -897,7 +904,11 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 FROM {SCHEMA}.direct_messages dm
                 JOIN {SCHEMA}.users u
                   ON u.id = CASE WHEN dm.from_id = {me['id']} THEN dm.to_id ELSE dm.from_id END
-                WHERE dm.from_id = {me['id']} OR dm.to_id = {me['id']}
+                WHERE (dm.from_id = {me['id']} OR dm.to_id = {me['id']})
+                  AND {arch_cond} (
+                      SELECT 1 FROM {SCHEMA}.dm_archive a
+                      WHERE a.user_id = {me['id']} AND a.peer_id = u.id
+                  )
                 GROUP BY u.id, u.name, u.avatar, u.role, u.last_seen
                 ORDER BY last_at DESC LIMIT 50"""
         )
@@ -914,7 +925,33 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             }
             for r in cur.fetchall()
         ]
-        return _resp(200, {'threads': threads})
+        cur.execute(
+            f"""SELECT COUNT(*) AS c FROM {SCHEMA}.dm_archive a
+                WHERE a.user_id = {me['id']}
+                  AND EXISTS (
+                      SELECT 1 FROM {SCHEMA}.direct_messages dm
+                      WHERE (dm.from_id = {me['id']} AND dm.to_id = a.peer_id)
+                         OR (dm.from_id = a.peer_id AND dm.to_id = {me['id']})
+                  )"""
+        )
+        return _resp(200, {'threads': threads, 'archivedCount': cur.fetchone()['c']})
+
+    if method == 'POST' and action == 'dm_archive':
+        peer_id = _int(body.get('peerId'))
+        if not peer_id:
+            return _resp(400, {'error': 'no_user'})
+        if body.get('restore'):
+            cur.execute(
+                f"""DELETE FROM {SCHEMA}.dm_archive
+                    WHERE user_id = {me['id']} AND peer_id = {peer_id}"""
+            )
+            return _resp(200, {'ok': True, 'archived': False})
+        cur.execute(
+            f"""INSERT INTO {SCHEMA}.dm_archive (user_id, peer_id)
+                VALUES ({me['id']}, {peer_id})
+                ON CONFLICT (user_id, peer_id) DO NOTHING"""
+        )
+        return _resp(200, {'ok': True, 'archived': True})
 
     if method == 'GET' and action == 'dm_thread':
         if not me:

@@ -233,14 +233,7 @@ const JobFeedCard = ({ job, responded, canRespond, readOnly }: Props) => {
               <Icon name="CheckCheck" size={15} className="text-primary" />
               Отклик отправлен
             </span>
-          ) : readOnly ? (
-            <span
-              title="Просмотр глазами роли"
-              className="flex min-h-[44px] w-full items-center justify-center rounded-full border border-line px-4 py-2 text-sm text-chip sm:min-h-0 sm:w-auto"
-            >
-              Готов взяться
-            </span>
-          ) : canRespond ? (
+          ) : readOnly ? null : canRespond ? (
             <button
               onClick={(e) => {
                 stop(e);
