@@ -57,7 +57,15 @@ const Contacts = ({
   </div>
 );
 
-const ActiveJobCard = ({ job }: { job: JobItem }) => {
+const ActiveJobCard = ({
+  job,
+  defaultOpen = true,
+  collapsible = false,
+}: {
+  job: JobItem;
+  defaultOpen?: boolean;
+  collapsible?: boolean;
+}) => {
   const { shareContact, complete, cancel, review } = useAppState();
   const [, setTick] = useState(0);
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -66,6 +74,8 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
   const [rating, setRating] = useState(5);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
+  const expanded = collapsible ? open : true;
 
   useEffect(() => {
     const id = window.setInterval(() => setTick((v) => v + 1), 60000);
@@ -109,7 +119,12 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
 
   return (
     <div className="rounded-3xl border border-primary/40 bg-tile p-5 md:p-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div
+        onClick={() => collapsible && setOpen((v) => !v)}
+        className={`flex flex-wrap items-start justify-between gap-3 ${
+          collapsible ? 'cursor-pointer' : ''
+        }`}
+      >
         <div className="min-w-0">
           <p className="text-xs uppercase tracking-[0.16em] text-chip">
             {job.status === 'done' ? 'Заказ выполнен' : 'Заказ в работе'}
@@ -126,12 +141,46 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
             <OnlineBadge online={partnerOnline} />
           </p>
         </div>
-        <span className="whitespace-nowrap font-head text-xl font-medium text-primary">
-          {money(job.finalPrice || job.price)}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="whitespace-nowrap font-head text-xl font-medium text-primary">
+            {money(job.finalPrice || job.price)}
+          </span>
+          {collapsible && (
+            <Icon
+              name="ChevronDown"
+              size={20}
+              className={`shrink-0 text-chip transition-transform ${expanded ? 'rotate-180' : ''}`}
+            />
+          )}
+        </div>
       </div>
 
-      {job.status !== 'done' &&
+      {collapsible && !expanded && (
+        <button
+          onClick={() => setOpen(true)}
+          className="mt-3 flex w-full flex-wrap items-center gap-2 text-left text-sm text-chip"
+        >
+          {job.status !== 'done' && (
+            <span
+              className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs ${
+                expired || !left
+                  ? 'border-destructive/50 bg-destructive/10 text-foreground'
+                  : 'border-line bg-surface text-muted-foreground'
+              }`}
+            >
+              <Icon name={expired || !left ? 'AlarmClock' : 'Timer'} size={13} />
+              {expired || !left ? 'Время вышло' : left}
+            </span>
+          )}
+          <span className="flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-xs text-muted-foreground">
+            <Icon name={iShared ? 'CheckCheck' : 'Share2'} size={13} />
+            {iShared ? 'Контакты открыты' : 'Контакты скрыты'}
+          </span>
+          <span className="ml-auto text-xs text-primary">Подробнее</span>
+        </button>
+      )}
+
+      {expanded && job.status !== 'done' &&
         (expired || !left ? (
           <p className="mt-4 flex items-center gap-2 rounded-2xl border border-destructive/60 bg-destructive/15 px-4 py-3 text-sm text-foreground">
             <Icon name="AlarmClock" size={16} />
@@ -144,6 +193,8 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
           </p>
         ))}
 
+      {expanded && (
+        <>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <Contacts
           label={job.isOwner ? 'Контакты исполнителя' : 'Контакты заказчика'}
@@ -244,6 +295,8 @@ const ActiveJobCard = ({ job }: { job: JobItem }) => {
             </>
           )}
         </div>
+      )}
+        </>
       )}
 
       <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>

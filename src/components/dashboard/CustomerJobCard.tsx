@@ -24,10 +24,14 @@ const CustomerJobCard = ({
   job,
   onProfile,
   onEdit,
+  collapsible = false,
+  defaultOpen = true,
 }: {
   job: JobItem;
   onProfile: (id: number) => void;
   onEdit: (job: JobItem) => void;
+  collapsible?: boolean;
+  defaultOpen?: boolean;
 }) => {
   const { assign, removeJob, bumpJob, limits } = useAppState();
   const [busy, setBusy] = useState(false);
@@ -83,7 +87,7 @@ const CustomerJobCard = ({
   };
 
   if (job.status === 'assigned' || job.status === 'expiring' || job.status === 'done') {
-    return <ActiveJobCard job={job} />;
+    return <ActiveJobCard job={job} collapsible={collapsible} defaultOpen={defaultOpen} />;
   }
 
   const left = hoursLeft(job.expiresAt);

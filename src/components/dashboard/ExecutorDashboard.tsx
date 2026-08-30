@@ -96,8 +96,13 @@ const ExecutorDashboard = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {working.map((j) => (
-              <ActiveJobCard key={j.id} job={j} />
+            {working.map((j, i) => (
+              <ActiveJobCard
+                key={j.id}
+                job={j}
+                collapsible
+                defaultOpen={working.length === 1 || (i === 0 && j.status !== 'done')}
+              />
             ))}
             {waiting.map((j) => (
               <div

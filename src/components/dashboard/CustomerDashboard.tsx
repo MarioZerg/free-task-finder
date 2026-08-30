@@ -129,9 +129,11 @@ const CustomerDashboard = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {(tab === 'jobs' ? active : finished).map((j) => (
+              {(tab === 'jobs' ? active : finished).map((j, i) => (
                 <CustomerJobCard
                   key={j.id}
+                  collapsible
+                  defaultOpen={(tab === 'jobs' ? active : finished).length === 1 || i === 0}
                   job={j}
                   onProfile={setProfileId}
                   onEdit={(target) => {
