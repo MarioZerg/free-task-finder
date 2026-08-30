@@ -139,6 +139,31 @@
   a {
     touch-action: manipulation;
   }
+
+  /* Колонки grid/flex не должны распираться содержимым:
+     без этого длинные слова и nowrap-цены выносят карточку за экран. */
+  .grid > * {
+    min-width: 0;
+  }
+
+  /* Длинные ссылки/слова (адреса, ники, e-mail) переносятся, а не рвут вёрстку */
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  li,
+  dd,
+  dt {
+    overflow-wrap: anywhere;
+  }
+
+  img,
+  video,
+  canvas,
+  svg {
+    max-width: 100%;
+  }
 }
 
 @layer components {

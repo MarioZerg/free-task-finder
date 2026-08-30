@@ -158,15 +158,15 @@ const LiveFeed = ({ readOnly }: { readOnly?: boolean }) => {
           )}
         </div>
       ) : (
-        <div className="mt-6 grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+        <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-2 2xl:grid-cols-3">
           {visible.map((j) => (
             <div
               key={j.id}
-              className={
+              className={`min-w-0 ${
                 freshIds.includes(j.id)
                   ? 'animate-slide-up-in rounded-3xl ring-2 ring-primary/40 transition-shadow'
                   : ''
-              }
+              }`}
             >
               <JobFeedCard
                 job={j}

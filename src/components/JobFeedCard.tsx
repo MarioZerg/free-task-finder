@@ -123,11 +123,11 @@ const JobFeedCard = ({ job, responded, canRespond, readOnly }: Props) => {
           </span>
 
           <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start justify-between gap-2 sm:gap-3">
               <h3 className="min-w-0 break-words font-head text-base font-medium leading-snug sm:text-lg">
                 {job.title}
               </h3>
-              <span className="shrink-0 whitespace-nowrap font-head text-xl font-semibold leading-none tracking-tight text-primary sm:text-2xl">
+              <span className="shrink-0 whitespace-nowrap font-head text-lg font-semibold leading-none tracking-tight text-primary sm:text-2xl">
                 {money(job.price)}
               </span>
             </div>
