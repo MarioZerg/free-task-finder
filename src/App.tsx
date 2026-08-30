@@ -19,6 +19,12 @@ import TrailingSlashRedirect from "./components/TrailingSlashRedirect";
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Admin = lazy(() => import("./pages/Admin"));
 
+const RouteFallback = () => (
+  <div className="flex min-h-screen items-center justify-center bg-background text-chip">
+    Загружаем…
+  </div>
+);
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -34,7 +40,7 @@ const App = () => (
           <Route
             path="/dashboard"
             element={
-              <Suspense fallback={null}>
+              <Suspense fallback={<RouteFallback />}>
                 <Dashboard />
               </Suspense>
             }
@@ -42,7 +48,7 @@ const App = () => (
           <Route
             path="/admin"
             element={
-              <Suspense fallback={null}>
+              <Suspense fallback={<RouteFallback />}>
                 <Admin />
               </Suspense>
             }
