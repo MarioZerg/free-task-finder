@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
+import { JobItem } from '@/lib/api';
 import { CATEGORIES, CITY_DISTRICTS, CITY_LIST } from '@/data/mock';
 import { PRESETS } from '@/data/categories';
 import { toast } from '@/hooks/use-toast';
@@ -18,12 +19,27 @@ import StepPricePhoto from '@/components/create-job/StepPricePhoto';
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  job?: JobItem | null;
 }
 
 const STEPS = ['Что нужно сделать', 'Когда и где', 'Цена и фото'];
 
-const CreateJobDialog = ({ open, onOpenChange }: Props) => {
-  const { createJob, feed } = useAppState();
+const splitCity = (raw: string) => {
+  const parts = (raw || '').split(',').map((s) => s.trim());
+  const city = parts[0] || CITY_LIST[0];
+  const known = CITY_DISTRICTS[city] || [];
+  const second = parts[1] || '';
+  const isDistrict = known.includes(second);
+  return {
+    city,
+    district: isDistrict ? second : '',
+    address: (isDistrict ? parts.slice(2) : parts.slice(1)).filter(Boolean).join(', '),
+  };
+};
+
+const CreateJobDialog = ({ open, onOpenChange, job }: Props) => {
+  const { createJob, editJob, feed } = useAppState();
+  const editing = !!job;
   const [step, setStep] = useState(0);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -39,6 +55,37 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    if (job) {
+      const loc = splitCity(job.city);
+      setStep(0);
+      setTitle(job.title);
+      setDescription(job.description);
+      setPrice(String(job.price));
+      setCityName(loc.city);
+      setDistrict(loc.district);
+      setAddress(loc.address);
+      setWhen(job.when);
+      setCategory(job.category);
+      setPhotoThumb(job.photo || '');
+      setPhotoFull('');
+      setErrors({});
+    } else {
+      setStep(0);
+      setTitle('');
+      setDescription('');
+      setPrice('');
+      setDistrict('');
+      setAddress('');
+      setWhen('Сегодня');
+      setCategory(CATEGORIES[1]);
+      setPhotoThumb('');
+      setPhotoFull('');
+      setErrors({});
+    }
+  }, [open, job]);
 
   const districts = CITY_DISTRICTS[cityName] || [];
 
@@ -79,7 +126,6 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
     setDescription(p.description);
     setPrice(String(p.price));
     setErrors({});
-    setStep(1);
   };
 
   const reset = () => {
@@ -104,32 +150,49 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
     }
 
     setBusy(true);
+    const payload = {
+      title: title.trim(),
+      description: description.trim(),
+      price: Number(price),
+      city: [cityName, district, address.trim()].filter(Boolean).join(', '),
+      when: when.trim() || 'Дата не указана',
+      category,
+      photoThumb: photoFull ? photoThumb : undefined,
+      photoFull: photoFull || undefined,
+    };
     try {
-      await createJob({
-        title: title.trim(),
-        description: description.trim(),
-        price: Number(price),
-        city: [cityName, district, address.trim()].filter(Boolean).join(', '),
-        when: when.trim() || 'Дата не указана',
-        category,
-        photoThumb: photoThumb || undefined,
-        photoFull: photoFull || undefined,
-      });
-      toast({
-        title: 'Задание отправлено на проверку',
-        description: 'После одобрения модератором оно появится в ленте заказов.',
-      });
+      if (editing && job) {
+        await editJob({ ...payload, jobId: job.id });
+        toast({
+          title: 'Изменения сохранены',
+          description: 'Объявление снова уйдёт на проверку модератору.',
+        });
+      } else {
+        await createJob(payload);
+        toast({
+          title: 'Задание отправлено на проверку',
+          description: 'После одобрения модератором оно появится в ленте заказов.',
+        });
+      }
       reset();
       onOpenChange(false);
     } catch (e) {
       const code = (e as Error).message;
       toast({
         title:
-          code === 'active_job_exists' ? 'Уже есть активное задание' : 'Не удалось опубликовать',
+          code === 'active_job_exists'
+            ? 'Уже есть активное задание'
+            : code === 'job_in_work'
+              ? 'Задание уже в работе'
+              : editing
+                ? 'Не удалось сохранить'
+                : 'Не удалось опубликовать',
         description:
           code === 'active_job_exists'
             ? 'Новое можно выставить после завершения текущего или через 24 часа.'
-            : 'Проверьте поля и попробуйте ещё раз.',
+            : code === 'job_in_work'
+              ? 'Редактировать можно только объявления, которые ещё не взяли в работу.'
+              : 'Проверьте поля и попробуйте ещё раз.',
       });
     } finally {
       setBusy(false);
@@ -147,11 +210,18 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
       <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden border-line bg-surface p-0 text-foreground sm:max-w-[600px]">
         <DialogHeader className="shrink-0 space-y-3 border-b border-line px-5 pb-4 pt-5 text-left sm:px-6">
           <DialogTitle className="font-head text-xl font-medium tracking-tight sm:text-2xl">
-            Новое объявление
+            {editing ? 'Редактирование объявления' : 'Новое объявление'}
           </DialogTitle>
           <DialogDescription className="sr-only">
             Заполните задание в три шага: что нужно сделать, когда и где, цена и фото.
           </DialogDescription>
+          {editing && (
+            <p className="flex items-start gap-2 rounded-2xl border border-line bg-tile px-3.5 py-2.5 text-xs text-muted-foreground">
+              <Icon name="Info" size={14} className="mt-0.5 shrink-0 text-primary" />
+              После изменений объявление снова уйдёт на проверку модератору и на время
+              скроется из ленты.
+            </p>
+          )}
           <div className="flex items-center gap-2">
             {STEPS.map((s, i) => (
               <span
@@ -178,6 +248,7 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
               setCategory={setCategory}
               errors={errors}
               usePreset={usePreset}
+              activePreset={PRESETS.find((p) => p.title === title)?.title}
             />
           )}
 
@@ -241,8 +312,14 @@ const CreateJobDialog = ({ open, onOpenChange }: Props) => {
                 disabled={busy}
                 className="flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-60"
               >
-                <Icon name="Send" size={18} />
-                {busy ? 'Публикуем…' : 'Разместить задание'}
+                <Icon name={editing ? 'Check' : 'Send'} size={18} />
+                {busy
+                  ? editing
+                    ? 'Сохраняем…'
+                    : 'Публикуем…'
+                  : editing
+                    ? 'Сохранить изменения'
+                    : 'Разместить задание'}
               </button>
             )}
           </div>

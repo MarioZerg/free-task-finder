@@ -20,7 +20,15 @@ import { toast } from '@/hooks/use-toast';
 import { hoursLeft, statusLabel } from '@/components/dashboard/DashTabs';
 import { categoryMeta } from '@/data/categories';
 
-const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: number) => void }) => {
+const CustomerJobCard = ({
+  job,
+  onProfile,
+  onEdit,
+}: {
+  job: JobItem;
+  onProfile: (id: number) => void;
+  onEdit: (job: JobItem) => void;
+}) => {
   const { assign, removeJob, bumpJob, limits } = useAppState();
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -149,6 +157,14 @@ const CustomerJobCard = ({ job, onProfile }: { job: JobItem; onProfile: (id: num
               {bumpAvailableIn ? `Поднять через ${bumpAvailableIn}` : 'Поднять в ленте'}
             </button>
           )}
+          <button
+            disabled={busy}
+            onClick={() => onEdit(job)}
+            className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border border-line px-5 py-2.5 text-sm transition-colors hover:border-primary/60 hover:text-primary disabled:opacity-60 sm:w-auto"
+          >
+            <Icon name="Pencil" size={16} />
+            Редактировать
+          </button>
           <button
             disabled={busy}
             onClick={() => setConfirmDelete(true)}

@@ -44,6 +44,22 @@ def _notify(max_user_id: Any, text: str):
         pass
 
 
+def _notify_admins(cur, text: str):
+    """Шлёт сообщение в MAX всем администраторам сервиса. Ошибки не пробрасывает."""
+    if not BOT_TOKEN:
+        return
+    try:
+        cur.execute(
+            f"SELECT DISTINCT max_user_id FROM {SCHEMA}.users "
+            f'WHERE is_admin = TRUE AND max_user_id IS NOT NULL '
+            f"AND max_user_id <> ''"
+        )
+        for row in cur.fetchall():
+            _notify(row['max_user_id'], text)
+    except Exception:
+        pass
+
+
 def _conn():
     return psycopg2.connect(os.environ['DATABASE_URL'])
 
@@ -685,7 +701,67 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                         'pending', NOW() + INTERVAL '24 hours')
                 RETURNING id"""
         )
-        return _resp(200, {'id': cur.fetchone()['id']})
+        new_id = cur.fetchone()['id']
+        _notify_admins(
+            cur,
+            f'Новое объявление на проверку: «{title}» за {price} ₽ '
+            f'({city}). Автор: {me["name"]}. Откройте админку Доделай.ру.',
+        )
+        return _resp(200, {'id': new_id})
+
+    if method == 'POST' and action == 'edit':
+        job_id_edit = _int(body.get('jobId'))
+        cur.execute(f'SELECT * FROM {SCHEMA}.jobs WHERE id = {job_id_edit}')
+        target = cur.fetchone()
+        if not target:
+            return _resp(404, {'error': 'job_not_found'})
+        if target['owner_id'] != me['id']:
+            return _resp(403, {'error': 'not_owner'})
+        if target['status'] not in ('open', 'cancelled'):
+            return _resp(400, {'error': 'job_in_work'})
+        title = str(body.get('title', '')).strip()[:200]
+        description = str(body.get('description', '')).strip()[:2000]
+        price = _int(body.get('price'))
+        city = str(body.get('city', target['city'])).strip()[:160]
+        when_text = str(body.get('when', '')).strip()[:160] or 'Срок не указан'
+        category = str(body.get('category', target['category'])).strip()[:80]
+        if len(title) < 3:
+            return _resp(400, {'error': 'bad_title'})
+        if len(description) < 10:
+            return _resp(400, {'error': 'bad_description'})
+        if price < MIN_PRICE or price > MAX_PRICE:
+            return _resp(400, {'error': 'bad_price'})
+        photo_thumb = str(body.get('photoThumb') or '')
+        photo_full = str(body.get('photoFull') or '')
+        photo_sets = ''
+        if photo_thumb.startswith('data:image/'):
+            if len(photo_thumb) > 400000 or len(photo_full) > 3000000:
+                return _resp(400, {'error': 'photo_too_big'})
+            full_sql = "'" + _esc(photo_full) + "'" if photo_full else 'NULL'
+            photo_sets = (
+                ", photo_thumb = '" + _esc(photo_thumb) + "'"
+                + ', photo_full = ' + full_sql
+            )
+        cur.execute(
+            f"""UPDATE {SCHEMA}.jobs SET
+                    title = '{_esc(title)}',
+                    description = '{_esc(description)}',
+                    price = {price},
+                    city = '{_esc(city)}',
+                    when_text = '{_esc(when_text)}',
+                    category = '{_esc(category)}',
+                    status = 'open',
+                    moderation = 'pending',
+                    expires_at = NOW() + INTERVAL '24 hours'
+                    {photo_sets}
+                WHERE id = {job_id_edit}"""
+        )
+        _notify_admins(
+            cur,
+            f'Объявление отредактировано и ждёт повторной проверки: «{title}» '
+            f'за {price} ₽ ({city}). Автор: {me["name"]}. Откройте админку Доделай.ру.',
+        )
+        return _resp(200, {'ok': True})
 
     if method == 'POST' and action == 'dm_send':
         to_id = _int(body.get('toId'))

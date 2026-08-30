@@ -14,6 +14,7 @@ interface Props {
   setCategory: (v: string) => void;
   errors: Record<string, string>;
   usePreset: (p: (typeof PRESETS)[number]) => void;
+  activePreset?: string;
 }
 
 const StepTaskDetails = ({
@@ -25,6 +26,7 @@ const StepTaskDetails = ({
   setCategory,
   errors,
   usePreset,
+  activePreset,
 }: Props) => {
   const err = (k: string) =>
     errors[k] ? <p className="mt-1.5 text-sm text-destructive">{errors[k]}</p> : null;
@@ -32,18 +34,23 @@ const StepTaskDetails = ({
   return (
     <>
       <div>
-        <p className="text-sm font-medium">Выберите готовую задачу</p>
+        <p className="text-sm font-medium">Подсказка: выберите готовую задачу</p>
         <p className="mt-1 text-xs text-chip">
-          Подставим название, категорию и примерную цену — потом всё можно поправить.
+          Заполним название, категорию и примерную цену — а текст ниже вы поправите под себя.
         </p>
         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
           {PRESETS.map((p) => {
             const m = categoryMeta(p.category);
+            const active = activePreset === p.title;
             return (
               <button
                 key={p.title}
                 onClick={() => usePreset(p)}
-                className="flex min-h-[44px] items-center gap-3 rounded-2xl border border-line bg-tile p-3 text-left transition-colors hover:border-primary/50"
+                className={`flex min-h-[44px] items-center gap-3 rounded-2xl border p-3 text-left transition-colors ${
+                  active
+                    ? 'border-primary bg-primary/5 ring-2 ring-primary/30'
+                    : 'border-line bg-tile hover:border-primary/50'
+                }`}
               >
                 <span
                   className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border ${m.tone}`}
@@ -56,6 +63,7 @@ const StepTaskDetails = ({
                     {m.short} · от {money(p.price)}
                   </span>
                 </span>
+                {active && <Icon name="Check" size={16} className="shrink-0 text-primary" />}
               </button>
             );
           })}
@@ -63,7 +71,7 @@ const StepTaskDetails = ({
       </div>
 
       <div className="border-t border-line pt-5">
-        <label className="mb-2 block text-sm font-medium">Своя задача</label>
+        <label className="mb-2 block text-sm font-medium">Название задачи</label>
         <input
           className={field}
           placeholder="Что нужно сделать"
@@ -95,6 +103,9 @@ const StepTaskDetails = ({
 
       <div>
         <label className="mb-2 block text-sm font-medium">Описание</label>
+        <p className="mb-2 text-xs text-chip">
+          Опишите задачу своими словами — так исполнители точнее поймут объём работы.
+        </p>
         <textarea
           className={`${field} min-h-[110px] resize-none`}
           placeholder="Подробности: объём работ, инструмент, этаж, сроки"

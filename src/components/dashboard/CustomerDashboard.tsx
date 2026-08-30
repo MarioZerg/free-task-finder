@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
+import { JobItem } from '@/lib/api';
 import CreateJobDialog from '@/components/CreateJobDialog';
 import ProfileDialog from '@/components/ProfileDialog';
 import LiveFeed from '@/components/LiveFeed';
@@ -14,6 +15,7 @@ const CustomerDashboard = () => {
   const [createOpen, setCreateOpen] = useState(false);
   const [tab, setTab] = useState('feed');
   const [profileId, setProfileId] = useState<number | null>(null);
+  const [editJob, setEditJob] = useState<JobItem | null>(null);
 
   const active = myJobs.filter((j) => ['open', 'assigned', 'expiring'].includes(j.status));
   const finished = myJobs.filter((j) => ['done', 'cancelled'].includes(j.status));
@@ -39,6 +41,7 @@ const CustomerDashboard = () => {
               setTab('jobs');
               return;
             }
+            setEditJob(null);
             setCreateOpen(true);
           }}
           className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-primary px-7 py-4 text-base font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-transform hover:scale-[1.03] disabled:opacity-60 sm:w-auto sm:px-8 sm:text-lg"
@@ -105,6 +108,7 @@ const CustomerDashboard = () => {
                       });
                       return;
                     }
+                    setEditJob(null);
                     setCreateOpen(true);
                   }}
                   className="mx-auto mt-5 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02] sm:w-auto"
@@ -126,13 +130,28 @@ const CustomerDashboard = () => {
           ) : (
             <div className="space-y-4">
               {(tab === 'jobs' ? active : finished).map((j) => (
-                <CustomerJobCard key={j.id} job={j} onProfile={setProfileId} />
+                <CustomerJobCard
+                  key={j.id}
+                  job={j}
+                  onProfile={setProfileId}
+                  onEdit={(target) => {
+                    setEditJob(target);
+                    setCreateOpen(true);
+                  }}
+                />
               ))}
             </div>
           ))}
       </div>
 
-      <CreateJobDialog open={createOpen} onOpenChange={setCreateOpen} />
+      <CreateJobDialog
+        open={createOpen}
+        job={editJob}
+        onOpenChange={(v) => {
+          setCreateOpen(v);
+          if (!v) setEditJob(null);
+        }}
+      />
       <ProfileDialog userId={profileId} showDetails onOpenChange={() => setProfileId(null)} />
     </div>
   );

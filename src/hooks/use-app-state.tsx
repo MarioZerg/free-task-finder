@@ -90,6 +90,17 @@ interface AppState {
     photoThumb?: string;
     photoFull?: string;
   }) => Promise<void>;
+  editJob: (job: {
+    jobId: number;
+    title: string;
+    description: string;
+    price: number;
+    city: string;
+    when: string;
+    category: string;
+    photoThumb?: string;
+    photoFull?: string;
+  }) => Promise<void>;
   respond: (jobId: number, note: string) => Promise<void>;
   assign: (jobId: number, executorId: number) => Promise<void>;
   shareContact: (jobId: number) => Promise<void>;
@@ -296,6 +307,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       logout,
       refresh,
       createJob: (job) => act('create', job),
+      editJob: (job) => act('edit', job),
       respond: (jobId, note) => act('respond', { jobId, note }),
       assign: (jobId, executorId) => act('assign', { jobId, executorId }),
       shareContact: (jobId) => act('share_contact', { jobId }),
