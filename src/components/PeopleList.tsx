@@ -3,6 +3,7 @@ import Icon from '@/components/ui/icon';
 import Avatar from '@/components/Avatar';
 import ProfileDialog from '@/components/ProfileDialog';
 import InviteDialog from '@/components/InviteDialog';
+import DirectMessageDialog from '@/components/DirectMessageDialog';
 import SubscriptionDialog from '@/components/SubscriptionDialog';
 import { useAppState } from '@/hooks/use-app-state';
 import { listProfessions, people, PeopleCounts, Profession, User } from '@/lib/api';
@@ -24,10 +25,12 @@ const PersonCard = memo(
     user,
     onOpen,
     onInvite,
+    onMessage,
   }: {
     user: User;
     onOpen: (id: number) => void;
     onInvite?: (u: User) => void;
+    onMessage?: (u: User) => void;
   }) => {
     const list = user.professions || [];
     const shown = list.slice(0, 3);
@@ -85,6 +88,16 @@ const PersonCard = memo(
             Пригласить на заказ
           </button>
         )}
+
+        {onMessage && (
+          <button
+            onClick={() => onMessage(user)}
+            className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border border-line bg-tile px-4 py-2.5 text-sm transition-colors hover:border-primary/60 hover:text-primary"
+          >
+            <Icon name="MessageCircle" size={16} />
+            Написать
+          </button>
+        )}
       </div>
     );
   },
@@ -97,6 +110,7 @@ const PeopleList = () => {
   const { user } = useAppState();
   const [tab, setTab] = useState<'executor' | 'customer'>('executor');
   const [invite, setInvite] = useState<User | null>(null);
+  const [message, setMessage] = useState<User | null>(null);
   const [proOpen, setProOpen] = useState(false);
   const [executors, setExecutors] = useState<User[]>([]);
   const [customers, setCustomers] = useState<User[]>([]);
@@ -158,7 +172,9 @@ const PeopleList = () => {
   const shown = list.slice((current - 1) * PER_PAGE, current * PER_PAGE);
   const isPro = !!user?.isPro;
   const canInvite = user?.role === 'customer' && tab === 'executor' && isPro;
+  const canMessage = user?.role === 'executor' && tab === 'customer' && isPro;
   const handleInvite = (u: User) => setInvite(u);
+  const handleMessage = (u: User) => setMessage(u);
 
   return (
     <section>
@@ -222,7 +238,9 @@ const PeopleList = () => {
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-tile px-4 py-3">
           <p className="flex min-w-0 items-start gap-2.5 text-sm text-muted-foreground">
             <Icon name="Crown" size={16} className="mt-0.5 shrink-0 text-amber-600" />
-            С подпиской PRO можно пригласить нужного исполнителя прямо на свой заказ
+            {user?.role === 'executor'
+              ? 'С подпиской PRO можно писать заказчикам напрямую, минуя отклик'
+              : 'С подпиской PRO можно пригласить нужного исполнителя прямо на свой заказ'}
           </p>
           <button
             onClick={() => setProOpen(true)}
@@ -263,6 +281,7 @@ const PeopleList = () => {
                 user={u}
                 onOpen={setProfileId}
                 onInvite={canInvite ? handleInvite : undefined}
+                onMessage={canMessage ? handleMessage : undefined}
               />
             ))}
           </div>
@@ -315,10 +334,15 @@ const PeopleList = () => {
 
       <ProfileDialog userId={profileId} onOpenChange={() => setProfileId(null)} />
       <InviteDialog executor={invite} onOpenChange={() => setInvite(null)} />
+      <DirectMessageDialog customer={message} onOpenChange={() => setMessage(null)} />
       <SubscriptionDialog
         open={proOpen}
         onOpenChange={setProOpen}
-        hint="Приглашение исполнителей доступно по подписке PRO"
+        hint={
+          user?.role === 'executor'
+            ? 'Личные сообщения заказчикам доступны по подписке PRO'
+            : 'Приглашение исполнителей доступно по подписке PRO'
+        }
       />
     </section>
   );

@@ -123,7 +123,9 @@ const LiveFeed = ({ readOnly }: { readOnly?: boolean }) => {
       {limits.busy && user?.role === 'executor' && (
         <p className="mt-5 flex items-start gap-2.5 rounded-2xl border border-line bg-tile px-5 py-4 text-sm text-muted-foreground">
           <Icon name="Info" size={18} className="mt-0.5 shrink-0 text-primary" />
-          Вы уже назначены на заказ. Пока он не завершён, взяться за новый нельзя.
+          {limits.pro
+            ? `Вы уже ведёте ${limits.activeLimit ?? 3} заказа одновременно — лимит PRO. Завершите один, чтобы взять новый.`
+            : 'Вы уже назначены на заказ. Пока он не завершён, взяться за новый нельзя.'}
         </p>
       )}
 

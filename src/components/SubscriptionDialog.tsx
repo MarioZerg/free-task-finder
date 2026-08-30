@@ -27,10 +27,16 @@ const MONTHS = [1, 3, 6];
 
 const monthWord = (n: number) => (n === 1 ? 'месяц' : n < 5 ? 'месяца' : 'месяцев');
 
-const PERKS = [
+const CUSTOMER_PERKS = [
   'Публикация без лимита — новое задание каждый час вместо одного активного',
   'Поднятие объявления каждый час вместо 5 часов',
   'Приглашение исполнителей на свой заказ прямо из вкладки Люди',
+  'Значок PRO в профиле и приоритет в списках',
+];
+
+const EXECUTOR_PERKS = [
+  'До 3 заказов в работе одновременно вместо одного',
+  'Сообщения заказчикам напрямую из вкладки Люди — без ожидания отклика',
   'Значок PRO в профиле и приоритет в списках',
 ];
 
@@ -54,6 +60,7 @@ const SubscriptionDialog = ({ open, onOpenChange, hint }: Props) => {
   const isAdmin = !!user?.isAdmin;
   const autoRenew = user?.autoRenew !== false;
   const total = price * months;
+  const perks = user?.role === 'executor' ? EXECUTOR_PERKS : CUSTOMER_PERKS;
 
   useEffect(() => {
     if (!open) return;
@@ -145,7 +152,7 @@ const SubscriptionDialog = ({ open, onOpenChange, hint }: Props) => {
           </div>
 
           <ul className="mt-4 space-y-2.5">
-            {PERKS.map((p) => (
+            {perks.map((p) => (
               <li key={p} className="flex items-start gap-2.5 text-sm text-muted-foreground">
                 <Icon name="Check" size={16} className="mt-0.5 shrink-0 text-primary" />
                 {p}

@@ -120,11 +120,17 @@ def _esc(v: Any) -> str:
     return str(v).replace("'", "''")
 
 
+def _json_default(v: Any) -> str:
+    if isinstance(v, dt.datetime):
+        return v.isoformat() + 'Z'
+    return str(v)
+
+
 def _resp(status: int, body: Dict[str, Any]) -> Dict[str, Any]:
     return {
         'statusCode': status,
         'headers': {'Content-Type': 'application/json', **CORS},
-        'body': json.dumps(body, ensure_ascii=False, default=str),
+        'body': json.dumps(body, ensure_ascii=False, default=_json_default),
         'isBase64Encoded': False,
     }
 

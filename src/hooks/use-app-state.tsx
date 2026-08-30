@@ -8,7 +8,16 @@ import {
   useState,
   ReactNode,
 } from 'react';
-import { api, clearToken, getToken, JobItem, payStart, setToken, User } from '@/lib/api';
+import {
+  api,
+  clearToken,
+  getToken,
+  JobInvite,
+  JobItem,
+  payStart,
+  setToken,
+  User,
+} from '@/lib/api';
 
 export type Role = 'customer' | 'executor';
 
@@ -29,6 +38,8 @@ export interface Limits {
   activeJobId: number | null;
   activeExpiresAt: string | null;
   pro?: boolean;
+  activeCount?: number;
+  activeLimit?: number;
 }
 
 interface AppState {
@@ -87,6 +98,9 @@ interface AppState {
   bumpJob: (jobId: number) => Promise<void>;
   sendMessage: (jobId: number, text: string) => Promise<void>;
   review: (jobId: number, rating: number, text: string) => Promise<void>;
+  invites: JobInvite[];
+  acceptInvite: (inviteId: number) => Promise<void>;
+  declineInvite: (inviteId: number) => Promise<void>;
 }
 
 const Ctx = createContext<AppState | null>(null);
@@ -111,6 +125,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [loginOpen, setLoginOpen] = useState(false);
   const [loginRole, setLoginRole] = useState<Role>('customer');
   const [maxEnabled, setMaxEnabled] = useState(false);
+  const [invites, setInvites] = useState<JobInvite[]>([]);
 
   const loadPublic = useCallback(async () => {
     const f = await api.jobs('feed').catch(() => ({ jobs: [] }));
@@ -126,11 +141,13 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     if (!getToken()) {
       setMyJobs([]);
       setLimits(emptyLimits);
+      setInvites([]);
       return;
     }
-    const r = await api.jobs('mine').catch(() => ({ jobs: [], limits: emptyLimits }));
+    const r = await api.jobs('mine').catch(() => ({ jobs: [], limits: emptyLimits, invites: [] }));
     setMyJobs(r.jobs || []);
     setLimits({ ...emptyLimits, ...(r.limits || {}) });
+    setInvites(r.invites || []);
   }, []);
 
   const refreshing = useRef(false);
@@ -283,6 +300,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       bumpJob: (jobId) => act('bump', { jobId }),
       sendMessage: (jobId, text) => act('message', { jobId, text }),
       review: (jobId, rating, text) => act('review', { jobId, rating, text }),
+      invites,
+      acceptInvite: (inviteId) => act('invite_accept', { inviteId }),
+      declineInvite: (inviteId) => act('invite_decline', { inviteId }),
     }),
     [
       user,
@@ -290,6 +310,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       limits,
       maxEnabled,
       feed,
+      invites,
       myJobs,
       stats,
       loginOpen,

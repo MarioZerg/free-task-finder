@@ -193,6 +193,38 @@ export interface ChatMessage {
   mine: boolean;
 }
 
+export interface DirectMessage {
+  id: number;
+  text: string;
+  createdAt: string;
+  fromId: number;
+  fromName: string;
+  fromAvatar?: string | null;
+  mine: boolean;
+}
+
+export const dmThread = (userId: number): Promise<{ messages: DirectMessage[] }> =>
+  api.jobs('dm_thread', { params: { userId: String(userId) } }) as Promise<{
+    messages: DirectMessage[];
+  }>;
+
+export const dmSend = (toId: number, text: string) =>
+  api.jobs('dm_send', { method: 'POST', body: { toId, text } });
+
+export interface JobInvite {
+  id: number;
+  jobId: number;
+  note: string;
+  createdAt: string;
+  title: string;
+  price: number;
+  city: string;
+  when: string;
+  customerName: string;
+  customerAvatar?: string | null;
+  customerRating: number;
+}
+
 export interface JobResponseItem {
   executorId: number;
   avatar?: string | null;

@@ -4,10 +4,11 @@ import { useAppState } from '@/hooks/use-app-state';
 import ActiveJobCard from '@/components/ActiveJobCard';
 import LiveFeed from '@/components/LiveFeed';
 import PeopleList from '@/components/PeopleList';
+import InviteCard from '@/components/InviteCard';
 import DashTabs from '@/components/dashboard/DashTabs';
 
 const ExecutorDashboard = () => {
-  const { myJobs, feed, limits } = useAppState();
+  const { myJobs, feed, limits, invites } = useAppState();
   const [tab, setTab] = useState('feed');
 
   const working = myJobs.filter(
@@ -36,13 +37,27 @@ const ExecutorDashboard = () => {
           <Icon name="Radio" size={16} className="role-accent-text" />
           {feed.length} {feedWord(feed.length)} в ленте
         </span>
-        {limits.busy && (
+        {limits.pro && (
+          <span className="flex min-h-[40px] items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-600">
+            <Icon name="Crown" size={16} />
+            PRO: до {limits.activeLimit ?? 3} заказов одновременно
+          </span>
+        )}
+        {typeof limits.activeCount === 'number' && (
           <span className="flex min-h-[40px] items-center gap-2 rounded-full border border-line bg-tile px-4 py-2 text-sm text-muted-foreground">
-            <Icon name="Lock" size={16} />
-            Вы заняты заказом
+            <Icon name={limits.busy ? 'Lock' : 'ClipboardCheck'} size={16} />
+            {limits.busy ? 'Лимит заказов исчерпан' : `В работе: ${limits.activeCount} из ${limits.activeLimit ?? 1}`}
           </span>
         )}
       </div>
+
+      {invites.length > 0 && (
+        <div className="mt-6 space-y-3">
+          {invites.map((inv) => (
+            <InviteCard key={inv.id} invite={inv} />
+          ))}
+        </div>
+      )}
 
       <div className="mt-6">
         <DashTabs
