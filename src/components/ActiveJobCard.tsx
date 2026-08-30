@@ -15,6 +15,7 @@ import { JobItem } from '@/lib/api';
 import { money } from '@/data/mock';
 import Avatar, { OnlineBadge } from '@/components/Avatar';
 import JobChat from '@/components/JobChat';
+import PhotoViewer from '@/components/PhotoViewer';
 import { toast } from '@/hooks/use-toast';
 
 const leftText = (deadline?: string | null) => {
@@ -75,6 +76,8 @@ const ActiveJobCard = ({
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(defaultOpen);
+  const [specOpen, setSpecOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const expanded = collapsible ? open : true;
 
   useEffect(() => {
@@ -195,6 +198,61 @@ const ActiveJobCard = ({
 
       {expanded && (
         <>
+      <div className="mt-4 overflow-hidden rounded-2xl border border-line bg-surface">
+        <button
+          onClick={() => setSpecOpen((v) => !v)}
+          className="flex min-h-[48px] w-full items-center gap-2.5 px-4 py-3 text-left transition-colors hover:bg-tile"
+        >
+          <Icon name="FileText" size={16} className="shrink-0 text-primary" />
+          <span className="min-w-0 flex-1 text-sm font-medium">Задание целиком</span>
+          <Icon
+            name="ChevronDown"
+            size={17}
+            className={`shrink-0 text-chip transition-transform ${specOpen ? 'rotate-180' : ''}`}
+          />
+        </button>
+        {specOpen && (
+          <div className="border-t border-line px-4 py-4">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-tile px-2.5 py-1 text-xs text-muted-foreground">
+                <Icon name="MapPin" size={12} />
+                {job.city}
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-tile px-2.5 py-1 text-xs text-muted-foreground">
+                <Icon name="CalendarDays" size={12} />
+                {job.when}
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-tile px-2.5 py-1 text-xs text-muted-foreground">
+                <Icon name="Tag" size={12} />
+                {job.category}
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                {money(job.price)}
+                {job.finalPrice && job.finalPrice !== job.price
+                  ? ` → ${money(job.finalPrice)}`
+                  : ''}
+              </span>
+            </div>
+
+            <div className="mt-3 flex items-start gap-3">
+              {job.photo && (
+                <PhotoViewer
+                  jobId={job.id}
+                  title={job.title}
+                  thumb={job.photo}
+                  hasFull={job.hasFullPhoto}
+                  className="h-16 w-16 shrink-0 rounded-2xl border border-line"
+                  compact
+                />
+              )}
+              <p className="min-w-0 flex-1 whitespace-pre-line break-words text-sm leading-relaxed text-muted-foreground">
+                {job.description || 'Описание не указано.'}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <Contacts
           label={job.isOwner ? 'Контакты исполнителя' : 'Контакты заказчика'}
@@ -224,7 +282,21 @@ const ActiveJobCard = ({
         </div>
       </div>
 
-      <JobChat jobId={job.id} partner={partner} />
+      <div className="mt-4 overflow-hidden rounded-2xl border border-line bg-surface">
+        <button
+          onClick={() => setChatOpen((v) => !v)}
+          className="flex min-h-[48px] w-full items-center gap-2.5 px-4 py-3 text-left transition-colors hover:bg-tile"
+        >
+          <Icon name="MessageSquare" size={16} className="shrink-0 text-primary" />
+          <span className="min-w-0 flex-1 text-sm font-medium">Чат с {partner}</span>
+          <Icon
+            name="ChevronDown"
+            size={17}
+            className={`shrink-0 text-chip transition-transform ${chatOpen ? 'rotate-180' : ''}`}
+          />
+        </button>
+        {chatOpen && <JobChat jobId={job.id} partner={partner} />}
+      </div>
 
       {job.status !== 'done' && (
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">

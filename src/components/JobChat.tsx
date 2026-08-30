@@ -8,7 +8,7 @@ import { toast } from '@/hooks/use-toast';
 const time = (iso: string) =>
   new Date(iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 
-const JobChat = ({ jobId, partner }: { jobId: number; partner: string }) => {
+const JobChat = ({ jobId }: { jobId: number; partner?: string }) => {
   const { sendMessage } = useAppState();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState('');
@@ -53,13 +53,8 @@ const JobChat = ({ jobId, partner }: { jobId: number; partner: string }) => {
   };
 
   return (
-    <div className="mt-4 rounded-2xl border border-line bg-tile p-4">
-      <p className="flex items-center gap-2 text-sm font-medium">
-        <Icon name="MessageSquare" size={16} className="text-primary" />
-        Чат по заказу · {partner}
-      </p>
-
-      <div ref={boxRef} className="mt-3 max-h-[50vh] space-y-3 overflow-y-auto pr-1 sm:max-h-[280px]">
+    <div className="border-t border-line bg-tile p-4">
+      <div ref={boxRef} className="max-h-[50vh] space-y-3 overflow-y-auto pr-1 sm:max-h-[280px]">
         {messages.length === 0 ? (
           <p className="py-6 text-center text-sm text-chip">
             Сообщений пока нет. Напишите, чтобы договориться о деталях.

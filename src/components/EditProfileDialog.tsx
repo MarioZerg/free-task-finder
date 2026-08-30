@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
@@ -10,6 +11,9 @@ import Icon from '@/components/ui/icon';
 import Avatar from '@/components/Avatar';
 import SubscriptionDialog from '@/components/SubscriptionDialog';
 import NotificationSettings from '@/components/NotificationSettings';
+import InstallPwa from '@/components/InstallPwa';
+import ProfileSection from '@/components/profile/ProfileSection';
+import SupportPanel from '@/components/profile/SupportPanel';
 import { useAppState } from '@/hooks/use-app-state';
 import { CITIES } from '@/data/mock';
 import { toast } from '@/hooks/use-toast';
@@ -65,7 +69,7 @@ const compress = (file: File) =>
   });
 
 const EditProfileDialog = ({ open, onOpenChange }: Props) => {
-  const { user, updateProfile, setUserData } = useAppState();
+  const { user, updateProfile, setUserData, logout } = useAppState();
   const fileRef = useRef<HTMLInputElement>(null);
   const [avatar, setAvatar] = useState<string>('');
   const [name, setName] = useState('');
@@ -172,20 +176,31 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex items-center gap-4">
           <button
             onClick={() => fileRef.current?.click()}
-            className="relative rounded-full transition-transform hover:scale-[1.03]"
+            className="relative shrink-0 rounded-full transition-transform hover:scale-[1.03]"
             aria-label="Загрузить фото"
           >
-            <Avatar src={avatar} name={name || user.name} size={72} />
+            <Avatar src={avatar} name={name || user.name} size={64} />
             <span className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground">
               <Icon name="Camera" size={14} />
             </span>
           </button>
-          <div className="text-sm text-chip">
-            <p>Нажмите на фото, чтобы заменить.</p>
-            <p className="mt-1">Квадрат 512×512, вес уменьшим автоматически.</p>
+          <div className="min-w-0">
+            <p className="flex items-center gap-1.5 truncate font-head text-lg font-medium">
+              {user.name}
+              {user.isPro && (
+                <span className="flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-600">
+                  <Icon name="Crown" size={11} />
+                  PRO
+                </span>
+              )}
+            </p>
+            <p className="mt-0.5 truncate text-xs text-chip">
+              ★ {user.rating.toFixed(1)} ·{' '}
+              {user.role === 'customer' ? 'заказчик' : `${user.doneCount} работ`}
+            </p>
           </div>
           <input
             ref={fileRef}
@@ -196,6 +211,12 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
           />
         </div>
 
+        <ProfileSection
+          icon="UserRound"
+          title="Личные данные"
+          hint="Имя, город, контакты"
+          defaultOpen
+        >
         <div className="space-y-3">
           <input
             value={name}
@@ -281,16 +302,16 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
             </div>
           </div>
         </div>
+        </ProfileSection>
 
         {isExecutor && (
-          <div className="border-t border-line pt-4">
-            <p className="flex items-center gap-2 font-head text-base font-medium">
-              <Icon name="Wrench" size={16} className="text-primary" />
-              Что вы умеете
-            </p>
-            <p className="mt-1 text-sm text-chip">
-              Выберите специальности — заказчики найдут вас по ним во вкладке «Люди». Выбрано{' '}
-              {selected.length} из {MAX_PROFESSIONS}.
+          <ProfileSection
+            icon="Wrench"
+            title="Что вы умеете"
+            hint={`Выбрано ${selected.length} из ${MAX_PROFESSIONS}`}
+          >
+            <p className="text-sm text-chip">
+              Заказчики найдут вас по этим специальностям во вкладке «Люди».
             </p>
             {professions.length === 0 ? (
               <p className="mt-3 text-sm text-chip">Загружаем список…</p>
@@ -316,15 +337,16 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
                 })}
               </div>
             )}
-          </div>
+          </ProfileSection>
         )}
 
-        <div className="rounded-3xl border border-line bg-tile p-4">
-          <p className="flex items-center gap-2 font-head text-base font-medium">
-            <Icon name="Crown" size={16} className="text-amber-600" />
-            Подписка
-          </p>
-          <p className="mt-1 text-sm text-chip">
+        <ProfileSection
+          icon="Crown"
+          accent="gold"
+          title="Подписка PRO"
+          hint={user.isPro ? 'Активна' : 'Не подключена'}
+        >
+          <p className="text-sm text-chip">
             {user.isPro
               ? `Доделай PRO активен до ${new Date(user.subscriptionUntil || '').toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}`
               : 'Доделай PRO — больше заданий, быстрое поднятие и приглашения исполнителей.'}
@@ -335,24 +357,58 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
           >
             {user.isPro ? 'Управлять подпиской' : 'Подключить PRO'}
           </button>
-        </div>
+        </ProfileSection>
 
-        <div className="space-y-3">
-          <p className="flex items-center gap-2 font-head text-base font-medium">
-            <Icon name="Bell" size={16} className="text-primary" />
-            Уведомления
-          </p>
+        <ProfileSection icon="Bell" title="Уведомления" hint="Push и события">
           <NotificationSettings />
-        </div>
+        </ProfileSection>
 
-        <button
-          onClick={save}
-          disabled={busy}
-          className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-60"
-        >
-          <Icon name="Check" size={18} />
-          {busy ? 'Сохраняем…' : 'Сохранить'}
-        </button>
+        <ProfileSection icon="LifeBuoy" title="Техподдержка" hint="Написать в поддержку">
+          <SupportPanel />
+        </ProfileSection>
+
+        <ProfileSection icon="Smartphone" title="Приложение" hint="Установить на телефон">
+          <p className="text-sm text-chip">
+            Доделай.ру можно поставить как обычное приложение — с иконкой на экране и push-уведомлениями.
+          </p>
+          <div className="mt-3 [&>button]:min-h-[48px] [&>button]:w-full">
+            <InstallPwa />
+          </div>
+        </ProfileSection>
+
+        {user.isAdmin && (
+          <Link
+            to="/admin"
+            onClick={() => onOpenChange(false)}
+            className="flex min-h-[52px] items-center gap-3 rounded-2xl border border-line bg-tile px-4 transition-colors hover:border-primary/50"
+          >
+            <Icon name="ShieldCheck" size={17} className="shrink-0 text-primary" />
+            <span className="min-w-0 flex-1 text-sm font-medium">Админка</span>
+            <Icon name="ChevronRight" size={17} className="shrink-0 text-chip" />
+          </Link>
+        )}
+
+        <div className="flex gap-2">
+          <button
+            onClick={save}
+            disabled={busy}
+            className="flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-60"
+          >
+            <Icon name="Check" size={18} />
+            {busy ? 'Сохраняем…' : 'Сохранить'}
+          </button>
+          <button
+            onClick={() => {
+              onOpenChange(false);
+              logout();
+            }}
+            title="Выйти"
+            aria-label="Выйти"
+            className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border border-line text-muted-foreground transition-colors hover:border-destructive/60 hover:text-destructive"
+          >
+            <Icon name="LogOut" size={18} />
+          </button>
+        </div>
 
         <SubscriptionDialog open={proOpen} onOpenChange={setProOpen} />
       </DialogContent>
