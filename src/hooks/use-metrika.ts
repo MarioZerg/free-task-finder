@@ -9,6 +9,15 @@ declare global {
   }
 }
 
+export const reachGoal = (goal: string, params?: Record<string, unknown>) => {
+  if (typeof window === 'undefined' || typeof window.ym !== 'function') return;
+  try {
+    window.ym(COUNTER_ID, 'reachGoal', goal, params);
+  } catch {
+    /* метрика не должна ломать интерфейс */
+  }
+};
+
 const useMetrika = () => {
   const { pathname, search } = useLocation();
   const first = useRef(true);

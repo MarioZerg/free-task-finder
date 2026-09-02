@@ -9,6 +9,7 @@ import Icon from '@/components/ui/icon';
 import { payCheck } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
 import useSeo from '@/hooks/use-seo';
+import { reachGoal } from '@/hooks/use-metrika';
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -50,6 +51,7 @@ const DashboardInner = () => {
           if (!alive) return;
           if (r?.status === 'paid') {
             if (r.user) setUserData(r.user);
+            reachGoal('pay_success');
             await refresh();
             toast({
               title: 'Подписка Доделай PRO активна',

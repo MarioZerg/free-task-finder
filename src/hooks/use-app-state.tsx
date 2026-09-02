@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { api, clearToken, getToken, payStart, setToken } from '@/lib/api';
 import type { JobInvite, JobItem, UnreadInfo, User } from '@/lib/api';
+import { reachGoal } from '@/hooks/use-metrika';
 
 export type Role = 'customer' | 'executor';
 
@@ -213,6 +214,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     async (payload) => {
       const r = await api.auth('login', { method: 'POST', body: payload });
       if (r.user?.token) setToken(r.user.token);
+      reachGoal(r.created ? 'signup' : 'login', { role: r.user?.role });
       setUser(r.user);
       setLoginOpen(false);
       await refresh();
@@ -247,6 +249,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
 
   const startPayment = useCallback<AppState['startPayment']>(async (months) => {
     const r = await payStart(months);
+    reachGoal('pay_start', { months, amount: r.amount ?? 0 });
     return {
       paymentsEnabled: !!r.paymentsEnabled,
       paymentUrl: r.paymentUrl,

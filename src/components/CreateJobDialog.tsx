@@ -9,6 +9,7 @@ import {
 import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
 import type { JobItem } from '@/lib/api';
+import { reachGoal } from '@/hooks/use-metrika';
 import { CATEGORIES, CITY_DISTRICTS, CITY_LIST } from '@/data/mock';
 import { PRESETS } from '@/data/categories';
 import { toast } from '@/hooks/use-toast';
@@ -169,6 +170,7 @@ const CreateJobDialog = ({ open, onOpenChange, job }: Props) => {
         });
       } else {
         await createJob(payload);
+        reachGoal('job_created', { category: payload.category, city: payload.city });
         toast({
           title: 'Задание отправлено на проверку',
           description: 'После одобрения модератором оно появится в ленте заказов.',

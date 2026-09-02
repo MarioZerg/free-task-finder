@@ -11,6 +11,7 @@ import Avatar from '@/components/Avatar';
 import PhotoViewer from '@/components/PhotoViewer';
 import { useAppState } from '@/hooks/use-app-state';
 import type { JobItem } from '@/lib/api';
+import { reachGoal } from '@/hooks/use-metrika';
 import { money } from '@/data/mock';
 import { categoryMeta } from '@/data/categories';
 import { toast } from '@/hooks/use-toast';
@@ -87,6 +88,7 @@ const JobFeedCard = ({ job, responded, canRespond, readOnly }: Props) => {
     setBusy(true);
     try {
       await respond(job.id, note.trim());
+      reachGoal('job_response', { category: job.category, city: job.city });
       setOpen(false);
       setNote('');
       toast({ title: 'Отклик отправлен', description: 'Заказчик увидит вас в списке откликов.' });
