@@ -15,6 +15,7 @@ import ProfessionCityLanding from "./pages/ProfessionCityLanding";
 import DistrictLanding from "./pages/DistrictLanding";
 import ScrollToTop from "./components/ScrollToTop";
 import TrailingSlashRedirect from "./components/TrailingSlashRedirect";
+import useMetrika from "./hooks/use-metrika";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Admin = lazy(() => import("./pages/Admin"));
@@ -27,6 +28,11 @@ const RouteFallback = () => (
 
 const queryClient = new QueryClient();
 
+const MetrikaTracker = () => {
+  useMetrika();
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -35,6 +41,7 @@ const App = () => (
       <BrowserRouter>
         <ScrollToTop />
         <TrailingSlashRedirect />
+        <MetrikaTracker />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route
