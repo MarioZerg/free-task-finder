@@ -7,7 +7,8 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
-import { api, ReviewItem, User } from '@/lib/api';
+import { api } from '@/lib/api';
+import type { ReviewItem, User } from '@/lib/api';
 import { money } from '@/data/mock';
 import Avatar from '@/components/Avatar';
 

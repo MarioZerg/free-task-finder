@@ -8,7 +8,8 @@ import {
 } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
 import Avatar from '@/components/Avatar';
-import { dmSend, dmThread, DirectMessage } from '@/lib/api';
+import { dmSend, dmThread } from '@/lib/api';
+import type { DirectMessage } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
 
 const time = (iso: string) =>

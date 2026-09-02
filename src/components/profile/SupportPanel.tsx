@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Icon from '@/components/ui/icon';
-import { api, SupportTicket } from '@/lib/api';
+import { api } from '@/lib/api';
+import type { SupportTicket } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
 
 const TOPICS = [

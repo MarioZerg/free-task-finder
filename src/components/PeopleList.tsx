@@ -7,16 +7,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import DirectMessageDialog from '@/components/DirectMessageDialog';
 import SubscriptionDialog from '@/components/SubscriptionDialog';
 import { useAppState } from '@/hooks/use-app-state';
-import {
-  dmArchive,
-  dmList,
-  DirectThread,
-  listProfessions,
-  people,
-  PeopleCounts,
-  Profession,
-  User,
-} from '@/lib/api';
+import { dmArchive, dmList, listProfessions, people } from '@/lib/api';
+import type { DirectThread, PeopleCounts, Profession, User } from '@/lib/api';
 
 const lastSeenText = (u: User) => {
   if (u.online) return 'в сети';

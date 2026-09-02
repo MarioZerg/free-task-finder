@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import Icon from '@/components/ui/icon';
 import Avatar from '@/components/Avatar';
-import { api, JobItem } from '@/lib/api';
+import { api } from '@/lib/api';
+import type { JobItem } from '@/lib/api';
 import { money } from '@/data/mock';
 import { statusLabel } from '@/components/admin/AdminJobs';
 

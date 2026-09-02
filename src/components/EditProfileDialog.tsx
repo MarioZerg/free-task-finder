@@ -18,7 +18,8 @@ import { useAppState } from '@/hooks/use-app-state';
 import { CITIES } from '@/data/mock';
 import { toast } from '@/hooks/use-toast';
 import { formatPhone, isPhoneValid, phoneDigits } from '@/lib/phone';
-import { listProfessions, Profession, updateMyProfessions } from '@/lib/api';
+import { listProfessions, updateMyProfessions } from '@/lib/api';
+import type { Profession } from '@/lib/api';
 
 const MAX_PROFESSIONS = 8;
 

@@ -14,7 +14,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import Icon from '@/components/ui/icon';
-import { api, JobItem } from '@/lib/api';
+import { api } from '@/lib/api';
+import type { JobItem } from '@/lib/api';
 import {
   AlertDialog,
   AlertDialogAction,

@@ -8,7 +8,8 @@ import {
 } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
 import Avatar from '@/components/Avatar';
-import { api, User } from '@/lib/api';
+import { api } from '@/lib/api';
+import type { User } from '@/lib/api';
 import { CITIES } from '@/data/mock';
 import { toast } from '@/hooks/use-toast';
 

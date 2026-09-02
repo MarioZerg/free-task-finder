@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Icon from '@/components/ui/icon';
 import Avatar from '@/components/Avatar';
 import { useAppState } from '@/hooks/use-app-state';
-import { JobInvite } from '@/lib/api';
+import type { JobInvite } from '@/lib/api';
 import { money } from '@/data/mock';
 import { toast } from '@/hooks/use-toast';
 

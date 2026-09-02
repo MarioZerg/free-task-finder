@@ -15,7 +15,8 @@ import {
   getProfessionCityPagesBySlug,
   ProfessionCityPage,
 } from '@/data/professionCityPages';
-import { people, User } from '@/lib/api';
+import { people } from '@/lib/api';
+import type { User } from '@/lib/api';
 import NotFound from '@/pages/NotFound';
 
 const PRICE_ROWS: Record<string, { task: string; price: string }[]> = {

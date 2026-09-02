@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
-import { JobItem } from '@/lib/api';
+import type { JobItem } from '@/lib/api';
 import { CATEGORIES, CITY_DISTRICTS, CITY_LIST } from '@/data/mock';
 import { PRESETS } from '@/data/categories';
 import { toast } from '@/hooks/use-toast';

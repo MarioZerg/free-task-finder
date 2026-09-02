@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import Icon from '@/components/ui/icon';
 import Avatar from '@/components/Avatar';
-import { api, ChatMessage } from '@/lib/api';
+import { api } from '@/lib/api';
+import type { ChatMessage } from '@/lib/api';
 import { useAppState } from '@/hooks/use-app-state';
 import { toast } from '@/hooks/use-toast';
 

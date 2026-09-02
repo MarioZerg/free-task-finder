@@ -8,17 +8,8 @@ import {
   useState,
   ReactNode,
 } from 'react';
-import {
-  api,
-  clearToken,
-  getToken,
-  JobInvite,
-  JobItem,
-  payStart,
-  setToken,
-  UnreadInfo,
-  User,
-} from '@/lib/api';
+import { api, clearToken, getToken, payStart, setToken } from '@/lib/api';
+import type { JobInvite, JobItem, UnreadInfo, User } from '@/lib/api';
 
 export type Role = 'customer' | 'executor';
 

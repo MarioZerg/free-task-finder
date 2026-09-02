@@ -10,7 +10,7 @@ import Icon from '@/components/ui/icon';
 import Avatar from '@/components/Avatar';
 import PhotoViewer from '@/components/PhotoViewer';
 import { useAppState } from '@/hooks/use-app-state';
-import { JobItem } from '@/lib/api';
+import type { JobItem } from '@/lib/api';
 import { money } from '@/data/mock';
 import { categoryMeta } from '@/data/categories';
 import { toast } from '@/hooks/use-toast';
