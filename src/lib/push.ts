@@ -16,6 +16,14 @@ export const pushSupported = (): boolean =>
   'PushManager' in window &&
   'Notification' in window;
 
+const swReady = (): Promise<ServiceWorkerRegistration> =>
+  Promise.race([
+    navigator.serviceWorker.ready,
+    new Promise<ServiceWorkerRegistration>((_, reject) =>
+      setTimeout(() => reject(new Error('sw_timeout')), 5000),
+    ),
+  ]);
+
 export const getPermission = (): NotificationPermission => {
   if (typeof window === 'undefined' || !('Notification' in window)) return 'default';
   try {
@@ -41,7 +49,7 @@ export const iosNeedsInstall = (): boolean => {
 export const currentSubscription = async (): Promise<PushSubscription | null> => {
   if (!pushSupported()) return null;
   try {
-    const registration = await navigator.serviceWorker.ready;
+    const registration = await swReady();
     return await registration.pushManager.getSubscription();
   } catch {
     return null;
@@ -56,7 +64,7 @@ export const enablePush = async (
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') return { ok: false, reason: 'denied' };
 
-    const registration = await navigator.serviceWorker.ready;
+    const registration = await swReady();
     const existing = await registration.pushManager.getSubscription();
     const sub =
       existing ||

@@ -1,4 +1,15 @@
-const CACHE = 'dodelay-v2';
+const CACHE = 'dodelay-v3';
+
+const isDevModule = (url) =>
+  url.pathname.startsWith('/src/') ||
+  url.pathname.startsWith('/@vite') ||
+  url.pathname.startsWith('/@react-refresh') ||
+  url.pathname.startsWith('/@fs/') ||
+  url.pathname.startsWith('/node_modules/');
+
+const isAsset = (url) =>
+  url.pathname.startsWith('/assets/') ||
+  /\.(png|jpg|jpeg|svg|webp|ico|woff2?|json|webmanifest)$/i.test(url.pathname);
 const SHELL = [
   '/',
   '/index.html',
@@ -10,7 +21,13 @@ const SHELL = [
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  event.waitUntil(
+    caches
+      .open(CACHE)
+      .then((c) => c.addAll(SHELL))
+      .catch(() => null)
+      .then(() => self.skipWaiting()),
+  );
 });
 
 self.addEventListener('activate', (event) => {
@@ -29,12 +46,16 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  if (request.mode === 'navigate') {
+  if (isDevModule(url)) return;
+
+  if (request.mode === 'navigate' || request.destination === 'document') {
     event.respondWith(
       fetch(request).catch(() => caches.match('/index.html').then((r) => r || Response.error())),
     );
     return;
   }
+
+  if (!isAsset(url)) return;
 
   event.respondWith(
     caches.match(request).then(

@@ -3,6 +3,30 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+    <script>
+      (function () {
+        var h = location.hostname;
+        window.__DODELAY_IS_PROD__ = h === 'dodelay.ru' || h === 'www.dodelay.ru';
+        if (window.__DODELAY_IS_PROD__) return;
+        try {
+          if (window.caches && caches.keys) {
+            caches.keys().then(function (ks) {
+              ks.forEach(function (k) { caches.delete(k); });
+            });
+          }
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (rs) {
+              var had = rs.length > 0;
+              rs.forEach(function (r) { r.unregister(); });
+              if (had && !sessionStorage.getItem('__sw_cleaned__')) {
+                sessionStorage.setItem('__sw_cleaned__', '1');
+                location.reload();
+              }
+            });
+          }
+        } catch (e) {}
+      })();
+    </script>
     <title>Доделай.ру — шабашка и подработка в Ярославле</title>
     <meta name="description" content="Бесплатные объявления о разовой подработке в Ярославле и области: заказчики публикуют задачи, исполнители откликаются. Вход через MAX."/>
     <link rel="canonical" href="https://dodelay.ru/" />
@@ -335,11 +359,16 @@
 </script>
 <script type="module" src="/src/main.tsx"></script>
 <script>
-  if ('serviceWorker' in navigator) {
+  (function () {
+    if (!('serviceWorker' in navigator)) return;
+    if (!window.__DODELAY_IS_PROD__) return;
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js').catch(function () {});
+      navigator.serviceWorker.register('/sw.js').then(function (reg) {
+        reg.update();
+        setInterval(function () { reg.update(); }, 60 * 60 * 1000);
+      }).catch(function () {});
     });
-  }
+  })();
 </script>
 
 <!-- Yandex.Metrika counter -->
