@@ -1,17 +1,24 @@
 User-agent: Googlebot
 Allow: /
+Allow: /podrabotka/
 Disallow: /dashboard
 Disallow: /admin
+Sitemap: https://dodelay.ru/sitemap.xml
 
 User-agent: Bingbot
 Allow: /
+Allow: /podrabotka/
 Disallow: /dashboard
 Disallow: /admin
+Sitemap: https://dodelay.ru/sitemap.xml
 
 User-agent: Yandex
 Allow: /
+Allow: /podrabotka/
 Disallow: /dashboard
 Disallow: /admin
+Clean-param: utm_source&utm_medium&utm_campaign&utm_term&utm_content&yclid&gclid&from&ref
+Sitemap: https://dodelay.ru/sitemap.xml
 
 User-agent: Twitterbot
 Allow: /
@@ -21,8 +28,9 @@ Allow: /
 
 User-agent: *
 Allow: /
+Allow: /podrabotka/
 Disallow: /dashboard
 Disallow: /admin
+Clean-param: utm_source&utm_medium&utm_campaign&utm_term&utm_content&yclid&gclid&from&ref
 
-Host: dodelay.ru
 Sitemap: https://dodelay.ru/sitemap.xml
