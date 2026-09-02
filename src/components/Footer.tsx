@@ -89,6 +89,22 @@ const Footer = () => {
             Оплата подписки Доделай PRO принимается через интернет-эквайринг Точка Банк:
             банковской картой или по СБП. Платёж проходит на защищённой странице банка.
           </p>
+          <a
+            href="https://webmaster.yandex.ru/siteinfo/?site=https://dodelay.ru"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-block opacity-70 transition-opacity hover:opacity-100"
+            aria-label="Индекс качества сайта в Яндекс Вебмастере"
+          >
+            <img
+              width="88"
+              height="31"
+              alt="Индекс качества сайта"
+              loading="lazy"
+              className="rounded-lg"
+              src="https://yandex.ru/cycounter?https://dodelay.ru&theme=light&lang=ru"
+            />
+          </a>
         </div>
 
         <div className="pointer-events-none mt-6 flex select-none items-end justify-between pb-10 md:pb-14">
