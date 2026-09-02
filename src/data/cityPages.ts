@@ -1,4 +1,4 @@
-import { JobItem } from '@/lib/api';
+import type { JobItem } from '@/lib/api';
 
 export interface CityPage {
   slug: string;
