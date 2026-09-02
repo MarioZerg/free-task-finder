@@ -1,5 +1,13 @@
 const CACHE = 'dodelay-v2';
-const SHELL = ['/', '/index.html', '/icon-192.png', '/icon-512.png', '/favicon.svg'];
+const SHELL = [
+  '/',
+  '/index.html',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/favicon.ico',
+  '/favicon-32.png',
+  '/favicon.svg',
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
