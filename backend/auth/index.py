@@ -223,6 +223,7 @@ def _user_row(
         'autoRenew': bool(row.get('subscription_auto_renew')),
         'isPro': _is_pro(row.get('subscription_until')),
         'blocked': bool(row.get('blocked')),
+        'isDemo': bool(row.get('is_demo')),
         'createdAt': row['created_at'],
     }
     if private:
@@ -1116,6 +1117,10 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             where = "WHERE role IN ('customer', 'executor')"
             if role in ('customer', 'executor'):
                 where = f"WHERE role = '{role}'"
+            elif role == 'demo':
+                where = "WHERE is_demo = TRUE"
+            elif role == 'real':
+                where = "WHERE role IN ('customer', 'executor') AND is_demo = FALSE"
             cur.execute(
                 f"SELECT * FROM {SCHEMA}.users {where} ORDER BY created_at DESC LIMIT 200"
             )

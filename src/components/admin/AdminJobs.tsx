@@ -179,7 +179,14 @@ const AdminJobs = () => {
               className="flex flex-col gap-4 rounded-3xl border border-line bg-surface p-4 sm:flex-row sm:flex-wrap sm:items-center sm:p-5"
             >
               <div className="min-w-0 flex-1 sm:min-w-[220px]">
-                <p className="break-words font-head text-lg font-medium">{j.title}</p>
+                <p className="flex flex-wrap items-center gap-2 break-words font-head text-lg font-medium">
+                  {j.title}
+                  {j.isDemo && (
+                    <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-medium text-amber-600">
+                      демо
+                    </span>
+                  )}
+                </p>
                 <p className="mt-1 break-words text-sm text-chip">
                   {money(j.finalPrice || j.price)} · {j.city} · {dateRu(j.createdAt)}
                 </p>

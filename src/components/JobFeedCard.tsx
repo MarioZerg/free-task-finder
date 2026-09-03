@@ -125,6 +125,12 @@ const JobFeedCard = ({ job, responded, canRespond, readOnly }: Props) => {
           </span>
 
           <div className="min-w-0 flex-1">
+            {job.isDemo && (
+              <span className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-tile px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                <Icon name="Info" size={11} />
+                Пример — так выглядят заказы
+              </span>
+            )}
             <div className="flex items-start justify-between gap-2 sm:gap-3">
               <h3 className="min-w-0 break-words font-head text-base font-medium leading-snug sm:text-lg">
                 {job.title}
@@ -230,7 +236,12 @@ const JobFeedCard = ({ job, responded, canRespond, readOnly }: Props) => {
             </span>
           </span>
 
-          {responded ? (
+          {job.isDemo ? (
+            <span className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border border-line bg-tile px-4 py-2 text-xs text-muted-foreground sm:min-h-0 sm:w-auto sm:py-2">
+              <Icon name="Eye" size={14} />
+              Пример заказа
+            </span>
+          ) : responded ? (
             <span className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border border-line bg-tile px-4 py-2 text-sm text-muted-foreground sm:min-h-0 sm:w-auto sm:py-2">
               <Icon name="CheckCheck" size={15} className="text-primary" />
               Отклик отправлен

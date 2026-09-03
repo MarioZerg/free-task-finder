@@ -53,6 +53,7 @@ export interface User {
   online?: boolean;
   lastSeen?: string | null;
   blocked?: boolean;
+  isDemo?: boolean;
   createdAt: string;
   phone?: string | null;
   contact?: string | null;
@@ -304,6 +305,7 @@ export interface JobItem {
   ownerOnline?: boolean;
   executorOnline?: boolean;
   moderation?: 'pending' | 'approved' | 'rejected';
+  isDemo?: boolean;
   expiresAt?: string | null;
   bumpedAt?: string | null;
   responses?: JobResponseItem[];

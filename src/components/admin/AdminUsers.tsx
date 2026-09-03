@@ -18,8 +18,10 @@ const field =
 
 const filters = [
   { id: 'all', label: 'Все' },
+  { id: 'real', label: 'Реальные' },
   { id: 'customer', label: 'Заказчики' },
   { id: 'executor', label: 'Исполнители' },
+  { id: 'demo', label: 'Демо' },
 ];
 
 const AdminUsers = ({ onProfile }: { onProfile: (id: number) => void }) => {
@@ -37,6 +39,11 @@ const AdminUsers = ({ onProfile }: { onProfile: (id: number) => void }) => {
         method: 'POST',
         body: r === 'all' ? {} : { role: r },
       });
+      if (r === 'all') {
+        const list = (res.users || []) as User[];
+        setUsers([...list].sort((a, b) => Number(a.isDemo) - Number(b.isDemo)));
+        return;
+      }
       setUsers(res.users || []);
     } catch {
       toast({ title: 'Не удалось загрузить пользователей' });
@@ -103,6 +110,11 @@ const AdminUsers = ({ onProfile }: { onProfile: (id: number) => void }) => {
                   {u.blocked && (
                     <span className="rounded-full border border-destructive/60 px-2.5 py-0.5 text-xs">
                       заблокирован
+                    </span>
+                  )}
+                  {u.isDemo && (
+                    <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-medium text-amber-600">
+                      демо
                     </span>
                   )}
                 </p>

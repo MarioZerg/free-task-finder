@@ -149,6 +149,7 @@ def _job(row: Dict[str, Any], viewer: Optional[Dict[str, Any]]) -> Dict[str, Any
         'moderation': row['moderation'],
         'expiresAt': row['expires_at'],
         'bumpedAt': row['bumped_at'],
+        'isDemo': bool(row.get('is_demo')),
     }
     if (is_owner or is_executor) and (assigned or row['status'] == 'done'):
         if is_owner or row['owner_contact_shared']:
@@ -1004,6 +1005,8 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
     if method == 'POST' and action == 'respond':
         if me['role'] != 'executor':
             return _resp(403, {'error': 'only_executor'})
+        if job.get('is_demo'):
+            return _resp(400, {'error': 'demo_job'})
         if job['status'] != 'open':
             return _resp(400, {'error': 'job_closed'})
         if _busy_executor(cur, me['id'], _is_pro(me)):
