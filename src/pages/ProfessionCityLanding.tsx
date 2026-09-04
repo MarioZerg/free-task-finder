@@ -229,6 +229,11 @@ const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
               Сумму всегда назначает заказчик — это лишь ориентир по типовым задачам, итоговую цену
               стороны согласуют напрямую.
             </p>
+            <p className="mt-3 flex max-w-[620px] items-start gap-2.5 rounded-2xl border border-primary/40 bg-primary/5 px-4 py-3 text-sm text-muted-foreground">
+              <Icon name="TrendingDown" size={16} className="mt-0.5 shrink-0 text-primary" />
+              Цены ниже, чем на биржах услуг: мы не берём комиссию, поэтому исполнитель получает
+              всю сумму, а вы платите меньше.
+            </p>
             <div className="mt-6 overflow-hidden rounded-3xl border border-line">
               <table className="w-full text-left text-sm">
                 <tbody>
@@ -267,7 +272,7 @@ const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
                   to={`/podrabotka/${p.citySlug}/${p.professionSlug}`}
                   className="flex items-center gap-2 rounded-full border border-line bg-tile px-5 py-3 text-sm font-medium transition-colors hover:border-primary/60"
                 >
-                  {page.professionLabel} в {c.nameNominative}
+                  {page.professionLabel} в {c.name}
                   <Icon name="ArrowRight" size={14} />
                 </Link>
               );
