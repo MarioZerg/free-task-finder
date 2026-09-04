@@ -4,6 +4,8 @@ export interface CityPage {
   slug: string;
   name: string;
   nameNominative: string;
+  /** Родительный падеж: «по районам Ярославля» */
+  nameGenitive: string;
   title: string;
   description: string;
   h1: string;
@@ -19,6 +21,7 @@ export const CITY_PAGES: CityPage[] = [
     slug: 'yaroslavl',
     name: 'Ярославле',
     nameNominative: 'Ярославль',
+    nameGenitive: 'Ярославля',
     title: 'Шабашка и подработка в Ярославле — Доделай.ру',
     description:
       'В Ярославле разместите задачу бесплатно или найдите подработку по районам: переезд, ремонт, уборка, дача. Вход через MAX.',
@@ -41,6 +44,7 @@ export const CITY_PAGES: CityPage[] = [
     slug: 'rybinsk',
     name: 'Рыбинске',
     nameNominative: 'Рыбинск',
+    nameGenitive: 'Рыбинска',
     title: 'Шабашка и подработка в Рыбинске — Доделай.ру',
     description:
       'В Рыбинске разместите заказ бесплатно или найдите подработку на день: переезд, разгрузка, уборка. Вход через MAX.',
@@ -56,6 +60,7 @@ export const CITY_PAGES: CityPage[] = [
     slug: 'tutaev',
     name: 'Тутаеве',
     nameNominative: 'Тутаев',
+    nameGenitive: 'Тутаева',
     title: 'Шабашка и подработка в Тутаеве — Доделай.ру',
     description:
       'В Тутаеве разместите задачу бесплатно или найдите подработку на любом берегу Волги: ремонт, дача, переезд. Вход через MAX.',
@@ -71,6 +76,7 @@ export const CITY_PAGES: CityPage[] = [
     slug: 'pereslavl',
     name: 'Переславле-Залесском',
     nameNominative: 'Переславль-Залесский',
+    nameGenitive: 'Переславля-Залесского',
     title: 'Шабашка и подработка в Переславле-Залесском',
     description:
       'В Переславле-Залесском разместите задачу бесплатно или найдите подработку: помощь туристам, переезд, дача. Вход через MAX.',
@@ -86,6 +92,7 @@ export const CITY_PAGES: CityPage[] = [
     slug: 'uglich',
     name: 'Угличе',
     nameNominative: 'Углич',
+    nameGenitive: 'Углича',
     title: 'Шабашка и подработка в Угличе — Доделай.ру',
     description:
       'В Угличе разместите задачу бесплатно или найдите подработку: подготовка жилья для туристов, ремонт, уборка. Вход через MAX.',
@@ -101,6 +108,7 @@ export const CITY_PAGES: CityPage[] = [
     slug: 'rostov',
     name: 'Ростове Великом',
     nameNominative: 'Ростов Великий',
+    nameGenitive: 'Ростова Великого',
     title: 'Шабашка и подработка в Ростове Великом',
     description:
       'В Ростове Великом разместите задачу бесплатно или найдите подработку у кремля: переезд, ремонт, дача. Вход через MAX.',

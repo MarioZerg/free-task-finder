@@ -20,7 +20,11 @@ import { people } from '@/lib/api';
 import type { User } from '@/lib/api';
 import NotFound from '@/pages/PageNotFound';
 import Loader from '@/components/Loader';
+import ProfessionContent from '@/components/landing/ProfessionContent';
 
+
+/** Дата последнего обновления страниц каталога */
+const BUILD_DATE = '2026-09-05';
 
 const cityMatch = (userCity: string, nameNominative: string) =>
   userCity.split(',')[0].trim().toLowerCase() === nameNominative.trim().toLowerCase();
@@ -62,18 +66,40 @@ const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
 
   const canonical = `https://dodelay.ru/podrabotka/${page.citySlug}/${page.professionSlug}`;
 
+  const firstTask = page.tasks[0]?.task || 'типовую работу';
+  const firstPrice = page.tasks[0]?.price || 'от 500 ₽';
+  const districtsList = city.districts.slice(0, 3).join(', ');
+
+  // Вопросы собираются из данных профессии и города: у каждой из 300 страниц
+  // свой набор формулировок, а не один шаблон на весь сайт.
   const faq = [
     {
       q: `Как быстро найти ${page.professionGenitive} в ${city.name}?`,
-      a: `Разместите заявку бесплатно с описанием задачи — её увидят все, кто указал специальность «${page.professionLabel}» в ${city.name}. Либо откройте ленту заказов, если сами ищете такую подработку.`,
+      a: `Разместите заявку бесплатно с описанием задачи — её увидят все, кто указал специальность «${page.professionLabel}» в ${city.name}. Первые отклики обычно приходят в день публикации. Либо откройте ленту заказов, если сами ищете такую подработку.`,
     },
     {
       q: `Сколько стоит вызвать ${page.professionGenitive} в ${city.name}?`,
-      a: 'Точную сумму называет заказчик — ориентир по типовым работам есть в таблице выше. Комиссию с оплаты сервис не берёт.',
+      a: `Ориентир по типовым работам: «${firstTask}» — ${firstPrice}, полный список цен есть в таблице выше. Точную сумму заказчик и мастер согласуют между собой, комиссию с оплаты сервис не берёт.`,
+    },
+    {
+      q: `Можно ли вызвать ${page.professionGenitive} срочно, в день обращения?`,
+      a: `Да. Укажите в объявлении, что работа нужна сегодня — такие заявки исполнители разбирают быстрее всего. Срочный выезд обычно стоит немного дороже: мастер подстраивает под вас свой график.`,
+    },
+    {
+      q: `Мастер приедет со своим инструментом?`,
+      a: `У большинства частных исполнителей инструмент свой — это стоит уточнить в переписке до начала работ. Расходные материалы, как правило, покупает заказчик либо мастер с последующим возмещением.`,
+    },
+    {
+      q: `В каких районах ${city.nameGenitive} работают исполнители?`,
+      a: `По всему городу, включая ${districtsList}. Мастера чаще берут заказы рядом с домом, поэтому укажите район в объявлении — так исполнитель сразу поймёт, сколько ехать, и не станет закладывать дорогу в стоимость.`,
     },
     {
       q: `Можно ли заказать ${page.professionGenitive} без регистрации на сайте?`,
-      a: 'Разместить задачу можно после входа через MAX — это заменяет обычную регистрацию и пароль. Публикация объявлений бесплатна.',
+      a: 'Разместить задачу можно после входа через MAX — это заменяет обычную регистрацию и пароль, занимает меньше минуты. Публикация объявлений бесплатна, скрытых платежей нет.',
+    },
+    {
+      q: `Что делать, если работа выполнена плохо?`,
+      a: `Оплата идёт напрямую мастеру, поэтому принимайте работу до расчёта и проверяйте результат на месте. После завершения задания оставьте честный отзыв — рейтинг виден всем заказчикам и напрямую влияет на то, сколько заказов получит исполнитель.`,
     },
   ];
 
@@ -146,6 +172,22 @@ const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
         item: canonical,
       },
     ],
+  });
+
+  // Дата обновления: поисковики показывают её в сниппете и учитывают свежесть
+  useLdJson(`ld-pc-webpage-${page.citySlug}-${page.professionSlug}`, {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    '@id': `${canonical}#webpage`,
+    url: canonical,
+    name: page.title,
+    description: page.description,
+    inLanguage: 'ru-RU',
+    isPartOf: { '@id': 'https://dodelay.ru/#website' },
+    about: { '@id': `${canonical}#service` },
+    primaryImageOfPage: 'https://dodelay.ru/img/og-cover.jpg',
+    dateModified: BUILD_DATE,
+    breadcrumb: { '@id': `${canonical}#breadcrumbs` },
   });
 
   useLdJson(`ld-pc-faq-${page.citySlug}-${page.professionSlug}`, {
@@ -333,10 +375,12 @@ const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
           )}
         </section>
 
+        <ProfessionContent page={page} city={city} />
+
         <section className="mt-16 max-w-[760px]">
           <p className="text-sm uppercase tracking-[0.2em] text-chip">Вопросы</p>
           <h2 className="mt-3 font-head text-2xl font-medium tracking-tight md:text-3xl">
-            Коротко о том, как найти {page.professionGenitive} в {city.name}
+            Частые вопросы: {page.professionLabel} в {city.name}
           </h2>
           <div className="mt-6 space-y-4">
             {faq.map((f) => (
