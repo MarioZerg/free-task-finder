@@ -1,6 +1,10 @@
 User-agent: Googlebot
 Allow: /
 Allow: /podrabotka/
+Allow: /google*.html
+Allow: /*.txt$
+Allow: /*.png$
+Allow: /*.webp$
 Disallow: /dashboard
 Disallow: /admin
 Sitemap: https://dodelay.ru/sitemap.xml
