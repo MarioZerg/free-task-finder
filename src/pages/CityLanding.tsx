@@ -12,6 +12,7 @@ import { countOpenJobsInCity, getCityPage, getCityPagesBySlug, pluralJobs } from
 import { professionsByGroup, PROFESSIONS } from '@/data/professionsCatalog';
 import { getDistrictPagesByCity } from '@/data/districtPages';
 import NotFound from '@/pages/PageNotFound';
+import CityContent from '@/components/landing/CityContent';
 
 const TASK_HINTS: Record<string, string> = {
   move: 'Переезды, погрузка и разгрузка — самый частый запрос',
@@ -35,6 +36,43 @@ const CityLandingInner = ({ slug }: { slug: string }) => {
   const nearby = getCityPagesBySlug(city.nearbyCities);
   const openCount = countOpenJobsInCity(feed, city.nameNominative);
   const districtPages = getDistrictPagesByCity(city.slug);
+
+  // Вопросы строятся из данных города — районы, соседи, население,
+  // поэтому у шести городов получаются разные наборы формулировок.
+  const faq = [
+    {
+      q: `Как найти подработку в ${city.name}?`,
+      a: `Войдите через MAX, выберите роль исполнителя и откройте ленту заказов — там видны все активные задачи города${city.districts.length ? ' с разбивкой по районам' : ''}. Откликайтесь на подходящие: заказчик увидит вашу анкету с рейтингом и отзывами.`,
+    },
+    {
+      q: `Сколько стоит шабашка в ${city.name}?`,
+      a: 'Сумму указывает заказчик — в таблице выше приведён ориентир по типовым задачам. Комиссию с оплаты сервис не берёт, расчёт идёт напрямую между заказчиком и исполнителем.',
+    },
+    {
+      q: `Есть ли подработка в ${city.name} без опыта?`,
+      a: 'Да. Погрузка, уборка территории, помощь по хозяйству и курьерские задачи не требуют квалификации — достаточно прийти вовремя и аккуратно сделать работу. С первыми отзывами открываются более дорогие профильные заказы.',
+    },
+    {
+      q: 'Можно ли работать по выходным или вечерам?',
+      a: 'Да, график полностью свободный. Вы сами решаете, какие задачи брать и в какие дни выходить — многие совмещают разовые заказы с основной работой.',
+    },
+    {
+      q: `Как часто появляются новые заказы в ${city.name}?`,
+      a: `Лента обновляется в течение дня, спрос зависит от сезона: летом больше загородных работ, зимой — уборки снега и задач внутри помещений. Переезды, уборка и сборка мебели идут круглый год.`,
+    },
+    {
+      q: 'Нужно ли платить за доступ к заказам?',
+      a: 'Нет. Сервис бесплатный и для заказчиков, и для исполнителей: ни абонентской платы, ни комиссии с заказа. Если кто-то просит взнос за регистрацию или доступ к заявкам — это мошенник.',
+    },
+    {
+      q: 'Можно разместить задачу без регистрации на сайте?',
+      a: 'Вход только через мессенджер MAX — это заменяет и регистрацию, и пароль, занимает меньше минуты. Публикация объявлений бесплатна.',
+    },
+    {
+      q: `Работает ли сервис в пригороде ${city.nameGenitive}?`,
+      a: `Да, объявления публикуют и из пригорода, и из соседних населённых пунктов${nearby.length ? `: многие исполнители берут заказы также в ${nearby.map((n) => n.name).join(', ')}` : ''}. Укажите точный адрес в задаче — так исполнитель сразу оценит дорогу.`,
+    },
+  ];
 
   useSeo({
     title: city.title,
@@ -93,32 +131,27 @@ const CityLandingInner = ({ slug }: { slug: string }) => {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
     '@id': `https://dodelay.ru/podrabotka/${city.slug}#faq`,
-    mainEntity: [
-      {
-        '@type': 'Question',
-        name: `Как найти подработку в ${city.name}?`,
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: `Войдите через MAX, выберите роль исполнителя и откройте ленту заказов — там видны все активные задачи города${city.districts.length ? ' с разбивкой по районам' : ''}.`,
-        },
-      },
-      {
-        '@type': 'Question',
-        name: `Сколько стоит шабашка в ${city.name}?`,
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'Сумму указывает заказчик — в таблице выше приведён ориентир по типовым задачам. Комиссию с оплаты сервис не берёт.',
-        },
-      },
-      {
-        '@type': 'Question',
-        name: 'Можно разместить задачу без регистрации на сайте?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'Вход только через мессенджер MAX — это заменяет и регистрацию, и пароль. Публикация объявлений бесплатна.',
-        },
-      },
-    ],
+    mainEntity: faq.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  });
+
+  // Дата обновления: поисковики учитывают свежесть и показывают её в сниппете
+  useLdJson(`ld-city-webpage-${city.slug}`, {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    '@id': `https://dodelay.ru/podrabotka/${city.slug}#webpage`,
+    url: `https://dodelay.ru/podrabotka/${city.slug}`,
+    name: city.title,
+    description: city.description,
+    inLanguage: 'ru-RU',
+    isPartOf: { '@id': 'https://dodelay.ru/#website' },
+    about: { '@id': `https://dodelay.ru/podrabotka/${city.slug}#service` },
+    primaryImageOfPage: `https://dodelay.ru${city.image}`,
+    breadcrumb: { '@id': `https://dodelay.ru/podrabotka/${city.slug}#breadcrumbs` },
+    dateModified: '2026-09-05',
   });
 
   return (
@@ -317,39 +350,20 @@ const CityLandingInner = ({ slug }: { slug: string }) => {
           </section>
         )}
 
+        <CityContent city={city} />
+
         <section className="mt-16 max-w-[760px]">
           <p className="text-sm uppercase tracking-[0.2em] text-chip">Вопросы</p>
           <h2 className="mt-3 font-head text-2xl font-medium tracking-tight md:text-3xl">
-            Коротко о подработке в {city.name}
+            Частые вопросы о подработке в {city.name}
           </h2>
           <div className="mt-6 space-y-4">
-            <div className="rounded-3xl border border-line bg-surface p-6">
-              <h3 className="font-head text-base font-medium">
-                Как найти подработку в {city.name}?
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Войдите через MAX, выберите роль исполнителя и откройте ленту заказов — там видны
-                все активные задачи города{city.districts.length ? ' с разбивкой по районам' : ''}.
-              </p>
-            </div>
-            <div className="rounded-3xl border border-line bg-surface p-6">
-              <h3 className="font-head text-base font-medium">
-                Сколько стоит шабашка в {city.name}?
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Сумму указывает заказчик — в таблице выше приведён ориентир по типовым задачам.
-                Комиссию с оплаты сервис не берёт.
-              </p>
-            </div>
-            <div className="rounded-3xl border border-line bg-surface p-6">
-              <h3 className="font-head text-base font-medium">
-                Можно разместить задачу без регистрации на сайте?
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Вход только через мессенджер MAX — это заменяет и регистрацию, и пароль. Публикация
-                объявлений бесплатна.
-              </p>
-            </div>
+            {faq.map((f) => (
+              <div key={f.q} className="rounded-3xl border border-line bg-surface p-6">
+                <h3 className="font-head text-base font-medium">{f.q}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.a}</p>
+              </div>
+            ))}
           </div>
         </section>
       </main>
