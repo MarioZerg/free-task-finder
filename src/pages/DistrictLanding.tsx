@@ -16,6 +16,8 @@ import {
   DistrictPage,
 } from '@/data/districtPages';
 import NotFound from '@/pages/PageNotFound';
+import { PROFESSIONS } from '@/data/professionsCatalog';
+import DistrictContent from '@/components/landing/DistrictContent';
 
 const TASK_HINTS: Record<string, string> = {
   move: 'Переезды, погрузка и разгрузка — самый частый запрос',
@@ -43,18 +45,42 @@ const DistrictLandingInner = ({ district }: { district: DistrictPage }) => {
 
   const canonical = `https://dodelay.ru/podrabotka/${city.slug}/rayon/${district.slug}`;
 
+  // Вопросы опираются на фактуру самого района — микрорайоны, застройку,
+  // востребованные специальности, — поэтому у шести страниц разные ответы.
+  const topLabels = district.topProfessions
+    .map((s) => PROFESSIONS.find((p) => p.slug === s)?.label)
+    .filter(Boolean)
+    .slice(0, 3)
+    .join(', ');
+
   const faq = [
     {
       q: `Как найти подработку в ${district.name}?`,
-      a: `Войдите через MAX, выберите роль исполнителя и откройте ленту заказов — там видны все активные задачи по городу, в том числе в ${district.name}.`,
+      a: `Войдите через MAX, выберите роль исполнителя и откройте ленту заказов — там видны все активные задачи по городу, в том числе в ${district.name}. Откликайтесь на подходящие: заказчик увидит вашу анкету с рейтингом и отзывами.`,
     },
     {
       q: `Сколько стоит шабашка в ${district.name}?`,
-      a: 'Сумму указывает заказчик — в таблице выше приведён ориентир по типовым задачам. Комиссию с оплаты сервис не берёт.',
+      a: 'Сумму указывает заказчик — в таблице выше приведён ориентир по типовым задачам района. Комиссию с оплаты сервис не берёт, расчёт идёт напрямую между заказчиком и исполнителем.',
+    },
+    {
+      q: `Каких мастеров чаще всего ищут в ${district.name}?`,
+      a: `Чаще остальных здесь заказывают: ${topLabels}. Набор задач напрямую связан с характером застройки. ${district.housing}`,
+    },
+    {
+      q: `Какие микрорайоны входят в ${district.nameNominative}?`,
+      a: `${district.areas.join(', ')}. В объявлении лучше писать привычное местное название, а не только официальное имя района — так исполнителю сразу понятно, куда ехать.`,
+    },
+    {
+      q: `Приедет ли мастер из другого района ${city.nameGenitive}?`,
+      a: `Обычно да, но многое зависит от дороги. ${district.logistics.split('.')[0]}. Поэтому исполнители рядом откликаются охотнее — укажите точный адрес, чтобы мастер сразу оценил маршрут.`,
+    },
+    {
+      q: 'Нужно ли платить за доступ к заказам?',
+      a: 'Нет. Сервис бесплатный и для заказчиков, и для исполнителей: ни абонентской платы, ни комиссии с заказа. Если кто-то просит взнос за регистрацию или доступ к заявкам — это мошенник.',
     },
     {
       q: 'Можно разместить задачу без регистрации на сайте?',
-      a: 'Вход только через мессенджер MAX — это заменяет и регистрацию, и пароль. Публикация объявлений бесплатна.',
+      a: 'Вход только через мессенджер MAX — это заменяет и регистрацию, и пароль, занимает меньше минуты. Публикация объявлений бесплатна.',
     },
   ];
 
@@ -103,6 +129,21 @@ const DistrictLandingInner = ({ district }: { district: DistrictPage }) => {
         item: canonical,
       },
     ],
+  });
+
+  // Дата обновления: поисковики учитывают свежесть и показывают её в сниппете
+  useLdJson(`ld-district-webpage-${district.slug}`, {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    '@id': `${canonical}#webpage`,
+    url: canonical,
+    name: district.title,
+    description: district.description,
+    inLanguage: 'ru-RU',
+    isPartOf: { '@id': 'https://dodelay.ru/#website' },
+    about: { '@id': `${canonical}#service` },
+    breadcrumb: { '@id': `${canonical}#breadcrumbs` },
+    dateModified: '2026-09-05',
   });
 
   useLdJson(`ld-district-faq-${district.slug}`, {
@@ -217,10 +258,12 @@ const DistrictLandingInner = ({ district }: { district: DistrictPage }) => {
           </div>
         </section>
 
+        <DistrictContent district={district} city={city} />
+
         <section className="mt-16">
           <p className="text-sm uppercase tracking-[0.2em] text-chip">Рядом</p>
           <h2 className="mt-3 font-head text-2xl font-medium tracking-tight md:text-3xl">
-            Другие районы Ярославля
+            Другие районы {city.nameGenitive}
           </h2>
           <div className="mt-6 flex flex-wrap gap-3">
             {otherDistricts.map((d) => (
