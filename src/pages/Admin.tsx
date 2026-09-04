@@ -12,6 +12,7 @@ import AdminJobs from '@/components/admin/AdminJobs';
 import AdminRoleView from '@/components/admin/AdminRoleView';
 import AdminModeration from '@/components/admin/AdminModeration';
 import AdminDemoAccess from '@/components/admin/AdminDemoAccess';
+import AdminBroadcast from '@/components/admin/AdminBroadcast';
 import AdminReviews from '@/components/admin/AdminReviews';
 import AdminSupport from '@/components/admin/AdminSupport';
 import ProfileDialog from '@/components/ProfileDialog';
@@ -150,6 +151,10 @@ const AdminInner = () => {
 
         <div className="mt-8">
           <AdminDemoAccess />
+        </div>
+
+        <div className="mt-6">
+          <AdminBroadcast />
         </div>
 
         <div className="mt-10 flex flex-wrap items-center gap-4">

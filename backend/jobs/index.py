@@ -60,6 +60,46 @@ def _notify_admins(cur, text: str):
         pass
 
 
+def _notify_executors_new_job(cur, job_id: int):
+    """Сообщает исполнителям в MAX о новом заказе после одобрения модератором.
+
+    Пишем только тем, кто включил уведомления об откликах, не заблокирован
+    и находится в том же городе. Демо-заказы не рассылаем.
+    """
+    if not BOT_TOKEN:
+        return
+    try:
+        cur.execute(
+            f"""SELECT title, price, city, category, is_demo
+                FROM {SCHEMA}.jobs WHERE id = {int(job_id)}"""
+        )
+        job = cur.fetchone()
+        if not job or job['is_demo']:
+            return
+        base_city = str(job['city']).split(',')[0].strip()
+        cur.execute(
+            f"""SELECT DISTINCT max_user_id FROM {SCHEMA}.users
+                WHERE role = 'executor' AND blocked = FALSE AND is_demo = FALSE
+                  AND COALESCE(notify_responses, TRUE) = TRUE
+                  AND max_user_id IS NOT NULL AND max_user_id <> ''
+                  AND city ILIKE '{_esc(base_city)}%'
+                LIMIT 500"""
+        )
+        rows = cur.fetchall()
+        text = (
+            f'Новый заказ в городе {base_city}\n\n'
+            f"{job['title']}\n"
+            f"Оплата: {int(job['price'])} ₽\n"
+            f"Категория: {job['category']}\n\n"
+            f'Откройте Доделай.ру и откликнитесь первым — '
+            f'заказчик обычно выбирает из первых откликов.'
+        )
+        for row in rows:
+            _notify(row['max_user_id'], text)
+    except Exception:
+        pass
+
+
 def _conn():
     return psycopg2.connect(os.environ['DATABASE_URL'])
 
@@ -532,6 +572,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     f"Ваше задание «{updated['title']}» появилось в ленте заказов",
                     url='/dashboard', job_id=jid, esc=_esc,
                 )
+                _notify_executors_new_job(cur, jid)
             elif updated and moderation == 'rejected':
                 send_push(
                     cur, SCHEMA, updated['owner_id'], 'status', 'Задание отклонено',

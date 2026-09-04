@@ -48,6 +48,15 @@
       "method": "GET",
       "path": "/?action=nope",
       "expectedStatus": 404
+    },
+    {
+      "name": "Рассылка закрыта без прав",
+      "method": "POST",
+      "path": "/?action=admin_broadcast",
+      "body": {
+        "mode": "preview"
+      },
+      "expectedStatus": 403
     }
   ]
 }

@@ -295,6 +295,36 @@ def _bot_send(chat_id: Any, text: str):
     urllib.request.urlopen(req, timeout=4).read()
 
 
+_LAUNCH_LETTER = (
+    'Доделай.ру — спасибо, что вы с нами с первых дней\n\n'
+    'Вы среди первых, кто зарегистрировался на сервисе. Проект стартовал '
+    '1 сентября 2026 года и сейчас активно рекламируется в интернете, '
+    'так что заказчиков в Ярославской области будет становиться больше.\n\n'
+    'Что важно знать:\n\n'
+    '1. Для исполнителей сервис полностью бесплатный. Комиссию мы не берём, '
+    'оплата идёт напрямую от заказчика.\n\n'
+    '2. Теперь бот будет присылать вам сюда уведомление каждый раз, когда '
+    'в вашем городе публикуется новый заказ. Заходите сразу и откликайтесь — '
+    'заказчики обычно выбирают из первых откликов.\n\n'
+    'Чтобы не пропустить заказ, не отключайте уведомления от бота. '
+    'Открыть сервис: https://dodelay.ru\n\n'
+    'Если появятся вопросы или предложения — напишите нам, мы читаем всё.'
+)
+
+
+def _audience_where(audience: str) -> str:
+    """Условие выборки получателей рассылки. Демо-профили исключены всегда."""
+    base = (
+        "WHERE blocked = FALSE AND is_demo = FALSE "
+        "AND max_user_id IS NOT NULL AND max_user_id <> ''"
+    )
+    if audience == 'executor':
+        return base + " AND role = 'executor'"
+    if audience == 'customer':
+        return base + " AND role = 'customer'"
+    return base + " AND role IN ('customer','executor')"
+
+
 def _notify(max_user_id: Any, text: str):
     """Сообщение пользователю в мессенджер MAX. Никогда не бросает исключений."""
     if not BOT_TOKEN or not max_user_id:
@@ -1111,6 +1141,38 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                         WHERE id = {uid}"""
                 )
             return _resp(200, {'ok': True})
+
+        if method == 'POST' and action == 'admin_broadcast':
+            mode = str(body.get('mode', 'preview'))
+            audience = str(body.get('audience', 'all'))
+            text = str(body.get('text', '')).strip()
+            if not text:
+                text = _LAUNCH_LETTER
+            if not BOT_TOKEN:
+                return _resp(400, {'error': 'no_bot_token'})
+
+            if mode == 'preview':
+                _notify(me.get('max_user_id'), text)
+                cur.execute(
+                    f"""SELECT COUNT(DISTINCT max_user_id) AS c FROM {SCHEMA}.users
+                        {_audience_where(audience)}"""
+                )
+                return _resp(200, {
+                    'ok': True, 'preview': True,
+                    'recipients': int(cur.fetchone()['c'] or 0),
+                    'text': text,
+                })
+
+            cur.execute(
+                f"""SELECT DISTINCT max_user_id FROM {SCHEMA}.users
+                    {_audience_where(audience)} LIMIT 2000"""
+            )
+            targets = [r['max_user_id'] for r in cur.fetchall()]
+            sent = 0
+            for uid in targets:
+                _notify(uid, text)
+                sent += 1
+            return _resp(200, {'ok': True, 'sent': sent})
 
         if method == 'POST' and action == 'admin_users':
             role = body.get('role')
