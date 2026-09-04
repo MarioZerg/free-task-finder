@@ -18,6 +18,7 @@ import {
 import NotFound from '@/pages/PageNotFound';
 import { PROFESSIONS } from '@/data/professionsCatalog';
 import DistrictContent from '@/components/landing/DistrictContent';
+import RecentJobs from '@/components/landing/RecentJobs';
 
 const TASK_HINTS: Record<string, string> = {
   move: 'Переезды, погрузка и разгрузка — самый частый запрос',
@@ -257,6 +258,13 @@ const DistrictLandingInner = ({ district }: { district: DistrictPage }) => {
             </table>
           </div>
         </section>
+
+        <RecentJobs
+          cityNominative={city.nameNominative}
+          cityPrepositional={city.name}
+          citySlug={city.slug}
+          heading={`Свежие заказы в ${city.name}`}
+        />
 
         <DistrictContent district={district} city={city} />
 

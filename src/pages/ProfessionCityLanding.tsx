@@ -21,6 +21,7 @@ import type { User } from '@/lib/api';
 import NotFound from '@/pages/PageNotFound';
 import Loader from '@/components/Loader';
 import ProfessionContent from '@/components/landing/ProfessionContent';
+import RecentJobs from '@/components/landing/RecentJobs';
 
 
 /** Дата последнего обновления страниц каталога */
@@ -374,6 +375,13 @@ const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
             </>
           )}
         </section>
+
+        <RecentJobs
+          cityNominative={city.nameNominative}
+          cityPrepositional={city.name}
+          citySlug={city.slug}
+          heading={`Свежие заказы в ${city.name}`}
+        />
 
         <ProfessionContent page={page} city={city} />
 

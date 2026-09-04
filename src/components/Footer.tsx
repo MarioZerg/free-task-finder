@@ -51,7 +51,7 @@ const Footer = () => {
           <nav className="mt-4 flex flex-wrap gap-x-6 gap-y-3 text-sm text-chip">
             {CITY_PAGES.map((c) => (
               <Link key={c.slug} to={`/podrabotka/${c.slug}`} className="story-link">
-                Подработка в {c.nameNominative}
+                Подработка в {c.name}
               </Link>
             ))}
           </nav>

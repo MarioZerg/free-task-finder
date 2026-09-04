@@ -13,6 +13,7 @@ import { professionsByGroup, PROFESSIONS } from '@/data/professionsCatalog';
 import { getDistrictPagesByCity } from '@/data/districtPages';
 import NotFound from '@/pages/PageNotFound';
 import CityContent from '@/components/landing/CityContent';
+import RecentJobs from '@/components/landing/RecentJobs';
 
 const TASK_HINTS: Record<string, string> = {
   move: 'Переезды, погрузка и разгрузка — самый частый запрос',
@@ -135,6 +136,40 @@ const CityLandingInner = ({ slug }: { slug: string }) => {
       '@type': 'Question',
       name: f.q,
       acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  });
+
+  // Свежие заказы города в разметке: даёт поисковику сигнал, что страница
+  // регулярно обновляется, и позволяет показать задачи прямо в выдаче.
+  const recent = feed
+    .filter(
+      (j) =>
+        j.city.split(',')[0].trim().toLowerCase() ===
+        city.nameNominative.trim().toLowerCase(),
+    )
+    .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
+    .slice(0, 6);
+
+  useLdJson(`ld-city-jobs-${city.slug}`, {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    '@id': `https://dodelay.ru/podrabotka/${city.slug}#jobs`,
+    name: `Последние заказы в ${city.name}`,
+    numberOfItems: recent.length,
+    itemListElement: recent.map((j, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      item: {
+        '@type': 'Offer',
+        name: j.title,
+        description: j.description || j.title,
+        areaServed: { '@type': 'City', name: city.nameNominative },
+        ...(j.price > 0
+          ? { price: j.price, priceCurrency: 'RUB' }
+          : {}),
+        availability: 'https://schema.org/InStock',
+        validFrom: new Date(j.createdAt).toISOString().slice(0, 10),
+      },
     })),
   });
 
@@ -336,7 +371,7 @@ const CityLandingInner = ({ slug }: { slug: string }) => {
                   to={`/podrabotka/${n.slug}`}
                   className="flex items-center gap-2 rounded-full border border-line bg-tile px-5 py-3 text-sm font-medium transition-colors hover:border-primary/60"
                 >
-                  Подработка в {n.nameNominative}
+                  Подработка в {n.name}
                   <Icon name="ArrowRight" size={14} />
                 </Link>
               ))}
@@ -349,6 +384,12 @@ const CityLandingInner = ({ slug }: { slug: string }) => {
             </div>
           </section>
         )}
+
+        <RecentJobs
+          cityNominative={city.nameNominative}
+          cityPrepositional={city.name}
+          citySlug={city.slug}
+        />
 
         <CityContent city={city} />
 
