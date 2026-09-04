@@ -15,6 +15,10 @@ Sitemap: https://dodelay.ru/sitemap.xml
 User-agent: Yandex
 Allow: /
 Allow: /podrabotka/
+Allow: /favicon.ico
+Allow: /favicon.svg
+Allow: /*.png$
+Allow: /manifest.webmanifest
 Disallow: /dashboard
 Disallow: /admin
 Clean-param: utm_source&utm_medium&utm_campaign&utm_term&utm_content&yclid&gclid&from&ref
