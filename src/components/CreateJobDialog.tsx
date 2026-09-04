@@ -50,6 +50,7 @@ const CreateJobDialog = ({ open, onOpenChange, job }: Props) => {
   const [address, setAddress] = useState('');
   const [when, setWhen] = useState('Сегодня');
   const [category, setCategory] = useState(CATEGORIES[1]);
+  const [profession, setProfession] = useState('');
   const [photoThumb, setPhotoThumb] = useState('');
   const [photoFull, setPhotoFull] = useState('');
   const [photoBusy, setPhotoBusy] = useState(false);
@@ -70,6 +71,7 @@ const CreateJobDialog = ({ open, onOpenChange, job }: Props) => {
       setAddress(loc.address);
       setWhen(job.when);
       setCategory(job.category);
+      setProfession(job.profession || '');
       setPhotoThumb(job.photo || '');
       setPhotoFull('');
       setErrors({});
@@ -82,6 +84,7 @@ const CreateJobDialog = ({ open, onOpenChange, job }: Props) => {
       setAddress('');
       setWhen('Сегодня');
       setCategory(CATEGORIES[1]);
+      setProfession('');
       setPhotoThumb('');
       setPhotoFull('');
       setErrors({});
@@ -102,6 +105,7 @@ const CreateJobDialog = ({ open, onOpenChange, job }: Props) => {
       if (title.trim().length < 3) next.title = 'Коротко назовите задачу — минимум 3 символа';
       if (description.trim().length < 10)
         next.description = 'Опишите подробнее — минимум 10 символов';
+      if (!profession) next.profession = 'Выберите, какой мастер нужен';
     }
     if (s === 1) {
       if (!cityName) next.city = 'Выберите город';
@@ -124,6 +128,7 @@ const CreateJobDialog = ({ open, onOpenChange, job }: Props) => {
   const usePreset = (p: (typeof PRESETS)[number]) => {
     setTitle(p.title);
     setCategory(p.category);
+    if (p.profession) setProfession(p.profession);
     setDescription(p.description);
     setPrice(String(p.price));
     setErrors({});
@@ -158,6 +163,7 @@ const CreateJobDialog = ({ open, onOpenChange, job }: Props) => {
       city: [cityName, district, address.trim()].filter(Boolean).join(', '),
       when: when.trim() || 'Дата не указана',
       category,
+      profession,
       photoThumb: photoFull ? photoThumb : undefined,
       photoFull: photoFull || undefined,
     };
@@ -248,6 +254,8 @@ const CreateJobDialog = ({ open, onOpenChange, job }: Props) => {
               setDescription={setDescription}
               category={category}
               setCategory={setCategory}
+              profession={profession}
+              setProfession={setProfession}
               errors={errors}
               usePreset={usePreset}
               activePreset={PRESETS.find((p) => p.title === title)?.title}

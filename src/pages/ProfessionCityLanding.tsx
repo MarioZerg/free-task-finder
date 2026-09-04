@@ -13,6 +13,7 @@ import { getCityPage } from '@/data/cityPages';
 import {
   getProfessionCityPage,
   getProfessionCityPagesBySlug,
+  getProfessionsByCity,
   ProfessionCityPage,
 } from '@/data/professionCityPages';
 import { people } from '@/lib/api';
@@ -20,35 +21,6 @@ import type { User } from '@/lib/api';
 import NotFound from '@/pages/NotFound';
 import Loader from '@/components/Loader';
 
-const PRICE_ROWS: Record<string, { task: string; price: string }[]> = {
-  handyman: [
-    { task: 'Мелкая работа (полка, карниз, розетка)', price: 'от 400 до 900 ₽' },
-    { task: 'Час работы мужа на час', price: 'от 700 до 1 200 ₽' },
-    { task: 'Список из нескольких дел за визит', price: 'от 1 500 до 3 000 ₽' },
-  ],
-  electrician: [
-    { task: 'Замена розетки или выключателя', price: 'от 400 до 800 ₽' },
-    { task: 'Замена автомата в щитке', price: 'от 500 до 1 200 ₽' },
-    { task: 'Установка люстры', price: 'от 600 до 1 500 ₽' },
-    { task: 'Полная разводка проводки в квартире', price: 'от 15 000 ₽' },
-  ],
-  plumber: [
-    { task: 'Замена смесителя', price: 'от 700 до 1 500 ₽' },
-    { task: 'Установка унитаза', price: 'от 1 500 до 3 000 ₽' },
-    { task: 'Устранение засора стояка', price: 'от 1 000 до 2 500 ₽' },
-    { task: 'Замена батареи отопления', price: 'от 1 500 до 3 500 ₽' },
-  ],
-  mover: [
-    { task: 'Переезд квартиры-студии', price: 'от 1 500 до 3 000 ₽' },
-    { task: 'Переезд 1–2 комнат', price: 'от 2 500 до 5 000 ₽' },
-    { task: 'Перенос пианино или сейфа', price: 'от 3 000 до 6 000 ₽' },
-  ],
-  furniture: [
-    { task: 'Сборка шкафа', price: 'от 1 000 до 2 500 ₽' },
-    { task: 'Сборка кухонного гарнитура', price: 'от 3 000 до 7 000 ₽' },
-    { task: 'Сборка кровати', price: 'от 800 до 2 000 ₽' },
-  ],
-};
 
 const cityMatch = (userCity: string, nameNominative: string) =>
   userCity.split(',')[0].trim().toLowerCase() === nameNominative.trim().toLowerCase();
@@ -77,7 +49,11 @@ const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
   const otherCities = getProfessionCityPagesBySlug(page.professionSlug).filter(
     (p) => p.citySlug !== page.citySlug,
   );
-  const priceRows = PRICE_ROWS[page.professionSlug] || [];
+  // Профессии того же направления в этом городе — усиливают связность раздела
+  const relatedProfessions = getProfessionsByCity(page.citySlug)
+    .filter((p) => p.group === page.group && p.professionSlug !== page.professionSlug)
+    .slice(0, 8);
+  const priceRows = page.tasks || [];
 
   const canonical = `https://dodelay.ru/podrabotka/${page.citySlug}/${page.professionSlug}`;
 
@@ -247,7 +223,7 @@ const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
           <section className="mt-16">
             <p className="text-sm uppercase tracking-[0.2em] text-chip">Цены</p>
             <h2 className="mt-3 font-head text-2xl font-medium tracking-tight md:text-3xl">
-              Сколько стоит {page.professionGenitive} в {city.name}
+              Сколько стоят услуги {page.professionGenitive} в {city.name}
             </h2>
             <p className="mt-3 max-w-[620px] text-sm text-muted-foreground">
               Сумму всегда назначает заказчик — это лишь ориентир по типовым задачам, итоговую цену
@@ -297,6 +273,26 @@ const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
               );
             })}
           </div>
+
+          {relatedProfessions.length > 0 && (
+            <>
+              <h3 className="mt-10 font-head text-lg font-medium">
+                Похожие услуги в {city.name}
+              </h3>
+              <div className="mt-4 flex flex-wrap gap-2.5">
+                {relatedProfessions.map((p) => (
+                  <Link
+                    key={p.professionSlug}
+                    to={`/podrabotka/${city.slug}/${p.professionSlug}`}
+                    className="flex items-center gap-2 rounded-full border border-line bg-surface px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground"
+                  >
+                    <Icon name={p.icon} size={14} fallback="Wrench" />
+                    {p.professionLabel}
+                  </Link>
+                ))}
+              </div>
+            </>
+          )}
         </section>
 
         <section className="mt-16 max-w-[760px]">

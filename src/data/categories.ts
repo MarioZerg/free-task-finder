@@ -59,6 +59,8 @@ export const categoryMeta = (name?: string): CategoryMeta => {
 };
 
 export interface JobPreset {
+  /** Специальность по умолчанию — подставляется при выборе готовой задачи */
+  profession?: string;
   title: string;
   category: string;
   description: string;
@@ -68,60 +70,70 @@ export interface JobPreset {
 export const PRESETS: JobPreset[] = [
   {
     title: 'Перевезти диван',
+    profession: 'cargo',
     category: 'Переезд и грузы',
     description: 'Нужно перевезти диван из квартиры в квартиру, помочь вынести и занести.',
     price: 1500,
   },
   {
     title: 'Помочь с погрузкой',
+    profession: 'mover',
     category: 'Переезд и грузы',
     description: 'Нужны руки на погрузку вещей и коробок в машину, примерно на час работы.',
     price: 1000,
   },
   {
     title: 'Собрать шкаф',
+    profession: 'furniture',
     category: 'Ремонт',
     description: 'Нужно собрать шкаф-купе по инструкции, все детали и крепёж на месте.',
     price: 1200,
   },
   {
     title: 'Повесить люстру и карнизы',
+    profession: 'electrician',
     category: 'Ремонт',
     description: 'Нужно повесить люстру в зале и два карниза, инструмент у меня есть.',
     price: 900,
   },
   {
     title: 'Убрать квартиру после ремонта',
+    profession: 'cleaner',
     category: 'Уборка',
     description: 'Нужна уборка двухкомнатной квартиры после ремонта: пыль, окна, полы.',
     price: 2500,
   },
   {
     title: 'Мытьё окон',
+    profession: 'windowwash',
     category: 'Уборка',
     description: 'Нужно вымыть четыре окна с рамами и подоконниками, средства свои.',
     price: 1200,
   },
   {
     title: 'Скосить траву на участке',
+    profession: 'gardener',
     category: 'Дача и участок',
     description: 'Нужно скосить траву на участке около шести соток и собрать её в кучу.',
     price: 1500,
   },
   {
     title: 'Вскопать грядки',
+    profession: 'digger',
     category: 'Дача и участок',
     description: 'Нужно вскопать несколько грядок на даче и убрать сорняки, инструмент есть.',
     price: 1400,
   },
   {
     title: 'Расчистить снег у дома',
+    profession: 'snow',
     category: 'Разное',
     description: 'Нужно расчистить снег у частного дома: дорожка к калитке и место под машину.',
     price: 1000,
   },
   {
     title: 'Помочь донести покупки',
+    profession: 'household',
     category: 'Разное',
     description: 'Нужно помочь довезти и поднять покупки на этаж, лифта в доме нет.',
     price: 700,

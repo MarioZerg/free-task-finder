@@ -1,4 +1,5 @@
 import Icon from '@/components/ui/icon';
+import ProfessionSelect from '@/components/create-job/ProfessionSelect';
 import { money } from '@/data/mock';
 import { CATEGORY_META, PRESETS, categoryMeta } from '@/data/categories';
 
@@ -12,6 +13,8 @@ interface Props {
   setDescription: (v: string) => void;
   category: string;
   setCategory: (v: string) => void;
+  profession: string;
+  setProfession: (v: string) => void;
   errors: Record<string, string>;
   usePreset: (p: (typeof PRESETS)[number]) => void;
   activePreset?: string;
@@ -24,6 +27,8 @@ const StepTaskDetails = ({
   setDescription,
   category,
   setCategory,
+  profession,
+  setProfession,
   errors,
   usePreset,
   activePreset,
@@ -79,6 +84,19 @@ const StepTaskDetails = ({
           onChange={(e) => setTitle(e.target.value)}
         />
         {err('title')}
+      </div>
+
+      <div>
+        <p className="mb-2 text-sm font-medium">Кто нужен</p>
+        <p className="mb-2 text-xs text-chip">
+          Выберите специальность — уведомление придёт мастерам именно этого профиля.
+        </p>
+        <ProfessionSelect
+          value={profession}
+          onChange={setProfession}
+          error={errors.profession}
+        />
+        {err('profession')}
       </div>
 
       <div>

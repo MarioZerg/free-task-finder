@@ -79,6 +79,7 @@ interface AppState {
     city: string;
     when: string;
     category: string;
+    profession?: string;
     photoThumb?: string;
     photoFull?: string;
   }) => Promise<void>;
@@ -90,6 +91,7 @@ interface AppState {
     city: string;
     when: string;
     category: string;
+    profession?: string;
     photoThumb?: string;
     photoFull?: string;
   }) => Promise<void>;

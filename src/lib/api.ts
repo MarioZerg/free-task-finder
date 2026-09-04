@@ -306,6 +306,7 @@ export interface JobItem {
   executorOnline?: boolean;
   moderation?: 'pending' | 'approved' | 'rejected';
   isDemo?: boolean;
+  profession?: string;
   expiresAt?: string | null;
   bumpedAt?: string | null;
   responses?: JobResponseItem[];

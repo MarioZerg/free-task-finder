@@ -20,8 +20,10 @@ import { toast } from '@/hooks/use-toast';
 import { formatPhone, isPhoneValid, phoneDigits } from '@/lib/phone';
 import { listProfessions, updateMyProfessions } from '@/lib/api';
 import type { Profession } from '@/lib/api';
+import ProfessionPicker from '@/components/profile/ProfessionPicker';
+import Loader from '@/components/Loader';
 
-const MAX_PROFESSIONS = 8;
+const MAX_PROFESSIONS = 5;
 
 const GENDERS: { value: string; label: string; icon: string }[] = [
   { value: 'male', label: 'Мужской', icon: 'User' },
@@ -314,29 +316,24 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
             <p className="text-sm text-chip">
               Заказчики найдут вас по этим специальностям во вкладке «Люди».
             </p>
+
+            <p className="mt-3 flex items-start gap-2.5 rounded-2xl border border-primary/40 bg-primary/5 px-4 py-3 text-sm text-muted-foreground">
+              <Icon name="BellRing" size={16} className="mt-0.5 shrink-0 text-primary" />
+              Вам будут приходить уведомления только о тех заказах, которые публикуют на
+              Доделай.ру по указанным специальностям.
+            </p>
+
             {professions.length === 0 ? (
-              <p className="mt-3 text-sm text-chip">Загружаем список…</p>
-            ) : (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {professions.map((p) => {
-                  const on = selected.includes(p.id);
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => toggleProfession(p.id)}
-                      className={`flex min-h-[44px] items-center gap-2 rounded-full border px-4 py-2.5 text-sm transition-colors ${
-                        on
-                          ? 'border-primary bg-primary text-primary-foreground'
-                          : 'border-line bg-tile text-muted-foreground hover:border-primary/50'
-                      }`}
-                    >
-                      <Icon name={p.icon} size={15} fallback="Wrench" />
-                      {p.label}
-                    </button>
-                  );
-                })}
+              <div className="mt-3">
+                <Loader />
               </div>
+            ) : (
+              <ProfessionPicker
+                professions={professions}
+                selected={selected}
+                onToggle={toggleProfession}
+                max={MAX_PROFESSIONS}
+              />
             )}
           </ProfileSection>
         )}

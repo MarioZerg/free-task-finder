@@ -63,34 +63,52 @@ def _notify_admins(cur, text: str):
 def _notify_executors_new_job(cur, job_id: int):
     """Сообщает исполнителям в MAX о новом заказе после одобрения модератором.
 
-    Пишем только тем, кто включил уведомления об откликах, не заблокирован
-    и находится в том же городе. Демо-заказы не рассылаем.
+    Пишем только тем, кто в этом городе и указал в профиле специальность заказа.
+    Если заказчик специальность не выбрал — уведомляем всех в городе.
+    Демо-заказы не рассылаем.
     """
     if not BOT_TOKEN:
         return
     try:
         cur.execute(
-            f"""SELECT title, price, city, category, is_demo
+            f"""SELECT title, price, city, category, profession_slug, is_demo
                 FROM {SCHEMA}.jobs WHERE id = {int(job_id)}"""
         )
         job = cur.fetchone()
         if not job or job['is_demo']:
             return
         base_city = str(job['city']).split(',')[0].strip()
+        slug = (job['profession_slug'] or '').strip()
+
+        prof_filter = ''
+        prof_label = ''
+        if slug:
+            cur.execute(
+                f"SELECT id, label FROM {SCHEMA}.professions WHERE slug = '{_esc(slug)}'"
+            )
+            prof = cur.fetchone()
+            if prof:
+                prof_label = prof['label']
+                prof_filter = f"""
+                  AND EXISTS (
+                    SELECT 1 FROM {SCHEMA}.user_professions up
+                    WHERE up.user_id = users.id AND up.profession_id = {int(prof['id'])}
+                  )"""
+
         cur.execute(
             f"""SELECT DISTINCT max_user_id FROM {SCHEMA}.users
                 WHERE role = 'executor' AND blocked = FALSE AND is_demo = FALSE
                   AND COALESCE(notify_responses, TRUE) = TRUE
                   AND max_user_id IS NOT NULL AND max_user_id <> ''
-                  AND city ILIKE '{_esc(base_city)}%'
+                  AND city ILIKE '{_esc(base_city)}%'{prof_filter}
                 LIMIT 500"""
         )
         rows = cur.fetchall()
+        head = f'Новый заказ: {prof_label}' if prof_label else 'Новый заказ'
         text = (
-            f'Новый заказ в городе {base_city}\n\n'
+            f'{head}\n{base_city}\n\n'
             f"{job['title']}\n"
-            f"Оплата: {int(job['price'])} ₽\n"
-            f"Категория: {job['category']}\n\n"
+            f"Оплата: {int(job['price'])} ₽\n\n"
             f'Откройте Доделай.ру и откликнитесь первым — '
             f'заказчик обычно выбирает из первых откликов.'
         )
@@ -190,6 +208,7 @@ def _job(row: Dict[str, Any], viewer: Optional[Dict[str, Any]]) -> Dict[str, Any
         'expiresAt': row['expires_at'],
         'bumpedAt': row['bumped_at'],
         'isDemo': bool(row.get('is_demo')),
+        'profession': row.get('profession_slug') or '',
     }
     if (is_owner or is_executor) and (assigned or row['status'] == 'done'):
         if is_owner or row['owner_contact_shared']:
@@ -552,6 +571,8 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 sets.append(f"title = '{_esc(str(body['title'])[:200])}'")
             if body.get('description'):
                 sets.append(f"description = '{_esc(str(body['description'])[:2000])}'")
+            if body.get('profession'):
+                sets.append(f"profession_slug = '{_esc(str(body['profession'])[:40])}'")
             if body.get('price'):
                 sets.append(f'price = {min(_int(body["price"]), MAX_PRICE)}')
             moderation = str(body.get('moderation', ''))
@@ -718,6 +739,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         city = str(body.get('city', me['city'])).strip()[:160]
         when_text = str(body.get('when', '')).strip()[:160] or 'Срок не указан'
         category = str(body.get('category', 'Разное')).strip()[:80]
+        profession = str(body.get('profession', '')).strip()[:40]
         photo_thumb = str(body.get('photoThumb') or '')
         photo_full = str(body.get('photoFull') or '')
         if photo_thumb and not photo_thumb.startswith('data:image/'):
@@ -735,9 +757,10 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         cur.execute(
             f"""INSERT INTO {SCHEMA}.jobs
                   (owner_id, title, description, price, city, when_text, category,
-                   photo_thumb, photo_full, moderation, expires_at)
+                   profession_slug, photo_thumb, photo_full, moderation, expires_at)
                 VALUES ({me['id']}, '{_esc(title)}', '{_esc(description)}', {price},
                         '{_esc(city)}', '{_esc(when_text)}', '{_esc(category)}',
+                        {"'" + _esc(profession) + "'" if profession else 'NULL'},
                         {"'" + _esc(photo_thumb) + "'" if photo_thumb else 'NULL'},
                         {"'" + _esc(photo_full) + "'" if photo_full else 'NULL'},
                         'pending', NOW() + INTERVAL '24 hours')
@@ -767,6 +790,9 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         city = str(body.get('city', target['city'])).strip()[:160]
         when_text = str(body.get('when', '')).strip()[:160] or 'Срок не указан'
         category = str(body.get('category', target['category'])).strip()[:80]
+        profession = str(
+            body.get('profession', target.get('profession_slug') or '')
+        ).strip()[:40]
         if len(title) < 3:
             return _resp(400, {'error': 'bad_title'})
         if len(description) < 10:
@@ -792,6 +818,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     city = '{_esc(city)}',
                     when_text = '{_esc(when_text)}',
                     category = '{_esc(category)}',
+                    profession_slug = {"'" + _esc(profession) + "'" if profession else 'NULL'},
                     status = 'open',
                     moderation = 'pending',
                     expires_at = NOW() + INTERVAL '24 hours'

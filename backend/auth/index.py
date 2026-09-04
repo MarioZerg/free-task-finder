@@ -951,7 +951,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             value = _int_safe(item)
             if value and value not in wanted:
                 wanted.append(value)
-        wanted = wanted[:8]
+        wanted = wanted[:5]
         valid = []
         if wanted:
             cur.execute(

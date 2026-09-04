@@ -9,7 +9,7 @@ import useSeo from '@/hooks/use-seo';
 import useLdJson from '@/hooks/use-ld-json';
 import { CATEGORY_META } from '@/data/categories';
 import { countOpenJobsInCity, getCityPage, getCityPagesBySlug, pluralJobs } from '@/data/cityPages';
-import { FEATURED_PROFESSIONS, getProfessionCityPage } from '@/data/professionCityPages';
+import { professionsByGroup } from '@/data/professionsCatalog';
 import { getDistrictPagesByCity } from '@/data/districtPages';
 import NotFound from '@/pages/NotFound';
 
@@ -215,38 +215,40 @@ const CityLandingInner = ({ slug }: { slug: string }) => {
           </div>
         </section>
 
-        {FEATURED_PROFESSIONS.some((p) => getProfessionCityPage(p.slug, city.slug)) && (
-          <section className="mt-16">
-            <p className="text-sm uppercase tracking-[0.2em] text-chip">Специалисты</p>
-            <h2 className="mt-3 font-head text-2xl font-medium tracking-tight md:text-3xl">
-              Ищете специалиста конкретной профессии?
-            </h2>
-            <p className="mt-3 max-w-[620px] text-sm text-muted-foreground">
-              Отдельная страница по каждой профессии — с анкетами исполнителей и ориентиром по
-              ценам в {city.name}.
-            </p>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-              {FEATURED_PROFESSIONS.filter((p) => getProfessionCityPage(p.slug, city.slug)).map(
-                (p) => (
-                  <Link
-                    key={p.slug}
-                    to={`/podrabotka/${city.slug}/${p.slug}`}
-                    className="group flex flex-col items-start gap-3 rounded-3xl border border-line bg-tile p-5 transition-colors hover:border-primary/50"
-                  >
-                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/15 text-primary">
-                      <Icon name={p.icon} size={20} />
-                    </span>
-                    <span className="font-head text-sm font-medium">{p.label}</span>
-                    <span className="flex items-center gap-1 text-xs text-chip transition-transform group-hover:translate-x-1">
-                      Подробнее
-                      <Icon name="ArrowRight" size={12} />
-                    </span>
-                  </Link>
-                ),
-              )}
-            </div>
-          </section>
-        )}
+        <section className="mt-16">
+          <p className="text-sm uppercase tracking-[0.2em] text-chip">Специалисты</p>
+          <h2 className="mt-3 font-head text-2xl font-medium tracking-tight md:text-3xl">
+            Все специальности в {city.name}
+          </h2>
+          <p className="mt-3 max-w-[620px] text-sm text-muted-foreground">
+            По каждой профессии — отдельная страница с анкетами исполнителей и ориентиром по
+            ценам в {city.name}.
+          </p>
+          <div className="mt-8 flex flex-col gap-8">
+            {professionsByGroup().map((g) => (
+              <div key={g.group}>
+                <h3 className="text-sm font-medium text-muted-foreground">{g.group}</h3>
+                <div className="mt-3 flex flex-wrap gap-2.5">
+                  {g.items.map((p) => (
+                    <Link
+                      key={p.slug}
+                      to={`/podrabotka/${city.slug}/${p.slug}`}
+                      className="group flex items-center gap-2 rounded-full border border-line bg-tile px-4 py-2.5 text-sm transition-colors hover:border-primary/60"
+                    >
+                      <Icon name={p.icon} size={15} fallback="Wrench" className="text-primary" />
+                      {p.label}
+                      <Icon
+                        name="ArrowRight"
+                        size={12}
+                        className="text-chip transition-transform group-hover:translate-x-0.5"
+                      />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
 
         <section className="mt-16">
           <p className="text-sm uppercase tracking-[0.2em] text-chip">Цены</p>

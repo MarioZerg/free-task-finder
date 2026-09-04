@@ -12,17 +12,21 @@ const citySlugs = [...read('src/data/cityPages.ts').matchAll(/slug:\s*'([^']+)'/
   (m) => m[1],
 );
 
+// Профессии берём из каталога: страницы «профессия × город» собираются кодом,
+// поэтому в самом professionCityPages.ts готовых записей уже нет.
+const professionSlugs = [
+  ...read('src/data/professionsCatalog.ts').matchAll(/^\s{4}slug: '([a-z]+)',$/gm),
+].map((m) => m[1]);
+
 const districts = [
   ...read('src/data/districtPages.ts').matchAll(
     /citySlug:\s*'([^']+)'[\s\S]{0,600}?slug:\s*'([^']+)'|slug:\s*'([^']+)'[\s\S]{0,600}?citySlug:\s*'([^']+)'/g,
   ),
 ].map((m) => (m[1] ? { city: m[1], slug: m[2] } : { city: m[4], slug: m[3] }));
 
-const professionCities = [
-  ...read('src/data/professionCityPages.ts').matchAll(
-    /professionSlug:\s*'([^']+)'[\s\S]{0,600}?citySlug:\s*'([^']+)'/g,
-  ),
-].map((m) => ({ profession: m[1], city: m[2] }));
+const professionCities = citySlugs.flatMap((city) =>
+  professionSlugs.map((profession) => ({ profession, city })),
+);
 
 const urls = [
   { loc: '/', changefreq: 'daily', priority: '1.0' },
