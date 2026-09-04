@@ -1,6 +1,7 @@
 import Icon from '@/components/ui/icon';
 import PersonCard from '@/components/people/PersonCard';
 import type { User } from '@/lib/api';
+import Loader from '@/components/Loader';
 
 const PeopleGrid = ({
   loading,
@@ -29,7 +30,7 @@ const PeopleGrid = ({
   current: number;
   onPage: (n: number) => void;
 }) => {
-  if (loading) return <p className="mt-6 text-sm text-chip">Загружаем…</p>;
+  if (loading) return <Loader />;
 
   if (list.length === 0) {
     return (

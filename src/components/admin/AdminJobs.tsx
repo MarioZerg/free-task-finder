@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { money } from '@/data/mock';
 import { toast } from '@/hooks/use-toast';
+import Loader from '@/components/Loader';
 
 const field =
   'w-full rounded-2xl border border-line bg-tile px-4 py-3 text-base outline-none transition-colors placeholder:text-chip focus:border-primary/60';
@@ -166,7 +167,7 @@ const AdminJobs = () => {
       </div>
 
       {loading ? (
-        <p className="mt-8 text-sm text-chip">Загружаем…</p>
+        <Loader />
       ) : jobs.length === 0 ? (
         <p className="mt-8 rounded-3xl border border-line bg-surface p-10 text-center text-sm text-chip">
           Заказов нет

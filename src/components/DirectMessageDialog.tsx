@@ -11,6 +11,7 @@ import Avatar from '@/components/Avatar';
 import { dmSend, dmThread } from '@/lib/api';
 import type { DirectMessage } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
+import Loader from '@/components/Loader';
 
 const time = (iso: string) =>
   new Date(iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
@@ -82,7 +83,7 @@ const DirectMessageDialog = ({ peer, onOpenChange }: Props) => {
 
         <div ref={boxRef} className="min-h-[200px] flex-1 space-y-2.5 overflow-y-auto pr-1">
           {loading ? (
-            <p className="text-sm text-chip">Загружаем…</p>
+            <Loader />
           ) : messages.length === 0 ? (
             <p className="text-sm text-chip">Сообщений пока нет — напишите первым.</p>
           ) : (

@@ -3,6 +3,7 @@ import Icon from '@/components/ui/icon';
 import { api } from '@/lib/api';
 import type { SupportTicket } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
+import Loader from '@/components/Loader';
 
 const TOPICS = [
   'Не работает функция',
@@ -121,7 +122,7 @@ const SupportPanel = ({ onSent }: { onSent?: () => void }) => {
 
       {showList &&
         (loading ? (
-          <p className="text-sm text-chip">Загружаем…</p>
+          <Loader />
         ) : tickets.length === 0 ? (
           <p className="text-sm text-chip">Обращений пока нет.</p>
         ) : (

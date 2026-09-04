@@ -3,6 +3,7 @@ import Icon from '@/components/ui/icon';
 import Avatar from '@/components/Avatar';
 import { api } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
+import Loader from '@/components/Loader';
 
 interface Ticket {
   id: number;
@@ -120,7 +121,7 @@ const AdminSupport = ({ onProfile }: { onProfile: (id: number) => void }) => {
       </div>
 
       {loading ? (
-        <p className="mt-8 text-sm text-chip">Загружаем…</p>
+        <Loader />
       ) : items.length === 0 ? (
         <p className="mt-8 rounded-3xl border border-line bg-surface p-10 text-center text-sm text-chip">
           Обращений нет

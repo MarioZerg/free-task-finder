@@ -125,6 +125,10 @@ export default {
 				'typing': {
 					'0%, 60%, 100%': { opacity: '.25', transform: 'translateY(0)' },
 					'30%': { opacity: '1', transform: 'translateY(-3px)' }
+				},
+				'logo-pulse': {
+					'0%, 100%': { opacity: '.35', transform: 'scale(.98)' },
+					'50%': { opacity: '1', transform: 'scale(1)' }
 				}
 			},
 			animation: {
@@ -137,7 +141,8 @@ export default {
 				'slide-up-in': 'slide-up-in .45s cubic-bezier(.22,.7,.2,1) both',
 				'bubble-in': 'bubble-in .35s cubic-bezier(.22,.7,.2,1) both',
 				'pop-in': 'pop-in .4s cubic-bezier(.34,1.56,.64,1) both',
-				'typing': 'typing 1.2s ease-in-out infinite'
+				'typing': 'typing 1.2s ease-in-out infinite',
+				'logo-pulse': 'logo-pulse 1.3s ease-in-out infinite'
 			}
 		}
 	},

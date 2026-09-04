@@ -1,6 +1,6 @@
 import React from 'react';
-import * as LucideIcons from 'lucide-react';
 import { LucideProps } from 'lucide-react';
+import { iconMap } from '@/components/ui/icon-map';
 
 interface IconProps extends LucideProps {
   name: string;
@@ -8,11 +8,11 @@ interface IconProps extends LucideProps {
 }
 
 const Icon: React.FC<IconProps> = ({ name, fallback = 'CircleAlert', ...props }) => {
-  const IconComponent = (LucideIcons as Record<string, React.FC<LucideProps>>)[name];
+  const IconComponent = iconMap[name];
 
   if (!IconComponent) {
     // Если иконка не найдена, используем fallback иконку
-    const FallbackIcon = (LucideIcons as Record<string, React.FC<LucideProps>>)[fallback];
+    const FallbackIcon = iconMap[fallback];
 
     // Если даже fallback не найден, возвращаем пустой span
     if (!FallbackIcon) {

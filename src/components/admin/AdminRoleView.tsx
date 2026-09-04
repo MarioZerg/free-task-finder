@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import type { JobItem } from '@/lib/api';
 import { money } from '@/data/mock';
 import { statusLabel } from '@/components/admin/AdminJobs';
+import Loader from '@/components/Loader';
 
 const Ghost = ({ children }: { children: string }) => (
   <button
@@ -50,7 +51,7 @@ const AdminRoleView = ({ mode }: { mode: 'customer' | 'executor' }) => {
     };
   }, [mode]);
 
-  if (loading) return <p className="text-sm text-chip">Загружаем…</p>;
+  if (loading) return <Loader />;
   if (jobs.length === 0)
     return (
       <p className="rounded-3xl border border-line bg-surface p-10 text-center text-sm text-chip">

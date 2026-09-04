@@ -20,6 +20,7 @@ import type { Stats } from '@/components/admin/AdminOverview';
 import AdminPreview from '@/components/admin/AdminPreview';
 import ProfileDialog from '@/components/ProfileDialog';
 import useSeo from '@/hooks/use-seo';
+import { PageLoader } from '@/components/Loader';
 
 const AdminInner = () => {
   const { user, loading, logout } = useAppState();
@@ -72,9 +73,7 @@ const AdminInner = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background text-chip">
-        Загружаем админку…
-      </div>
+      <PageLoader />
     );
   }
   if (!user?.isAdmin) return <Navigate to="/" replace />;

@@ -9,6 +9,7 @@ import Icon from '@/components/ui/icon';
 import { payCheck } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
 import useSeo from '@/hooks/use-seo';
+import { PageLoader } from '@/components/Loader';
 import { reachGoal } from '@/hooks/use-metrika';
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -76,9 +77,7 @@ const DashboardInner = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background text-chip">
-        Загружаем кабинет…
-      </div>
+      <PageLoader />
     );
   }
   if (!user) return <Navigate to="/" replace />;

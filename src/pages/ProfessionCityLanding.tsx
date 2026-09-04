@@ -18,6 +18,7 @@ import {
 import { people } from '@/lib/api';
 import type { User } from '@/lib/api';
 import NotFound from '@/pages/NotFound';
+import Loader from '@/components/Loader';
 
 const PRICE_ROWS: Record<string, { task: string; price: string }[]> = {
   handyman: [
@@ -192,7 +193,7 @@ const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
           </h2>
 
           {loading ? (
-            <p className="mt-6 text-sm text-chip">Загружаем…</p>
+            <Loader />
           ) : executors.length === 0 ? (
             <div className="mt-6 rounded-3xl border border-line bg-tile p-6 text-center sm:p-10">
               <p className="font-head text-lg">
