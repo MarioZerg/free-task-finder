@@ -9,9 +9,9 @@ import useSeo from '@/hooks/use-seo';
 import useLdJson from '@/hooks/use-ld-json';
 import { CATEGORY_META } from '@/data/categories';
 import { countOpenJobsInCity, getCityPage, getCityPagesBySlug, pluralJobs } from '@/data/cityPages';
-import { professionsByGroup } from '@/data/professionsCatalog';
+import { professionsByGroup, PROFESSIONS } from '@/data/professionsCatalog';
 import { getDistrictPagesByCity } from '@/data/districtPages';
-import NotFound from '@/pages/NotFound';
+import NotFound from '@/pages/PageNotFound';
 
 const TASK_HINTS: Record<string, string> = {
   move: 'Переезды, погрузка и разгрузка — самый частый запрос',
@@ -56,6 +56,21 @@ const CityLandingInner = ({ slug }: { slug: string }) => {
     isPartOf: { '@id': 'https://dodelay.ru/#website' },
     url: `https://dodelay.ru/podrabotka/${city.slug}`,
     ...(openCount > 0 ? { offers: { '@type': 'Offer', availability: 'https://schema.org/InStock', eligibleQuantity: openCount } } : {}),
+  });
+
+  // Каталог специальностей города — Google строит из него расширенный сниппет
+  useLdJson(`ld-city-catalog-${city.slug}`, {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    '@id': `https://dodelay.ru/podrabotka/${city.slug}#services`,
+    name: `Специальности в ${city.nameNominative}`,
+    numberOfItems: PROFESSIONS.length,
+    itemListElement: PROFESSIONS.map((p, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: `${p.label} в ${city.name}`,
+      url: `https://dodelay.ru/podrabotka/${city.slug}/${p.slug}`,
+    })),
   });
 
   useLdJson(`ld-city-breadcrumbs-${city.slug}`, {

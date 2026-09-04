@@ -32,6 +32,9 @@ const CityLinks = () => {
                     src={c.image}
                     alt={`Подработка и разовые заказы в ${c.nameNominative}`}
                     loading="lazy"
+                    decoding="async"
+                    width={800}
+                    height={500}
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.05]"
                   />
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-black/0 to-black/0" />

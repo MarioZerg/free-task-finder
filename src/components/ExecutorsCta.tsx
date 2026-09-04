@@ -21,6 +21,9 @@ const ExecutorsCta = () => {
               alt="Грузчики Доделай.ру разгружают газель с мебелью"
               className="h-[320px] w-full object-cover md:h-[460px]"
               loading="lazy"
+              decoding="async"
+              width={1024}
+              height={1024}
             />
           </div>
 

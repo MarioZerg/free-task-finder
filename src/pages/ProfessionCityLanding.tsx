@@ -18,7 +18,7 @@ import {
 } from '@/data/professionCityPages';
 import { people } from '@/lib/api';
 import type { User } from '@/lib/api';
-import NotFound from '@/pages/NotFound';
+import NotFound from '@/pages/PageNotFound';
 import Loader from '@/components/Loader';
 
 
@@ -54,6 +54,11 @@ const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
     .filter((p) => p.group === page.group && p.professionSlug !== page.professionSlug)
     .slice(0, 8);
   const priceRows = page.tasks || [];
+  const priceNumbers = priceRows
+    .map((r) => Number(r.price.replace(/\D/g, '')))
+    .filter((n) => n > 0);
+  const minPrice = priceNumbers.length ? Math.min(...priceNumbers) : undefined;
+  const maxPrice = priceNumbers.length ? Math.max(...priceNumbers) : undefined;
 
   const canonical = `https://dodelay.ru/podrabotka/${page.citySlug}/${page.professionSlug}`;
 
@@ -88,9 +93,37 @@ const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
       '@type': 'City',
       name: city.nameNominative,
     },
+    serviceType: page.professionLabel,
+    category: page.group,
     provider: { '@id': 'https://dodelay.ru/#organization' },
     isPartOf: { '@id': 'https://dodelay.ru/#website' },
     url: canonical,
+    // Прайс в разметке: Google может показать «от N ₽» прямо в сниппете
+    offers: {
+      '@type': 'AggregateOffer',
+      priceCurrency: 'RUB',
+      lowPrice: minPrice,
+      highPrice: maxPrice,
+      offerCount: priceRows.length,
+      availability: 'https://schema.org/InStock',
+      areaServed: { '@type': 'City', name: city.nameNominative },
+    },
+    hasOfferCatalog: {
+      '@type': 'OfferCatalog',
+      name: `Услуги: ${page.professionLabel} в ${city.name}`,
+      itemListElement: priceRows.map((r) => ({
+        '@type': 'Offer',
+        priceCurrency: 'RUB',
+        price: Number(r.price.replace(/\D/g, '')) || undefined,
+        priceSpecification: {
+          '@type': 'PriceSpecification',
+          priceCurrency: 'RUB',
+          minPrice: Number(r.price.replace(/\D/g, '')) || undefined,
+          valueAddedTaxIncluded: true,
+        },
+        itemOffered: { '@type': 'Service', name: r.task },
+      })),
+    },
   });
 
   useLdJson(`ld-pc-breadcrumbs-${page.citySlug}-${page.professionSlug}`, {

@@ -1,4 +1,5 @@
 import {
+  Compass,
   AirVent,
   AlarmClock,
   Apple,
@@ -123,6 +124,7 @@ import type { FC } from 'react';
 /** Иконки, которые реально используются в проекте.
  *  Точечный импорт вместо всей библиотеки — иначе в сборку попадает ~1000 лишних иконок. */
 export const iconMap: Record<string, FC<LucideProps>> = {
+  Compass,
   AirVent,
   AlarmClock,
   Apple,

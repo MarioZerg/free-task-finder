@@ -15,7 +15,7 @@ import {
   getDistrictPagesByCity,
   DistrictPage,
 } from '@/data/districtPages';
-import NotFound from '@/pages/NotFound';
+import NotFound from '@/pages/PageNotFound';
 
 const TASK_HINTS: Record<string, string> = {
   move: 'Переезды, погрузка и разгрузка — самый частый запрос',

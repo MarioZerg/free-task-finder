@@ -1,4 +1,4 @@
-export const PHOTO_MOVERS = '/img/movers.jpg';
+export const PHOTO_MOVERS = '/img/movers.webp';
 
 export const REGION = 'Ярославская область';
 

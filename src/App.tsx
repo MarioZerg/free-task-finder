@@ -14,7 +14,7 @@ import { PageLoader } from "./components/Loader";
 // Каждая страница — отдельный файл: браузер качает только то, что открыли.
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Admin = lazy(() => import("./pages/Admin"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+const NotFound = lazy(() => import("./pages/PageNotFound"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Contacts = lazy(() => import("./pages/Contacts"));
