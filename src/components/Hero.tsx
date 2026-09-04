@@ -10,7 +10,7 @@ const Hero = () => {
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
           <div className="animate-fade-plain [animation-delay:.12s]">
             <h1 className="hero-head break-words font-head font-normal leading-[1.18] tracking-[-0.02em]">
-              Шабашка в Ярославле.
+              Шабашка и подработка в Ярославле.{' '}
               <br />
               Доделай.ру — руки на сегодня.
             </h1>

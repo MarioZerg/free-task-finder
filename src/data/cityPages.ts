@@ -22,10 +22,10 @@ export const CITY_PAGES: CityPage[] = [
     name: 'Ярославле',
     nameNominative: 'Ярославль',
     nameGenitive: 'Ярославля',
-    title: 'Шабашка и подработка в Ярославле — Доделай.ру',
+    title: 'Подработка в Ярославле: цены, районы, мастера — Доделай.ру',
     description:
       'В Ярославле разместите задачу бесплатно или найдите подработку по районам: переезд, ремонт, уборка, дача. Вход через MAX.',
-    h1: 'Шабашка и подработка в Ярославле',
+    h1: 'Шабашка и подработка в Ярославле: цены и районы',
     intro:
       'Ярославль — самый крупный город области, и заказов здесь стабильно больше всего: от переезда в Дзержинском районе до уборки после ремонта в Брагино. Лента живая почти круглые сутки, а благодаря шести районам исполнителю обычно находится что-то рядом с домом.',
     districts: [
@@ -131,6 +131,15 @@ export const getCityPagesBySlug = (slugs: string[]): CityPage[] =>
 export const countOpenJobsInCity = (feed: JobItem[], nameNominative: string): number => {
   const target = nameNominative.trim().toLowerCase();
   return feed.filter((job) => job.city.split(',')[0].trim().toLowerCase() === target).length;
+};
+
+/** Склонение слова «район»: 1 район, 2 района, 6 районов */
+export const pluralDistricts = (n: number): string => {
+  const d = n % 10;
+  const h = n % 100;
+  if (d === 1 && h !== 11) return 'район';
+  if (d >= 2 && d <= 4 && (h < 12 || h > 14)) return 'района';
+  return 'районов';
 };
 
 export const pluralJobs = (n: number): string => {

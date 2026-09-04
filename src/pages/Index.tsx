@@ -7,15 +7,16 @@ import ExecutorsCta from '@/components/ExecutorsCta';
 import Reviews from '@/components/Reviews';
 import CityLinks from '@/components/CityLinks';
 import Faq from '@/components/Faq';
+import HomeContent from '@/components/HomeContent';
 import Footer from '@/components/Footer';
 import LoginDialog from '@/components/LoginDialog';
 import useSeo from '@/hooks/use-seo';
 
 const Index = () => {
   useSeo({
-    title: 'Доделай.ру — шабашка и подработка в Ярославле',
+    title: 'Доделай.ру — подработка и разовые заказы в Ярославской области',
     description:
-      'Ярославль и область: разместите задачу бесплатно или найдите подработку сегодня — переезд, ремонт, уборка, дача. Вход через MAX.',
+      'Разовая работа в Ярославской области: Ярославль, Рыбинск, Тутаев, Углич, Ростов. Разместите задачу бесплатно или найдите подработку — без комиссии.',
     canonical: 'https://dodelay.ru/',
   });
 
@@ -29,6 +30,7 @@ const Index = () => {
           <HowItWorks />
           <ExecutorsCta />
           <Reviews />
+          <HomeContent />
           <CityLinks />
           <Faq />
         </main>

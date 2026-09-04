@@ -3,6 +3,7 @@ import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
 import InstallPwa from '@/components/InstallPwa';
 import { CITY_PAGES } from '@/data/cityPages';
+import { FEATURED_PROFESSIONS } from '@/data/professionCityPages';
 
 const Footer = () => {
   const { openLogin } = useAppState();
@@ -56,6 +57,23 @@ const Footer = () => {
           </nav>
         </div>
 
+        {/* Сквозные ссылки на специальности: без них страницы профессий
+            доступны только со своего города и медленнее попадают в индекс */}
+        <div className="border-b border-line py-10">
+          <h3 className="font-head text-base font-medium">Популярные специальности</h3>
+          <nav className="mt-4 flex flex-wrap gap-x-6 gap-y-3 text-sm text-chip">
+            {FEATURED_PROFESSIONS.map((p) => (
+              <Link
+                key={p.slug}
+                to={`/podrabotka/yaroslavl/${p.slug}`}
+                className="story-link"
+              >
+                {p.label} в Ярославле
+              </Link>
+            ))}
+          </nav>
+        </div>
+
         <div className="border-b border-line py-10">
           <p className="flex max-w-[860px] items-start gap-3 text-sm text-muted-foreground">
             <Icon name="ShieldAlert" size={18} className="mt-0.5 shrink-0 text-primary" />
@@ -83,7 +101,7 @@ const Footer = () => {
             Проект ведёт команда Доделай.ру, Ярославль · ИНН 760218194200 · ОГРНИП 322774600341432
           </p>
           <p className="mt-1.5 text-xs leading-relaxed text-chip/70">
-            Информация на сайте обновлена <time dateTime="2026-08-29">29 августа 2026</time>
+            Информация на сайте обновлена <time dateTime="2026-09-05">5 сентября 2026</time>
           </p>
           <p className="mt-1.5 text-xs leading-relaxed text-chip/70">
             Оплата подписки Доделай PRO принимается через интернет-эквайринг Точка Банк:

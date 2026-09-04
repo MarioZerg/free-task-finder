@@ -1,5 +1,6 @@
 import {
   Compass,
+  BadgeRussianRuble,
   Sun,
   Leaf,
   Repeat,
@@ -129,6 +130,7 @@ import type { FC } from 'react';
  *  Точечный импорт вместо всей библиотеки — иначе в сборку попадает ~1000 лишних иконок. */
 export const iconMap: Record<string, FC<LucideProps>> = {
   Compass,
+  BadgeRussianRuble,
   Sun,
   Leaf,
   Repeat,

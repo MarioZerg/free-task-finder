@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
-import { CITY_PAGES, countOpenJobsInCity, pluralJobs } from '@/data/cityPages';
+import { CITY_PAGES, countOpenJobsInCity, pluralJobs, pluralDistricts } from '@/data/cityPages';
 import { useAppState } from '@/hooks/use-app-state';
 
 const CityLinks = () => {
@@ -53,7 +53,7 @@ const CityLinks = () => {
                     <h3 className="font-head text-lg font-medium">{c.nameNominative}</h3>
                     <p className="mt-1 text-sm text-chip">
                       {c.districts.length > 0
-                        ? `${c.districts.length} районов`
+                        ? `${c.districts.length} ${pluralDistricts(c.districts.length)}`
                         : 'Подработка и разовые заказы'}
                     </p>
                   </div>
