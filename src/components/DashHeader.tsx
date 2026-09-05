@@ -34,7 +34,7 @@ const DashHeader = () => {
             </span>
             <span className="block text-xs text-chip">
               ★ {user.rating.toFixed(1)} ·{' '}
-              {user.role === 'customer' ? 'заказчик' : `${user.doneCount} работ`}
+              {user.doneCount} работ
             </span>
           </span>
           <Icon name="ChevronDown" size={16} className="shrink-0 text-chip" />

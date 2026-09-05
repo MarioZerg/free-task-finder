@@ -16,7 +16,7 @@ const Hero = () => {
             </h1>
 
             <button
-              onClick={() => openLogin('customer')}
+              onClick={() => openLogin()}
               className="mt-10 flex min-h-[44px] w-full max-w-[308px] items-center justify-between border-b border-foreground/40 pb-5 text-base transition-colors hover:border-primary md:mt-12"
             >
               <span>Открыть ленту заказов</span>

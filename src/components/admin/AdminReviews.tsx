@@ -24,8 +24,8 @@ interface AdminReview {
 
 const filters = [
   { id: '', label: 'Все отзывы' },
-  { id: 'to_executor', label: 'Заказчики → исполнителям' },
-  { id: 'to_customer', label: 'Исполнители → заказчикам' },
+  { id: 'to_executor', label: 'Отзывы исполнителям' },
+  { id: 'to_customer', label: 'Отзывы авторам задач' },
 ];
 
 const dateRu = (v: string) =>
@@ -120,7 +120,6 @@ const AdminReviews = ({ onProfile }: { onProfile: (id: number) => void }) => {
                     <p className="font-medium">
                       {r.author_name}
                       <span className="ml-2 text-xs text-chip">
-                        {r.author_role === 'customer' ? 'заказчик' : 'исполнитель'}
                       </span>
                     </p>
                     <p className="mt-0.5 text-xs text-chip">

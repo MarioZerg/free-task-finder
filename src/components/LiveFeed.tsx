@@ -14,7 +14,9 @@ const cityOf = (raw: string) => {
 
 const LiveFeed = ({ readOnly }: { readOnly?: boolean }) => {
   const { feed, user, limits } = useAppState();
-  const canRespond = user?.role === 'executor' && !limits.busy;
+  // Откликнуться может любой участник — кроме автора самой задачи,
+  // это проверяется отдельно по каждой карточке.
+  const canRespond = !!user && !limits.busy;
 
   const [city, setCity] = useState(
     () => localStorage.getItem(CITY_KEY) || (user ? cityOf(user.city) : '') || '',
@@ -149,7 +151,7 @@ const LiveFeed = ({ readOnly }: { readOnly?: boolean }) => {
         </div>
       )}
 
-      {limits.busy && user?.role === 'executor' && (
+      {limits.busy && !!user && (
         <p className="mt-5 flex items-start gap-2.5 rounded-2xl border border-line bg-tile px-5 py-4 text-sm text-muted-foreground">
           <Icon name="Info" size={18} className="mt-0.5 shrink-0 text-primary" />
           {limits.pro

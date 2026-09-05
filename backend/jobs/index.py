@@ -61,17 +61,19 @@ def _notify_admins(cur, text: str):
 
 
 def _notify_executors_new_job(cur, job_id: int):
-    """Сообщает исполнителям в MAX о новом заказе после одобрения модератором.
+    """Сообщает участникам в MAX о новом заказе после одобрения модератором.
 
     Пишем только тем, кто в этом городе и указал в профиле специальность заказа.
-    Если заказчик специальность не выбрал — уведомляем всех в городе.
+    Если автор специальность не выбрал — уведомляем всех в городе.
+    Автору его же заказ не отправляем: профиль теперь один, и без этого
+    человек получал бы уведомление о собственной задаче.
     Демо-заказы не рассылаем.
     """
     if not BOT_TOKEN:
         return
     try:
         cur.execute(
-            f"""SELECT title, price, city, category, profession_slug, is_demo
+            f"""SELECT title, price, city, category, profession_slug, is_demo, owner_id
                 FROM {SCHEMA}.jobs WHERE id = {int(job_id)}"""
         )
         job = cur.fetchone()
@@ -97,8 +99,9 @@ def _notify_executors_new_job(cur, job_id: int):
 
         cur.execute(
             f"""SELECT DISTINCT max_user_id FROM {SCHEMA}.users
-                WHERE role = 'executor' AND blocked = FALSE AND is_demo = FALSE
+                WHERE role = 'member' AND blocked = FALSE AND is_demo = FALSE
                   AND erased_at IS NULL
+                  AND id <> {int(job['owner_id'])}
                   AND COALESCE(notify_responses, TRUE) = TRUE
                   AND max_user_id IS NOT NULL AND max_user_id <> ''
                   AND city ILIKE '{_esc(base_city)}%'{prof_filter}
@@ -417,17 +420,16 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
     if method == 'GET' and action == 'mine':
         if not me:
             return _resp(401, {'error': 'no_token'})
-        if me['role'] == 'customer':
-            cur.execute(
-                JOB_SELECT + f" WHERE j.owner_id = {me['id']} ORDER BY j.created_at DESC"
-            )
-        else:
-            cur.execute(
-                JOB_SELECT
-                + f""" WHERE j.assigned_executor_id = {me['id']}
-                       OR j.id IN (SELECT job_id FROM {SCHEMA}.job_responses WHERE executor_id = {me['id']})
-                       ORDER BY j.created_at DESC"""
-            )
+        # Профиль один, поэтому в кабинет попадает всё сразу: и свои задачи,
+        # и заказы, которые человек взял или на которые откликнулся.
+        cur.execute(
+            JOB_SELECT
+            + f""" WHERE j.owner_id = {me['id']}
+                      OR j.assigned_executor_id = {me['id']}
+                      OR j.id IN (SELECT job_id FROM {SCHEMA}.job_responses
+                                  WHERE executor_id = {me['id']})
+                   ORDER BY j.created_at DESC"""
+        )
         jobs = []
         for row in cur.fetchall():
             item = _job(row, me)
@@ -437,49 +439,50 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             )
             item['myReviewDone'] = cur.fetchone()['c'] > 0
             jobs.append(item)
+        # Оба лимита теперь действуют для одного и того же человека:
+        # сколько заказов он держит в работе и сколько задач разместил.
         pro = _is_pro(me)
-        active_count = _executor_active_count(cur, me['id']) if me['role'] == 'executor' else 0
+        active_count = _executor_active_count(cur, me['id'])
         executor_limit = EXECUTOR_PRO_LIMIT if pro else EXECUTOR_FREE_LIMIT
+        active = None if pro else _active_customer_job(cur, me['id'])
         limits = {
             'busy': active_count >= executor_limit,
             'pro': pro,
             'activeCount': active_count,
             'activeLimit': executor_limit,
-        }
-        if me['role'] == 'customer':
-            active = None if pro else _active_customer_job(cur, me['id'])
-            limits['canCreate'] = active is None
-            limits['activeJobId'] = active['id'] if active else None
-            limits['activeExpiresAt'] = (
+            'canCreate': active is None,
+            'activeJobId': active['id'] if active else None,
+            'activeExpiresAt': (
                 _json_default(active['expires_at']) if active and active['expires_at'] else None
-            )
+            ),
+        }
+        # Приглашение на заказ может получить любой участник.
         invites = []
-        if me['role'] == 'executor':
-            cur.execute(
-                f"""SELECT i.id, i.job_id, i.note, i.created_at,
-                           j.title, j.price, j.city, j.when_text, j.status AS job_status,
-                           c.name AS customer_name, c.avatar AS customer_avatar,
-                           c.rating AS customer_rating
-                    FROM {SCHEMA}.job_invites i
-                    JOIN {SCHEMA}.jobs j ON j.id = i.job_id
-                    JOIN {SCHEMA}.users c ON c.id = i.customer_id
-                    WHERE i.executor_id = {me['id']} AND i.status = 'pending' AND j.status = 'open'
-                    ORDER BY i.created_at DESC"""
-            )
-            for r in cur.fetchall():
-                invites.append({
-                    'id': r['id'],
-                    'jobId': r['job_id'],
-                    'note': r['note'],
-                    'createdAt': r['created_at'],
-                    'title': r['title'],
-                    'price': r['price'],
-                    'city': r['city'],
-                    'when': r['when_text'],
-                    'customerName': r['customer_name'],
-                    'customerAvatar': r['customer_avatar'],
-                    'customerRating': float(r['customer_rating'] or 0),
-                })
+        cur.execute(
+            f"""SELECT i.id, i.job_id, i.note, i.created_at,
+                       j.title, j.price, j.city, j.when_text, j.status AS job_status,
+                       c.name AS customer_name, c.avatar AS customer_avatar,
+                       c.rating AS customer_rating
+                FROM {SCHEMA}.job_invites i
+                JOIN {SCHEMA}.jobs j ON j.id = i.job_id
+                JOIN {SCHEMA}.users c ON c.id = i.customer_id
+                WHERE i.executor_id = {me['id']} AND i.status = 'pending' AND j.status = 'open'
+                ORDER BY i.created_at DESC"""
+        )
+        for r in cur.fetchall():
+            invites.append({
+                'id': r['id'],
+                'jobId': r['job_id'],
+                'note': r['note'],
+                'createdAt': r['created_at'],
+                'title': r['title'],
+                'price': r['price'],
+                'city': r['city'],
+                'when': r['when_text'],
+                'customerName': r['customer_name'],
+                'customerAvatar': r['customer_avatar'],
+                'customerRating': float(r['customer_rating'] or 0),
+            })
         cur.execute(
             f"""SELECT from_id, COUNT(*) AS c FROM {SCHEMA}.direct_messages
                 WHERE to_id = {me['id']} AND read_at IS NULL
@@ -501,7 +504,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                  (SELECT COUNT(*) FROM {SCHEMA}.jobs WHERE status = 'open') AS open_jobs,
                  (SELECT COUNT(*) FROM {SCHEMA}.jobs WHERE status = 'done') AS done_jobs,
                  (SELECT COUNT(*) FROM {SCHEMA}.users
-                  WHERE role = 'executor' AND erased_at IS NULL) AS executors,
+                  WHERE role = 'member' AND erased_at IS NULL) AS executors,
                  (SELECT COALESCE(ROUND(AVG(final_price)), 0) FROM {SCHEMA}.jobs WHERE status = 'done') AS avg_check"""
         )
         row = cur.fetchone()
@@ -657,12 +660,15 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             return _resp(200, {'ok': True, 'removed': removed})
 
         if method == 'POST' and action == 'admin_reviews':
+            # Кто заказчик, а кто исполнитель, теперь определяет конкретная
+            # сделка, а не тип аккаунта: отзыв «исполнителю» — это отзыв тому,
+            # кто был назначен на заказ, «заказчику» — автору задачи.
             direction = str(body.get('direction', ''))
             extra = ''
             if direction == 'to_executor':
-                extra = " AND t.role = 'executor'"
+                extra = ' AND t.id = j.assigned_executor_id'
             elif direction == 'to_customer':
-                extra = " AND t.role = 'customer'"
+                extra = ' AND t.id = j.owner_id'
             cur.execute(
                 f"""SELECT r.id, r.rating, r.text, r.created_at, r.hidden,
                            a.name AS author_name, a.role AS author_role, a.avatar AS author_avatar,
@@ -710,9 +716,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             cur.execute(
                 f"""SELECT
                      (SELECT COUNT(*) FROM {SCHEMA}.users
-                      WHERE role = 'customer' AND erased_at IS NULL) AS customers,
-                     (SELECT COUNT(*) FROM {SCHEMA}.users
-                      WHERE role = 'executor' AND erased_at IS NULL) AS executors,
+                      WHERE role = 'member' AND erased_at IS NULL) AS members,
                      (SELECT COUNT(*) FROM {SCHEMA}.users
                       WHERE blocked AND erased_at IS NULL) AS blocked,
                      (SELECT COUNT(*) FROM {SCHEMA}.jobs WHERE status = 'open') AS open_jobs,
@@ -726,8 +730,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             return _resp(200, {k: int(v or 0) for k, v in dict(r).items()})
 
     if method == 'POST' and action == 'create':
-        if me['role'] != 'customer':
-            return _resp(403, {'error': 'only_customer'})
+        # Разместить задачу может любой участник — отдельной роли заказчика нет.
         pro = _is_pro(me)
         active = _active_customer_job(cur, me['id'], pro) if not pro else None
         if active:
@@ -848,16 +851,16 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         target = cur.fetchone()
         if not target:
             return _resp(404, {'error': 'user_not_found'})
-        if me['role'] == 'executor':
-            if not _is_pro(me) or target['role'] != 'customer':
-                return _resp(403, {'error': 'pro_executor_required'})
-        else:
+        # Отвечать в уже начатой переписке может любой. Написать ПЕРВЫМ —
+        # только с подпиской: раньше это правило зависело от роли,
+        # теперь оно одинаково для всех участников.
+        if not _is_pro(me):
             cur.execute(
                 f"""SELECT 1 FROM {SCHEMA}.direct_messages
                     WHERE from_id = {to_id} AND to_id = {me['id']} LIMIT 1"""
             )
             if not cur.fetchone():
-                return _resp(403, {'error': 'no_thread'})
+                return _resp(403, {'error': 'pro_required'})
         cur.execute(
             f"""INSERT INTO {SCHEMA}.direct_messages (from_id, to_id, text)
                 VALUES ({me['id']}, {to_id}, '{_esc(text)}')"""
@@ -879,12 +882,14 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         return _resp(200, {'ok': True})
 
     if method == 'POST' and action == 'invite':
-        if me['role'] != 'customer':
-            return _resp(403, {'error': 'only_customer'})
+        # Пригласить исполнителя на свой заказ может любой автор задачи.
         if not _is_pro(me):
             return _resp(403, {'error': 'pro_required'})
         executor_id = _int(body.get('executorId'))
         jid = _int(body.get('jobId'))
+        # Профиль один, поэтому себя на собственный заказ приглашать нельзя.
+        if executor_id == me['id']:
+            return _resp(400, {'error': 'self_invite'})
         cur.execute(
             f"""SELECT * FROM {SCHEMA}.jobs
                 WHERE id = {jid} AND owner_id = {me['id']} AND status = 'open'"""
@@ -894,7 +899,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             return _resp(400, {'error': 'no_open_job'})
         cur.execute(
             f"""SELECT name, max_user_id, subscription_until FROM {SCHEMA}.users
-                WHERE id = {executor_id} AND role = 'executor'"""
+                WHERE id = {executor_id} AND role = 'member' AND erased_at IS NULL"""
         )
         ex = cur.fetchone()
         if not ex:
@@ -921,8 +926,6 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         return _resp(200, {'ok': True})
 
     if method == 'POST' and action == 'invite_accept':
-        if me['role'] != 'executor':
-            return _resp(403, {'error': 'only_executor'})
         invite_id = _int(body.get('inviteId'))
         cur.execute(
             f"""SELECT i.*, j.status AS job_status, j.title, j.owner_id
@@ -958,8 +961,6 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         return _resp(200, {'ok': True})
 
     if method == 'POST' and action == 'invite_decline':
-        if me['role'] != 'executor':
-            return _resp(403, {'error': 'only_executor'})
         invite_id = _int(body.get('inviteId'))
         cur.execute(
             f"""UPDATE {SCHEMA}.job_invites SET status = 'declined'
@@ -1078,8 +1079,10 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         return _resp(404, {'error': 'job_not_found'})
 
     if method == 'POST' and action == 'respond':
-        if me['role'] != 'executor':
-            return _resp(403, {'error': 'only_executor'})
+        # Откликаться может любой участник, кроме автора самой задачи:
+        # профиль общий, поэтому свой заказ в ленте человек тоже видит.
+        if job['owner_id'] == me['id']:
+            return _resp(400, {'error': 'own_job'})
         if job.get('is_demo'):
             return _resp(400, {'error': 'demo_job'})
         if job['status'] != 'open':

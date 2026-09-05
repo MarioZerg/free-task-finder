@@ -1,24 +1,26 @@
 import { useState } from 'react';
 import Icon from '@/components/ui/icon';
-import { Role } from '@/hooks/use-app-state';
 
-const steps: Record<Role, { icon: string; title: string; text: string }[]> = {
-  customer: [
+// Это не роли аккаунта, а два сценария: оба доступны с одного профиля.
+type Scenario = 'order' | 'work';
+
+const steps: Record<Scenario, { icon: string; title: string; text: string }[]> = {
+  order: [
     { icon: 'LogIn', title: 'Вход через MAX', text: 'Ни анкет, ни паролей — один тап и вы внутри.' },
     { icon: 'ImagePlus', title: 'Объявление', text: 'Опишите задачу, добавьте фото — или обойдитесь без него.' },
     { icon: 'Users', title: 'Отклики', text: 'Исполнители из Ярославля и области видят заказ в ленте и откликаются.' },
     { icon: 'BadgeCheck', title: 'Подтверждение', text: 'Выбираете человека и подтверждаете его на задание.' },
   ],
-  executor: [
+  work: [
     { icon: 'LogIn', title: 'Вход через MAX', text: 'Регистрация занимает меньше минуты.' },
     { icon: 'Radio', title: 'Лента заказов', text: 'Живая лента: новые задачи появляются сами, без фильтров и поиска.' },
-    { icon: 'Hand', title: 'Отклик', text: 'Пара слов заказчику — и вы в списке кандидатов.' },
-    { icon: 'Wallet', title: 'Работа и оплата', text: 'Заказчик подтвердил — договариваетесь напрямую, без комиссий.' },
+    { icon: 'Hand', title: 'Отклик', text: 'Пара слов автору задачи — и вы в списке кандидатов.' },
+    { icon: 'Wallet', title: 'Работа и оплата', text: 'Автор подтвердил — договариваетесь напрямую, без комиссий.' },
   ],
 };
 
 const HowItWorks = () => {
-  const [role, setRole] = useState<Role>('customer');
+  const [scenario, setScenario] = useState<Scenario>('order');
 
   return (
     <section id="how" className="bg-surface py-20 md:py-28">
@@ -32,24 +34,24 @@ const HowItWorks = () => {
           </div>
 
           <div className="flex gap-1 rounded-full border border-line p-1">
-            {(['customer', 'executor'] as Role[]).map((r) => (
+            {(['order', 'work'] as Scenario[]).map((r) => (
               <button
                 key={r}
-                onClick={() => setRole(r)}
+                onClick={() => setScenario(r)}
                 className={`rounded-full px-6 py-2.5 text-sm font-medium transition-colors ${
-                  role === r
+                  scenario === r
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                {r === 'customer' ? 'Заказчику' : 'Исполнителю'}
+                {r === 'order' ? 'Заказать' : 'Заработать'}
               </button>
             ))}
           </div>
         </div>
 
         <div className="mt-12 grid gap-5 md:mt-16 md:grid-cols-2 lg:grid-cols-4">
-          {steps[role].map((s, i) => (
+          {steps[scenario].map((s, i) => (
             <article
               key={s.title}
               className="animate-fade-in rounded-3xl border border-line bg-tile p-7"

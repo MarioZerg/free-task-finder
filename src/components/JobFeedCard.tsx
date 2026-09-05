@@ -241,6 +241,11 @@ const JobFeedCard = ({ job, responded, canRespond, readOnly }: Props) => {
               <Icon name="Lock" size={14} />
               Отклики закрыты
             </span>
+          ) : job.isOwner ? (
+            <span className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border border-primary/40 bg-primary/5 px-4 py-2 text-xs text-muted-foreground sm:min-h-0 sm:w-auto sm:py-2">
+              <Icon name="User" size={14} className="text-primary" />
+              Ваша задача
+            </span>
           ) : responded ? (
             <span className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border border-line bg-tile px-4 py-2 text-sm text-muted-foreground sm:min-h-0 sm:w-auto sm:py-2">
               <Icon name="CheckCheck" size={15} className="text-primary" />

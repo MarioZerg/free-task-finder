@@ -60,7 +60,7 @@ const PersonCard = memo(
             </p>
             <p className="mt-1 text-xs text-chip">
               ★ {user.rating.toFixed(1)} · {user.reviewsCount} отзывов
-              {user.role === 'executor' ? ` · ${user.doneCount} работ` : ''}
+              {user.doneCount > 0 ? ` · ${user.doneCount} работ` : ''}
             </p>
           </div>
           <Icon name="ChevronRight" size={18} className="shrink-0 text-chip" />

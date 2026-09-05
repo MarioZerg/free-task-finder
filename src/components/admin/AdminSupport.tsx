@@ -142,7 +142,6 @@ const AdminSupport = ({ onProfile }: { onProfile: (id: number) => void }) => {
                         {t.name}
                       </button>
                       <span className="ml-2 text-xs text-chip">
-                        {t.role === 'customer' ? 'заказчик' : 'исполнитель'}
                       </span>
                     </p>
                     <p className="mt-0.5 break-words text-xs text-chip">

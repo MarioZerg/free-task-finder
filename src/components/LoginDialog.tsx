@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
 import InstallPwa from '@/components/InstallPwa';
-import { useAppState, Role } from '@/hooks/use-app-state';
+import { useAppState } from '@/hooks/use-app-state';
 import { CITIES } from '@/data/mock';
 import { toast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
@@ -19,20 +19,14 @@ import CodeStep from '@/components/login/CodeStep';
 import StartStep from '@/components/login/StartStep';
 import RegisterStep from '@/components/login/RegisterStep';
 
-const roleCopy: Record<Role, { title: string; hint: string }> = {
-  customer: {
-    title: 'Вход для заказчика',
-    hint: 'Выставляйте задачи, смотрите отклики и назначайте исполнителя.',
-  },
-  executor: {
-    title: 'Вход для исполнителя',
-    hint: 'Живая лента заказов Ярославской области — откликайтесь в один клик.',
-  },
-};
+// Профиль один на всех: и задачи размещают, и заказы берут с него же,
+// поэтому выбор роли при входе больше не нужен.
+const LOGIN_TITLE = 'Вход в Доделай.ру';
+const LOGIN_HINT =
+  'Один профиль на всё: размещайте свои задачи и берите заказы из живой ленты Ярославской области.';
 
 const errorText: Record<string, string> = {
   bad_max_id: 'Ник в MAX: латиница, цифры, точка, дефис или подчёркивание, от 3 символов.',
-  bad_role: 'Выберите роль.',
   bad_name: 'Введите имя — минимум 2 символа.',
   terms_required: 'Заполните анкету и примите условия.',
   code_required: 'Подтвердите вход в боте MAX.',
@@ -44,8 +38,7 @@ const errorText: Record<string, string> = {
 const CODE_TTL = 15 * 60;
 
 const LoginDialog = () => {
-  const { loginOpen, setLoginOpen, loginRole, openLogin, signIn, startMaxLogin, maxEnabled } =
-    useAppState();
+  const { loginOpen, setLoginOpen, signIn, startMaxLogin, maxEnabled } = useAppState();
   const navigate = useNavigate();
 
   const [maxId, setMaxId] = useState('');
@@ -117,20 +110,13 @@ const LoginDialog = () => {
     }
   }, [loginOpen, reset]);
 
-  useEffect(() => {
-    reset();
-  }, [loginRole, reset]);
-
   const cleanMax = maxId.trim().replace(/^@/, '').toLowerCase();
   const maxValid = /^[a-z0-9._-]{3,60}$/.test(cleanMax);
 
   const success = (isAdmin?: boolean) => {
     toast({
       title: 'Вы в Доделай.ру',
-      description:
-        loginRole === 'customer'
-          ? 'Можно выставить задачу — после проверки она появится в ленте.'
-          : 'Лента заказов открыта — откликайтесь.',
+      description: 'Лента заказов открыта, и можно сразу разместить свою задачу.',
     });
     setMaxId('');
     setName('');
@@ -148,7 +134,6 @@ const LoginDialog = () => {
 
   const finish = async (extra: Record<string, unknown> = {}) => {
     const user = await signIn({
-      role: loginRole,
       ...(code ? { code } : {}),
       ...(maxEnabled ? {} : { maxId: cleanMax }),
       ...extra,
@@ -210,7 +195,7 @@ const LoginDialog = () => {
     }, 3000);
     return () => window.clearInterval(poll);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, code, loginRole]);
+  }, [step, code]);
 
   const legacyLogin = async () => {
     if (!maxValid) {
@@ -264,14 +249,14 @@ const LoginDialog = () => {
               ? 'Вы вошли как администратор'
               : step === 'register'
                 ? 'Создание аккаунта'
-                : roleCopy[loginRole].title}
+                : LOGIN_TITLE}
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
             {adminHint
               ? 'Доступна панель управления сервисом.'
               : step === 'register'
                 ? 'Аккаунта пока нет — заполните анкету, это займёт минуту.'
-                : roleCopy[loginRole].hint}
+                : LOGIN_HINT}
           </DialogDescription>
         </DialogHeader>
 
@@ -279,22 +264,6 @@ const LoginDialog = () => {
           <AdminHintPanel setLoginOpen={setLoginOpen} />
         ) : (
           <>
-            <div className="flex gap-2 rounded-full border border-line p-1">
-              {(['customer', 'executor'] as Role[]).map((r) => (
-                <button
-                  key={r}
-                  onClick={() => openLogin(r)}
-                  className={`min-h-[44px] flex-1 rounded-full px-3 py-2.5 text-sm font-medium transition-colors ${
-                    loginRole === r
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {r === 'customer' ? 'Я заказчик' : 'Я исполнитель'}
-                </button>
-              ))}
-            </div>
-
             {step === 'code' && (
               <CodeStep
                 code={code}
@@ -327,7 +296,6 @@ const LoginDialog = () => {
                 setAbout={setAbout}
                 terms={terms}
                 setTerms={setTerms}
-                loginRole={loginRole}
               />
             )}
 

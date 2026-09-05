@@ -12,8 +12,6 @@ import { api, clearToken, getToken, payStart, setToken } from '@/lib/api';
 import type { JobInvite, JobItem, UnreadInfo, User } from '@/lib/api';
 import { reachGoal } from '@/hooks/use-metrika';
 
-export type Role = 'customer' | 'executor';
-
 export interface ProfilePayload {
   name?: string;
   city?: string;
@@ -44,13 +42,11 @@ interface AppState {
   myJobs: JobItem[];
   stats: { openJobs: number; doneJobs: number; executors: number; avgCheck: number };
   loginOpen: boolean;
-  loginRole: Role;
-  openLogin: (role: Role) => void;
+  openLogin: () => void;
   setLoginOpen: (v: boolean) => void;
   signIn: (payload: {
     maxId?: string;
     code?: string;
-    role: Role;
     name?: string;
     city?: string;
     phone?: string;
@@ -130,7 +126,6 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [stats, setStats] = useState(emptyStats);
   const [limits, setLimits] = useState<Limits>(emptyLimits);
   const [loginOpen, setLoginOpen] = useState(false);
-  const [loginRole, setLoginRole] = useState<Role>('customer');
   const [maxEnabled, setMaxEnabled] = useState(false);
   const [invites, setInvites] = useState<JobInvite[]>([]);
   const [unread, setUnread] = useState<UnreadInfo>({ total: 0, byUser: {} });
@@ -207,8 +202,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [refresh]);
 
-  const openLogin = useCallback((role: Role) => {
-    setLoginRole(role);
+  const openLogin = useCallback(() => {
     setLoginOpen(true);
   }, []);
 
@@ -216,7 +210,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     async (payload) => {
       const r = await api.auth('login', { method: 'POST', body: payload });
       if (r.user?.token) setToken(r.user.token);
-      reachGoal(r.created ? 'signup' : 'login', { role: r.user?.role });
+      reachGoal(r.created ? 'signup' : 'login');
       setUser(r.user);
       setLoginOpen(false);
       await refresh();
@@ -290,7 +284,6 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       myJobs,
       stats,
       loginOpen,
-      loginRole,
       openLogin,
       setLoginOpen,
       signIn,
@@ -329,7 +322,6 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       myJobs,
       stats,
       loginOpen,
-      loginRole,
       openLogin,
       signIn,
       startMaxLogin,

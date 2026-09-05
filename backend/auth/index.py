@@ -319,15 +319,13 @@ def _audience_where(audience: str) -> str:
 
     Демо-профили и удалённые пользователи исключены всегда.
     """
-    base = (
+    # Профиль один на всех, поэтому делить получателей по ролям больше не на что:
+    # любой участник и размещает задачи, и берёт заказы.
+    return (
         "WHERE blocked = FALSE AND is_demo = FALSE AND erased_at IS NULL "
-        "AND max_user_id IS NOT NULL AND max_user_id <> ''"
+        "AND max_user_id IS NOT NULL AND max_user_id <> '' "
+        "AND role = 'member'"
     )
-    if audience == 'executor':
-        return base + " AND role = 'executor'"
-    if audience == 'customer':
-        return base + " AND role = 'customer'"
-    return base + " AND role IN ('customer','executor')"
 
 
 def _notify(max_user_id: Any, text: str):
@@ -520,40 +518,38 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     WHERE up.user_id = users.id
                       AND (LOWER(p.slug) IN ({slugs}){id_cond})
                 )"""
+        # Список людей теперь один: деления на заказчиков и исполнителей нет.
+        # Ключ executors в ответе сохранён, чтобы старые версии приложения,
+        # открытые в браузере, не сломались до обновления страницы.
         cur.execute(
             f"""SELECT * FROM {SCHEMA}.users
-                WHERE role = 'executor' AND blocked = FALSE AND erased_at IS NULL{prof_join}
+                WHERE role = 'member' AND blocked = FALSE AND erased_at IS NULL{prof_join}
                 ORDER BY (last_seen > NOW() - INTERVAL '3 minutes') DESC,
                          rating DESC, done_count DESC LIMIT 200"""
         )
-        executor_rows = [dict(r) for r in cur.fetchall()]
-        ex_profs = _professions_map(cur, [r['id'] for r in executor_rows])
-        executors = [_user_row(r, profs_map=ex_profs) for r in executor_rows]
-        cur.execute(
-            f"""SELECT * FROM {SCHEMA}.users WHERE role = 'customer' AND blocked = FALSE
-                  AND erased_at IS NULL
-                ORDER BY (last_seen > NOW() - INTERVAL '3 minutes') DESC,
-                         last_seen DESC NULLS LAST LIMIT 200"""
-        )
-        customer_rows = [dict(r) for r in cur.fetchall()]
-        cu_profs = _professions_map(cur, [r['id'] for r in customer_rows])
-        customers = [_user_row(r, profs_map=cu_profs) for r in customer_rows]
+        rows = [dict(r) for r in cur.fetchall()]
+        profs = _professions_map(cur, [r['id'] for r in rows])
+        members = [_user_row(r, profs_map=profs) for r in rows]
         cur.execute(
             f"""SELECT
                  (SELECT COUNT(*) FROM {SCHEMA}.users
-                  WHERE role = 'executor' AND blocked = FALSE AND erased_at IS NULL) AS executors,
+                  WHERE role = 'member' AND blocked = FALSE AND erased_at IS NULL) AS members,
                  (SELECT COUNT(*) FROM {SCHEMA}.users
-                  WHERE role = 'customer' AND blocked = FALSE AND erased_at IS NULL) AS customers,
-                 (SELECT COUNT(*) FROM {SCHEMA}.users
-                  WHERE role IN ('customer','executor') AND blocked = FALSE
-                    AND erased_at IS NULL
+                  WHERE role = 'member' AND blocked = FALSE AND erased_at IS NULL
                     AND last_seen > NOW() - INTERVAL '3 minutes') AS online"""
         )
         counts = dict(cur.fetchone())
+        total = int(counts.get('members') or 0)
         return _resp(200, {
-            'executors': executors,
-            'customers': customers,
-            'counts': {k: int(v or 0) for k, v in counts.items()},
+            'members': members,
+            'executors': members,
+            'customers': [],
+            'counts': {
+                'members': total,
+                'executors': total,
+                'customers': 0,
+                'online': int(counts.get('online') or 0),
+            },
         })
 
     if method == 'GET' and action == 'profile':
@@ -635,7 +631,6 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
     if method == 'POST' and action == 'login':
         code = re.sub(r'\W', '', str(body.get('code', '')))[:12]
         max_id = str(body.get('maxId', '')).strip().lstrip('@').lower()
-        role = body.get('role')
         max_user_id = ''
 
         if code:
@@ -654,12 +649,15 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
 
         if not re.fullmatch(r'[a-z0-9._-]{3,60}', max_id):
             return _resp(400, {'error': 'bad_max_id'})
-        if role not in ('customer', 'executor'):
-            return _resp(400, {'error': 'bad_role'})
 
+        # Профиль один на человека: раньше на max_id заводилось по аккаунту
+        # на каждую роль, теперь ищем единственный живой профиль.
         is_admin = max_id in ADMIN_IDS
         cur.execute(
-            f"SELECT * FROM {SCHEMA}.users WHERE max_id = '{_esc(max_id)}' AND role = '{role}'"
+            f"""SELECT * FROM {SCHEMA}.users
+                WHERE max_id = '{_esc(max_id)}' AND erased_at IS NULL
+                  AND role <> 'archived'
+                ORDER BY id LIMIT 1"""
         )
         row = cur.fetchone()
         if row:
@@ -707,7 +705,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             f"""INSERT INTO {SCHEMA}.users
                   (max_id, max_user_id, role, name, city, phone, contact, skill, about,
                    accepted_terms, token, is_admin, verified, gender, avatar)
-                VALUES ('{_esc(max_id)}', '{_esc(max_user_id)}', '{role}', '{_esc(name)}',
+                VALUES ('{_esc(max_id)}', '{_esc(max_user_id)}', 'member', '{_esc(name)}',
                         '{_esc(city)}', '{_esc(phone)}', '{_esc(contact)}', '{_esc(skill)}',
                         '{_esc(about)}', TRUE, '{_esc(new_token)}',
                         {'TRUE' if is_admin else 'FALSE'}, {'TRUE' if code else 'FALSE'},
@@ -948,8 +946,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         me = _me(cur, token)
         if not me:
             return _resp(401, {'error': 'no_token'})
-        if me.get('role') != 'executor':
-            return _resp(403, {'error': 'only_executor'})
+        # Специализации указывает любой участник: заказы берут все.
         raw_ids = body.get('ids')
         if not isinstance(raw_ids, list):
             return _resp(400, {'error': 'bad_ids'})
@@ -1187,16 +1184,11 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             role = body.get('role')
             # Удалённые не показываются даже админу: строка остаётся в базе
             # только ради заданий, личных данных в ней уже нет.
-            where = "WHERE erased_at IS NULL AND role IN ('customer', 'executor')"
-            if role in ('customer', 'executor'):
-                where = f"WHERE erased_at IS NULL AND role = '{role}'"
-            elif role == 'demo':
+            where = "WHERE erased_at IS NULL AND role = 'member'"
+            if role == 'demo':
                 where = 'WHERE erased_at IS NULL AND is_demo = TRUE'
             elif role == 'real':
-                where = (
-                    'WHERE erased_at IS NULL '
-                    "AND role IN ('customer', 'executor') AND is_demo = FALSE"
-                )
+                where = "WHERE erased_at IS NULL AND role = 'member' AND is_demo = FALSE"
             cur.execute(
                 f"SELECT * FROM {SCHEMA}.users {where} ORDER BY created_at DESC LIMIT 200"
             )
@@ -1210,25 +1202,23 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             return _resp(200, {'users': users})
 
         if method == 'POST' and action == 'admin_demo_login':
-            role = body.get('role')
-            if role not in ('customer', 'executor'):
-                return _resp(400, {'error': 'bad_role'})
-            demo_id = f'demo_{role}'
+            # Кабинет теперь один, поэтому и демо-профиль для осмотра один.
+            demo_id = 'demo_member'
             cur.execute(
                 f"""SELECT * FROM {SCHEMA}.users
-                    WHERE max_id = '{demo_id}' AND role = '{role}'"""
+                    WHERE max_id = '{demo_id}' AND erased_at IS NULL"""
             )
             row = cur.fetchone()
             if not row:
-                name = 'Демо-заказчик' if role == 'customer' else 'Демо-исполнитель'
-                skill = '' if role == 'customer' else 'Разнорабочий, погрузка'
                 demo_token = secrets.token_urlsafe(32)
                 cur.execute(
                     f"""INSERT INTO {SCHEMA}.users
                           (max_id, role, name, city, phone, contact, skill, about,
                            accepted_terms, token, verified)
-                        VALUES ('{demo_id}', '{role}', '{name}', 'Ярославль, Кировский район',
-                                '+79000000000', 'Демо-аккаунт для проверки', '{skill}',
+                        VALUES ('{demo_id}', 'member', 'Демо-профиль',
+                                'Ярославль, Кировский район',
+                                '+79000000000', 'Демо-аккаунт для проверки',
+                                'Разнорабочий, погрузка',
                                 'Тестовый аккаунт для осмотра кабинета.', TRUE,
                                 '{demo_token}', TRUE)
                         RETURNING *"""

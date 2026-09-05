@@ -30,8 +30,6 @@ const field =
 const filters = [
   { id: 'all', label: 'Все' },
   { id: 'real', label: 'Реальные' },
-  { id: 'customer', label: 'Заказчики' },
-  { id: 'executor', label: 'Исполнители' },
   { id: 'demo', label: 'Демо' },
 ];
 
@@ -157,7 +155,7 @@ const AdminUsers = ({ onProfile }: { onProfile: (id: number) => void }) => {
                   )}
                 </p>
                 <p className="mt-0.5 break-words text-sm text-chip">
-                  @{u.maxId} · {u.city} · {u.role === 'customer' ? 'заказчик' : 'исполнитель'}
+                  @{u.maxId} · {u.city}
                 </p>
                 <p className="mt-0.5 break-words text-xs text-chip">
                   ★ {u.rating.toFixed(1)} · {u.doneCount} работ · {u.reviewsCount} отзывов

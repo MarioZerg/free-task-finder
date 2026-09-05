@@ -70,7 +70,7 @@ const ProfileDialog = ({ userId, onOpenChange, showDetails = false }: Props) => 
             {profile?.name || 'Профиль'}
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            {profile?.role === 'executor' ? 'Исполнитель Доделай.ру' : 'Заказчик Доделай.ру'}
+            Участник Доделай.ру
           </DialogDescription>
         </DialogHeader>
 

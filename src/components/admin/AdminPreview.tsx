@@ -2,11 +2,13 @@ import { useState } from 'react';
 import Icon from '@/components/ui/icon';
 import AdminRoleView from '@/components/admin/AdminRoleView';
 
+// Кабинет теперь один, но данные в нём удобно смотреть с двух сторон:
+// глазами автора задач и глазами того, кто ищет заказы в ленте.
 type Mode = 'customer' | 'executor';
 
 const modes: { id: Mode; label: string; icon: string }[] = [
-  { id: 'customer', label: 'Заказчик', icon: 'UserRound' },
-  { id: 'executor', label: 'Исполнитель', icon: 'Hammer' },
+  { id: 'customer', label: 'Задачи и отклики', icon: 'ClipboardList' },
+  { id: 'executor', label: 'Лента заказов', icon: 'Radio' },
 ];
 
 const AdminPreview = () => {
@@ -33,7 +35,9 @@ const AdminPreview = () => {
 
       <p className="mt-4 flex items-center gap-2 rounded-2xl border border-line bg-tile px-5 py-3.5 text-sm text-muted-foreground">
         <Icon name="Eye" size={16} className="shrink-0 text-primary" />
-        Так сервис выглядит для роли «{mode === 'customer' ? 'Заказчик' : 'Исполнитель'}».
+        {mode === 'customer'
+          ? 'Задачи участников вместе с откликами на них.'
+          : 'Лента открытых заказов — так её видят участники.'}{' '}
         Только просмотр — кнопки не работают.
       </p>
 

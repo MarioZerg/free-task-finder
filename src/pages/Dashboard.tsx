@@ -3,8 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { AppStateProvider, useAppState } from '@/hooks/use-app-state';
 import DashHeader from '@/components/DashHeader';
 import { AdminReturnBanner } from '@/components/admin/AdminDemoAccess';
-import CustomerDashboard from '@/components/dashboard/CustomerDashboard';
-import ExecutorDashboard from '@/components/dashboard/ExecutorDashboard';
+import MemberDashboard from '@/components/dashboard/MemberDashboard';
 import Icon from '@/components/ui/icon';
 import { payCheck } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
@@ -94,7 +93,9 @@ const DashboardInner = () => {
           </p>
         </div>
       )}
-      <main>{user.role === 'customer' ? <CustomerDashboard /> : <ExecutorDashboard />}</main>
+      <main>
+        <MemberDashboard />
+      </main>
     </div>
   );
 };

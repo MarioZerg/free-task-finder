@@ -62,7 +62,7 @@ const Header = () => {
             </div>
           ) : (
             <button
-              onClick={() => openLogin('customer')}
+              onClick={() => openLogin()}
               className="rounded-full bg-primary px-9 py-4 text-base font-medium leading-none text-primary-foreground transition-transform hover:scale-[1.03]"
             >
               Войти через MAX
@@ -130,7 +130,7 @@ const Header = () => {
               <button
                 onClick={() => {
                   setOpen(false);
-                  openLogin('customer');
+                  openLogin();
                 }}
                 className="w-full rounded-full bg-primary py-4 text-base font-medium text-primary-foreground"
               >

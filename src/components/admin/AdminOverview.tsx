@@ -3,8 +3,7 @@ import { money } from '@/data/mock';
 import type { SectionId } from '@/components/admin/AdminNav';
 
 export interface Stats {
-  customers: number;
-  executors: number;
+  members: number;
   blocked: number;
   open_jobs: number;
   active_jobs: number;
@@ -21,8 +20,7 @@ const groups: {
   {
     title: 'Люди',
     tiles: [
-      { key: 'customers', label: 'заказчиков', icon: 'UserRound' },
-      { key: 'executors', label: 'исполнителей', icon: 'Hammer' },
+      { key: 'members', label: 'участников', icon: 'UserRound' },
       { key: 'blocked', label: 'заблокировано', icon: 'Ban' },
     ],
   },

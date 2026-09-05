@@ -23,7 +23,7 @@
       "method": "POST",
       "path": "/?action=admin_users",
       "body": {
-        "role": "executor"
+        "role": "real"
       },
       "expectedStatus": 403
     },

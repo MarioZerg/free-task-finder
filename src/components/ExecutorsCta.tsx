@@ -53,10 +53,10 @@ const ExecutorsCta = () => {
             </ul>
 
             <button
-              onClick={() => openLogin('executor')}
+              onClick={() => openLogin()}
               className="mt-10 flex items-center gap-2 rounded-full bg-primary px-8 py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.03]"
             >
-              Войти как исполнитель
+              Смотреть заказы
               <Icon name="ArrowRight" size={18} />
             </button>
           </div>

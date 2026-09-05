@@ -267,7 +267,7 @@ const CityLandingInner = ({ slug }: { slug: string }) => {
           <p className="mt-4 flex flex-wrap items-center gap-2 text-sm text-chip">
             Заказов пока нет — станьте первым, кто разместит задачу
             <button
-              onClick={() => openLogin('customer')}
+              onClick={() => openLogin()}
               className="font-medium text-primary underline-offset-4 hover:underline"
             >
               Разместить задачу
@@ -284,7 +284,7 @@ const CityLandingInner = ({ slug }: { slug: string }) => {
             <Icon name="ArrowRight" size={18} />
           </Link>
           <button
-            onClick={() => openLogin('customer')}
+            onClick={() => openLogin()}
             className="min-h-[44px] rounded-full border border-line bg-surface px-7 py-4 text-base font-medium transition-colors hover:border-primary"
           >
             Разместить задачу

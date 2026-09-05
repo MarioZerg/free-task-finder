@@ -17,11 +17,8 @@ const LAUNCH_LETTER = `Доделай.ру — спасибо, что вы с н
 
 Если появятся вопросы или предложения — напишите нам, мы читаем всё.`;
 
-const audiences = [
-  { id: 'all', label: 'Всем' },
-  { id: 'executor', label: 'Исполнителям' },
-  { id: 'customer', label: 'Заказчикам' },
-];
+// Профиль один на всех, поэтому и получатель рассылки теперь один — участник.
+const audiences = [{ id: 'all', label: 'Всем участникам' }];
 
 const AdminBroadcast = () => {
   const [text, setText] = useState(LAUNCH_LETTER);

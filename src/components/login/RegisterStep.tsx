@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { Role } from '@/hooks/use-app-state';
 import { CITIES } from '@/data/mock';
 import { formatPhone, isPhoneValid } from '@/lib/phone';
 
@@ -19,7 +18,6 @@ interface Props {
   setAbout: (v: string) => void;
   terms: boolean;
   setTerms: (v: boolean) => void;
-  loginRole: Role;
 }
 
 const RegisterStep = ({
@@ -35,7 +33,6 @@ const RegisterStep = ({
   setAbout,
   terms,
   setTerms,
-  loginRole,
 }: Props) => (
   <div className="space-y-3">
     <input
@@ -70,22 +67,20 @@ const RegisterStep = ({
         <p className="mt-1 text-xs text-destructive">Номер из 10 цифр после +7</p>
       )}
     </div>
-    {loginRole === 'executor' && (
-      <>
-        <input
-          value={skill}
-          onChange={(e) => setSkill(e.target.value)}
-          placeholder="Чем занимаетесь: грузчик, сборка мебели…"
-          className={field}
-        />
-        <textarea
-          value={about}
-          onChange={(e) => setAbout(e.target.value)}
-          placeholder="О себе: опыт, инструмент, когда свободны"
-          className={`${field} min-h-[90px] resize-none`}
-        />
-      </>
-    )}
+    {/* Профиль один: эти поля нужны, когда человек берёт заказы.
+        Они необязательные — заполнить можно и позже в кабинете. */}
+    <input
+      value={skill}
+      onChange={(e) => setSkill(e.target.value)}
+      placeholder="Чем можете помочь: грузчик, сборка мебели… (необязательно)"
+      className={field}
+    />
+    <textarea
+      value={about}
+      onChange={(e) => setAbout(e.target.value)}
+      placeholder="О себе: опыт, инструмент, когда свободны (необязательно)"
+      className={`${field} min-h-[90px] resize-none`}
+    />
 
     <label className="flex cursor-pointer gap-3 rounded-2xl border border-line bg-tile p-4 text-sm text-muted-foreground">
       <input

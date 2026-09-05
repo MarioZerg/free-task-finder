@@ -14,13 +14,12 @@ const PER_PAGE = 15;
 
 const PeopleList = () => {
   const { user, unread, refresh } = useAppState();
-  const [tab, setTab] = useState<'executor' | 'customer'>('executor');
   const [invite, setInvite] = useState<User | null>(null);
   const [message, setMessage] = useState<User | null>(null);
   const [proOpen, setProOpen] = useState(false);
-  const [executors, setExecutors] = useState<User[]>([]);
-  const [customers, setCustomers] = useState<User[]>([]);
-  const [counts, setCounts] = useState<PeopleCounts>({ executors: 0, customers: 0, online: 0 });
+  // Список людей теперь один: делить не на что — каждый и заказывает, и работает.
+  const [members, setMembers] = useState<User[]>([]);
+  const [counts, setCounts] = useState<PeopleCounts>({ members: 0, online: 0 });
   const [loading, setLoading] = useState(true);
   const [profileId, setProfileId] = useState<number | null>(null);
   const [page, setPage] = useState(1);
@@ -48,9 +47,8 @@ const PeopleList = () => {
       try {
         const r = await people({ professions: key ? key.split(',') : [] });
         if (!alive) return;
-        setExecutors(r.executors || []);
-        setCustomers(r.customers || []);
-        setCounts(r.counts || { executors: 0, customers: 0, online: 0 });
+        setMembers(r.members || []);
+        setCounts(r.counts || { members: 0, online: 0 });
       } catch {
         /* тихо */
       } finally {
@@ -67,7 +65,7 @@ const PeopleList = () => {
     };
   }, [key]);
 
-  useEffect(() => setPage(1), [tab, key]);
+  useEffect(() => setPage(1), [key]);
 
   useEffect(() => {
     let alive = true;
@@ -111,13 +109,15 @@ const PeopleList = () => {
     );
   }, []);
 
-  const list = tab === 'executor' ? executors : customers;
+  // Себя в списке не показываем: пригласить или написать самому себе нельзя.
+  const list = members.filter((m) => m.id !== user?.id);
   const pages = Math.max(1, Math.ceil(list.length / PER_PAGE));
   const current = Math.min(page, pages);
   const shown = list.slice((current - 1) * PER_PAGE, current * PER_PAGE);
   const isPro = !!user?.isPro;
-  const canInvite = user?.role === 'customer' && tab === 'executor' && isPro;
-  const canMessage = user?.role === 'executor' && tab === 'customer' && isPro;
+  // Обе возможности теперь даёт одна подписка, роль ни при чём.
+  const canInvite = isPro;
+  const canMessage = isPro;
   const unreadOf = (id: number) => unread.byUser[String(id)] || 0;
   const handleInvite = (u: User) => setInvite(u);
   const handleMessage = (u: User) => setMessage(u);
@@ -130,14 +130,11 @@ const PeopleList = () => {
     <section>
       <PeopleFilters
         counts={counts}
-        tab={tab}
-        onTab={setTab}
         professions={professions}
         picked={picked}
         onPicked={setPicked}
         onToggle={toggle}
         isPro={isPro}
-        user={user}
         onPro={() => setProOpen(true)}
       />
 
@@ -177,11 +174,7 @@ const PeopleList = () => {
       <SubscriptionDialog
         open={proOpen}
         onOpenChange={setProOpen}
-        hint={
-          user?.role === 'executor'
-            ? 'Личные сообщения заказчикам доступны по подписке PRO'
-            : 'Приглашение исполнителей доступно по подписке PRO'
-        }
+        hint="Личные сообщения и приглашения на заказ доступны по подписке PRO"
       />
     </section>
   );

@@ -37,10 +37,15 @@ export const api = {
     request(JOBS_URL, action, options),
 };
 
+/** Роль осталась в данных только как технический признак: 'member' —
+ *  обычный участник, 'archived' — скрытый профиль. Заказчиков и исполнителей
+ *  больше нет, с одного профиля можно и размещать задачи, и брать заказы. */
+export type UserRole = 'member' | 'archived';
+
 export interface User {
   id: number;
   maxId: string;
-  role: 'customer' | 'executor';
+  role: UserRole;
   name: string;
   city: string;
   skill?: string | null;
@@ -83,8 +88,7 @@ export interface BillingConfig {
 }
 
 export interface PeopleCounts {
-  executors: number;
-  customers: number;
+  members: number;
   online: number;
 }
 
@@ -119,18 +123,15 @@ export const payCheck = (paymentId: number): Promise<{ status: 'paid' | 'pending
   }>;
 
 export const people = (options: {
-  role?: string;
   city?: string;
   professions?: string[];
-} = {}): Promise<{ executors: User[]; customers: User[]; counts: PeopleCounts }> => {
+} = {}): Promise<{ members: User[]; counts: PeopleCounts }> => {
   const params: Record<string, string> = {};
-  if (options.role) params.role = options.role;
   if (options.city) params.city = options.city;
   if (options.professions && options.professions.length)
     params.professions = options.professions.join(',');
   return api.auth('people', { params }) as Promise<{
-    executors: User[];
-    customers: User[];
+    members: User[];
     counts: PeopleCounts;
   }>;
 };
@@ -208,7 +209,7 @@ export interface DirectThread {
   userId: number;
   name: string;
   avatar?: string | null;
-  role: 'customer' | 'executor';
+  role: UserRole;
   online?: boolean;
   lastAt: string;
   lastText: string;

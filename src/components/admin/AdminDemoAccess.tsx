@@ -8,10 +8,10 @@ const ADMIN_BACKUP = 'dodelay_admin_token';
 const AdminDemoAccess = () => {
   const [busy, setBusy] = useState('');
 
-  const enter = async (role: 'customer' | 'executor') => {
-    setBusy(role);
+  const enter = async () => {
+    setBusy('demo');
     try {
-      const r = await api.auth('admin_demo_login', { method: 'POST', body: { role } });
+      const r = await api.auth('admin_demo_login', { method: 'POST', body: {} });
       localStorage.setItem(ADMIN_BACKUP, getToken());
       setToken(r.user.token);
       window.location.href = '/dashboard';
@@ -28,9 +28,9 @@ const AdminDemoAccess = () => {
           <Icon name="FlaskConical" size={20} />
         </span>
         <div className="min-w-0">
-          <h3 className="font-head text-lg font-medium">Тестовые кабинеты</h3>
+          <h3 className="font-head text-lg font-medium">Тестовый кабинет</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Войдите демо-аккаунтом, чтобы вживую посмотреть кабинет роли. Ваш админ-доступ
+            Войдите демо-аккаунтом, чтобы вживую посмотреть кабинет участника. Ваш админ-доступ
             сохранится — вернуться можно кнопкой ниже.
           </p>
         </div>
@@ -39,19 +39,11 @@ const AdminDemoAccess = () => {
       <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <button
           disabled={!!busy}
-          onClick={() => enter('customer')}
+          onClick={() => enter()}
           className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03] disabled:opacity-60 sm:w-auto"
         >
           <Icon name="ClipboardList" size={16} />
-          Кабинет заказчика
-        </button>
-        <button
-          disabled={!!busy}
-          onClick={() => enter('executor')}
-          className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03] disabled:opacity-60 sm:w-auto"
-        >
-          <Icon name="Hammer" size={16} />
-          Кабинет исполнителя
+          Открыть демо-кабинет
         </button>
       </div>
     </div>

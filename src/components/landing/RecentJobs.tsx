@@ -138,7 +138,7 @@ const RecentJobs = ({
           <Icon name="ArrowRight" size={15} />
         </Link>
         <button
-          onClick={() => openLogin('customer')}
+          onClick={() => openLogin()}
           className="flex min-h-[44px] items-center rounded-full border border-line bg-surface px-6 text-sm font-medium transition-colors hover:border-primary"
         >
           Разместить задачу

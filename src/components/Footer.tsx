@@ -20,17 +20,11 @@ const Footer = () => {
           </h2>
           <div className="flex flex-wrap gap-3 md:justify-end">
             <button
-              onClick={() => openLogin('customer')}
+              onClick={() => openLogin()}
               className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-7 py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.03] sm:w-auto"
             >
-              Я заказчик
+              Войти через MAX
               <Icon name="ArrowRight" size={18} />
-            </button>
-            <button
-              onClick={() => openLogin('executor')}
-              className="w-full rounded-full border border-line bg-surface px-7 py-4 text-base font-medium transition-colors hover:border-primary sm:w-auto"
-            >
-              Я исполнитель
             </button>
           </div>
         </div>

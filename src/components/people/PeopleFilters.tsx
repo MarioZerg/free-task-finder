@@ -1,28 +1,22 @@
 import Icon from '@/components/ui/icon';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import type { PeopleCounts, Profession, User } from '@/lib/api';
+import type { PeopleCounts, Profession } from '@/lib/api';
 
 const PeopleFilters = ({
   counts,
-  tab,
-  onTab,
   professions,
   picked,
   onPicked,
   onToggle,
   isPro,
-  user,
   onPro,
 }: {
   counts: PeopleCounts;
-  tab: 'executor' | 'customer';
-  onTab: (t: 'executor' | 'customer') => void;
   professions: Profession[];
   picked: string[];
   onPicked: (v: string[]) => void;
   onToggle: (slug: string) => void;
   isPro: boolean;
-  user: User | null;
   onPro: () => void;
 }) => (
   <>
@@ -32,23 +26,8 @@ const PeopleFilters = ({
           Люди сервиса
         </h2>
         <p className="mt-2 text-sm text-chip">
-          {counts.executors + counts.customers} участников · {counts.online} сейчас в сети
+          {counts.members} участников · {counts.online} сейчас в сети
         </p>
-      </div>
-      <div className="scrollbar-none flex w-full gap-1 overflow-x-auto rounded-full border border-line bg-surface p-1 sm:w-auto">
-        {(['executor', 'customer'] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => onTab(t)}
-            className={`min-h-[44px] shrink-0 whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-medium transition-colors ${
-              tab === t ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
-            }`}
-          >
-            {t === 'executor'
-              ? `Исполнители · ${counts.executors}`
-              : `Заказчики · ${counts.customers}`}
-          </button>
-        ))}
       </div>
     </div>
 
@@ -115,9 +94,8 @@ const PeopleFilters = ({
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-tile px-4 py-3">
         <p className="flex min-w-0 items-start gap-2.5 text-sm text-muted-foreground">
           <Icon name="Crown" size={16} className="mt-0.5 shrink-0 text-amber-600" />
-          {user?.role === 'executor'
-            ? 'С подпиской PRO можно писать заказчикам напрямую, минуя отклик'
-            : 'С подпиской PRO можно пригласить нужного исполнителя прямо на свой заказ'}
+          С подпиской PRO можно писать напрямую, минуя отклик, и приглашать нужного
+          исполнителя на свой заказ
         </p>
         <button
           onClick={onPro}

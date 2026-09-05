@@ -1,37 +1,37 @@
 import Icon from '@/components/ui/icon';
-import { useAppState, Role } from '@/hooks/use-app-state';
+import { useAppState } from '@/hooks/use-app-state';
 
+/** Раньше здесь выбирали роль — заказчика или исполнителя — и заводили под
+ *  каждую отдельный аккаунт. Теперь профиль один, а карточки показывают два
+ *  сценария, которые доступны с него одновременно. */
 const cards: {
-  role: Role;
+  id: string;
   title: string;
   sub: string;
   icon: string;
   points: string[];
-  cta: string;
 }[] = [
   {
-    role: 'customer',
-    title: 'Я заказчик',
-    sub: 'Нужны руки на сегодня',
+    id: 'order',
+    title: 'Нужны руки',
+    sub: 'Разместите задачу',
     icon: 'ClipboardList',
     points: [
       'Объявление за минуту — с фото или без',
       'Оно сразу в общей ленте исполнителей области',
       'Выбираете человека из откликов и подтверждаете',
     ],
-    cta: 'Разместить объявление',
   },
   {
-    role: 'executor',
-    title: 'Я исполнитель',
-    sub: 'Ищу подработку в Ярославле',
+    id: 'work',
+    title: 'Ищете подработку',
+    sub: 'Берите заказы рядом',
     icon: 'Hammer',
     points: [
       'Общая лента заказов вашего города области',
       'Отклик в один клик, без резюме и анкет',
-      'Заказчик подтверждает — вы едете работать',
+      'Автор подтверждает — вы едете работать',
     ],
-    cta: 'Смотреть заказы',
   },
 ];
 
@@ -43,13 +43,17 @@ const RolePreview = () => {
       <div className="mx-auto max-w-[1400px] px-6 md:px-10 lg:px-16">
         <p className="text-sm uppercase tracking-[0.2em] text-chip">Вход</p>
         <h2 className="mt-4 max-w-[720px] font-head text-3xl font-normal leading-tight tracking-tight md:text-5xl">
-          Две роли, один вход через MAX
+          Один профиль на всё, вход через MAX
         </h2>
+        <p className="mt-5 max-w-[640px] text-base text-muted-foreground md:text-lg">
+          Отдельных аккаунтов для заказчика и исполнителя больше нет. Сегодня вы ищете мастера,
+          завтра — сами беретесь за заказ. Всё с одного профиля.
+        </p>
 
         <div className="mt-12 grid gap-5 md:mt-16 lg:grid-cols-2">
           {cards.map((c) => (
             <article
-              key={c.role}
+              key={c.id}
               className="group flex flex-col rounded-3xl border border-line bg-tile p-7 transition-colors hover:border-primary/45 md:p-10"
             >
               <div className="flex items-center gap-4">
@@ -70,17 +74,17 @@ const RolePreview = () => {
                   </li>
                 ))}
               </ul>
-
-              <button
-                onClick={() => openLogin(c.role)}
-                className="mt-9 flex items-center justify-between rounded-full bg-primary px-7 py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02]"
-              >
-                <span>{c.cta}</span>
-                <Icon name="ArrowRight" size={18} />
-              </button>
             </article>
           ))}
         </div>
+
+        <button
+          onClick={() => openLogin()}
+          className="mt-9 flex w-full items-center justify-between gap-4 rounded-full bg-primary px-7 py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02] sm:w-auto"
+        >
+          <span>Войти через MAX</span>
+          <Icon name="ArrowRight" size={18} />
+        </button>
       </div>
     </section>
   );

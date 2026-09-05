@@ -101,7 +101,7 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
   }, [open, user]);
 
   useEffect(() => {
-    if (!open || user?.role !== 'executor') return;
+    if (!open) return;
     let alive = true;
     listProfessions()
       .then((r) => {
@@ -111,11 +111,12 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
     return () => {
       alive = false;
     };
-  }, [open, user?.role]);
+  }, [open]);
 
   if (!user) return null;
 
-  const isExecutor = user.role === 'executor';
+  // Специальности указывает любой участник: заказы берут все.
+  const isExecutor = true;
 
   const toggleProfession = (id: number) => {
     setSelected((prev) => {
@@ -202,7 +203,7 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
             </p>
             <p className="mt-0.5 truncate text-xs text-chip">
               ★ {user.rating.toFixed(1)} ·{' '}
-              {user.role === 'customer' ? 'заказчик' : `${user.doneCount} работ`}
+              {user.doneCount} работ
             </p>
           </div>
           <input

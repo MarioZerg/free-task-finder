@@ -42,7 +42,7 @@ const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
     people({ professions: [page.professionSlug] })
       .then((r) => {
         if (!alive) return;
-        const inCity = (r.executors || []).filter((u) => cityMatch(u.city, city.nameNominative));
+        const inCity = (r.members || []).filter((u) => cityMatch(u.city, city.nameNominative));
         setExecutors(inCity.slice(0, 6));
       })
       .catch(() => undefined)
@@ -258,7 +258,7 @@ const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
             <Icon name="ArrowRight" size={18} />
           </Link>
           <button
-            onClick={() => openLogin('customer')}
+            onClick={() => openLogin()}
             className="min-h-[44px] rounded-full border border-line bg-surface px-7 py-4 text-base font-medium transition-colors hover:border-primary"
           >
             Разместить задачу
@@ -282,7 +282,7 @@ const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
                 Станьте первым — заполните профиль исполнителя, и заказчики увидят вас в поиске.
               </p>
               <button
-                onClick={() => openLogin('executor')}
+                onClick={() => openLogin()}
                 className="mt-4 min-h-[44px] rounded-full border border-line bg-surface px-5 py-2.5 text-sm font-medium transition-colors hover:border-primary/60 hover:text-primary"
               >
                 Стать исполнителем

@@ -27,16 +27,14 @@ const MONTHS = [1, 3, 6];
 
 const monthWord = (n: number) => (n === 1 ? 'месяц' : n < 5 ? 'месяца' : 'месяцев');
 
-const CUSTOMER_PERKS = [
-  'Публикация без лимита — новое задание каждый час вместо одного активного',
-  'Поднятие объявления каждый час вместо 5 часов',
-  'Приглашение исполнителей на свой заказ прямо из вкладки Люди',
-  'Значок PRO в профиле и приоритет в списках',
-];
-
-const EXECUTOR_PERKS = [
+// Подписка одна на весь профиль: она сразу даёт и возможности для тех,
+// кто размещает задачи, и для тех, кто берёт заказы.
+const PRO_PERKS = [
   'До 3 заказов в работе одновременно вместо одного',
-  'Сообщения заказчикам напрямую из вкладки Люди — без ожидания отклика',
+  'Публикация задач без лимита — новая каждый час вместо одной активной',
+  'Поднятие своего объявления каждый час вместо 5 часов',
+  'Сообщения другим участникам напрямую — без ожидания отклика',
+  'Приглашение нужного исполнителя на свой заказ из вкладки Люди',
   'Значок PRO в профиле и приоритет в списках',
 ];
 
@@ -60,7 +58,7 @@ const SubscriptionDialog = ({ open, onOpenChange, hint }: Props) => {
   const isAdmin = !!user?.isAdmin;
   const autoRenew = user?.autoRenew !== false;
   const total = price * months;
-  const perks = user?.role === 'executor' ? EXECUTOR_PERKS : CUSTOMER_PERKS;
+  const perks = PRO_PERKS;
 
   useEffect(() => {
     if (!open) return;
@@ -134,7 +132,7 @@ const SubscriptionDialog = ({ open, onOpenChange, hint }: Props) => {
             Доделай PRO
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            {hint || 'Подписка для тех, кто размещает заказы часто.'}
+            {hint || 'Одна подписка на профиль: и для своих задач, и для работы по заказам.'}
           </DialogDescription>
         </DialogHeader>
 
