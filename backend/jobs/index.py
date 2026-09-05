@@ -98,6 +98,7 @@ def _notify_executors_new_job(cur, job_id: int):
         cur.execute(
             f"""SELECT DISTINCT max_user_id FROM {SCHEMA}.users
                 WHERE role = 'executor' AND blocked = FALSE AND is_demo = FALSE
+                  AND erased_at IS NULL
                   AND COALESCE(notify_responses, TRUE) = TRUE
                   AND max_user_id IS NOT NULL AND max_user_id <> ''
                   AND city ILIKE '{_esc(base_city)}%'{prof_filter}
@@ -231,7 +232,9 @@ def _job(row: Dict[str, Any], viewer: Optional[Dict[str, Any]]) -> Dict[str, Any
 def _viewer(cur, token: str) -> Optional[Dict[str, Any]]:
     if not token:
         return None
-    cur.execute(f"SELECT * FROM {SCHEMA}.users WHERE token = '{_esc(token)}'")
+    cur.execute(
+        f"SELECT * FROM {SCHEMA}.users WHERE token = '{_esc(token)}' AND erased_at IS NULL"
+    )
     row = cur.fetchone()
     return dict(row) if row else None
 
@@ -497,7 +500,8 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             f"""SELECT
                  (SELECT COUNT(*) FROM {SCHEMA}.jobs WHERE status = 'open') AS open_jobs,
                  (SELECT COUNT(*) FROM {SCHEMA}.jobs WHERE status = 'done') AS done_jobs,
-                 (SELECT COUNT(*) FROM {SCHEMA}.users WHERE role = 'executor') AS executors,
+                 (SELECT COUNT(*) FROM {SCHEMA}.users
+                  WHERE role = 'executor' AND erased_at IS NULL) AS executors,
                  (SELECT COALESCE(ROUND(AVG(final_price)), 0) FROM {SCHEMA}.jobs WHERE status = 'done') AS avg_check"""
         )
         row = cur.fetchone()
@@ -705,9 +709,12 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         if method == 'POST' and action == 'admin_stats':
             cur.execute(
                 f"""SELECT
-                     (SELECT COUNT(*) FROM {SCHEMA}.users WHERE role = 'customer') AS customers,
-                     (SELECT COUNT(*) FROM {SCHEMA}.users WHERE role = 'executor') AS executors,
-                     (SELECT COUNT(*) FROM {SCHEMA}.users WHERE blocked) AS blocked,
+                     (SELECT COUNT(*) FROM {SCHEMA}.users
+                      WHERE role = 'customer' AND erased_at IS NULL) AS customers,
+                     (SELECT COUNT(*) FROM {SCHEMA}.users
+                      WHERE role = 'executor' AND erased_at IS NULL) AS executors,
+                     (SELECT COUNT(*) FROM {SCHEMA}.users
+                      WHERE blocked AND erased_at IS NULL) AS blocked,
                      (SELECT COUNT(*) FROM {SCHEMA}.jobs WHERE status = 'open') AS open_jobs,
                      (SELECT COUNT(*) FROM {SCHEMA}.jobs WHERE status IN ('assigned','expiring')) AS active_jobs,
                      (SELECT COUNT(*) FROM {SCHEMA}.jobs WHERE status = 'done') AS done_jobs,

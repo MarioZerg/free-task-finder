@@ -6,6 +6,16 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import Icon from '@/components/ui/icon';
 import Avatar from '@/components/Avatar';
 import { api } from '@/lib/api';
@@ -32,6 +42,7 @@ const AdminUsers = ({ onProfile }: { onProfile: (id: number) => void }) => {
   const [edit, setEdit] = useState<User | null>(null);
   const [form, setForm] = useState({ name: '', city: '', skill: '' });
   const [busy, setBusy] = useState(false);
+  const [toDelete, setToDelete] = useState<User | null>(null);
 
   const load = async (r = role) => {
     setLoading(true);
@@ -66,6 +77,32 @@ const AdminUsers = ({ onProfile }: { onProfile: (id: number) => void }) => {
       await load(role);
     } catch {
       toast({ title: 'Не получилось', description: 'Действие не выполнено.' });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (user: User) => {
+    setBusy(true);
+    try {
+      await api.auth('admin_delete_user', {
+        method: 'POST',
+        body: { userId: user.id },
+      });
+      toast({
+        title: 'Пользователь удалён',
+        description: `${user.name} и его личные данные стёрты без возможности восстановления.`,
+      });
+      setToDelete(null);
+      await load(role);
+    } catch (e) {
+      const code = e instanceof Error ? e.message : '';
+      const reason = code.includes('admin_protected')
+        ? 'Нельзя удалить администратора.'
+        : code.includes('self_delete')
+          ? 'Нельзя удалить самого себя.'
+          : 'Действие не выполнено.';
+      toast({ title: 'Не получилось', description: reason });
     } finally {
       setBusy(false);
     }
@@ -177,6 +214,17 @@ const AdminUsers = ({ onProfile }: { onProfile: (id: number) => void }) => {
                 >
                   Изменить
                 </button>
+                {!u.isAdmin && (
+                  <button
+                    disabled={busy}
+                    onClick={() => setToDelete(u)}
+                    title="Удалить навсегда"
+                    className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-destructive/40 px-4 py-2 text-sm text-destructive transition-colors hover:border-destructive hover:bg-destructive/10 disabled:opacity-60"
+                  >
+                    <Icon name="Trash2" size={15} />
+                    Удалить
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -233,6 +281,36 @@ const AdminUsers = ({ onProfile }: { onProfile: (id: number) => void }) => {
           </button>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
+        <AlertDialogContent className="border-line bg-surface text-foreground">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-head text-2xl font-medium tracking-tight">
+              Удалить {toDelete?.name}?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              Профиль, переписка, отклики и отзывы будут стёрты без возможности
+              восстановления. Активные задания снимутся с публикации, а история
+              оплат сохранится для отчётности.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="min-h-[44px] rounded-full border-line bg-transparent px-6">
+              Отмена
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={busy}
+              onClick={(e) => {
+                e.preventDefault();
+                if (toDelete) remove(toDelete);
+              }}
+              className="min-h-[44px] rounded-full bg-destructive px-6 text-destructive-foreground hover:bg-destructive/90"
+            >
+              {busy ? 'Удаляю…' : 'Удалить навсегда'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

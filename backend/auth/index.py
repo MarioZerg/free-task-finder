@@ -255,7 +255,9 @@ def _online(seen) -> bool:
 def _me(cur, token: str) -> Optional[Dict[str, Any]]:
     if not token:
         return None
-    cur.execute(f"SELECT * FROM {SCHEMA}.users WHERE token = '{_esc(token)}'")
+    cur.execute(
+        f"SELECT * FROM {SCHEMA}.users WHERE token = '{_esc(token)}' AND erased_at IS NULL"
+    )
     row = cur.fetchone()
     if row:
         cur.execute(f"UPDATE {SCHEMA}.users SET last_seen = NOW() WHERE id = {row['id']}")
@@ -313,9 +315,12 @@ _LAUNCH_LETTER = (
 
 
 def _audience_where(audience: str) -> str:
-    """Условие выборки получателей рассылки. Демо-профили исключены всегда."""
+    """Условие выборки получателей рассылки.
+
+    Демо-профили и удалённые пользователи исключены всегда.
+    """
     base = (
-        "WHERE blocked = FALSE AND is_demo = FALSE "
+        "WHERE blocked = FALSE AND is_demo = FALSE AND erased_at IS NULL "
         "AND max_user_id IS NOT NULL AND max_user_id <> ''"
     )
     if audience == 'executor':
@@ -517,7 +522,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 )"""
         cur.execute(
             f"""SELECT * FROM {SCHEMA}.users
-                WHERE role = 'executor' AND blocked = FALSE{prof_join}
+                WHERE role = 'executor' AND blocked = FALSE AND erased_at IS NULL{prof_join}
                 ORDER BY (last_seen > NOW() - INTERVAL '3 minutes') DESC,
                          rating DESC, done_count DESC LIMIT 200"""
         )
@@ -526,6 +531,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         executors = [_user_row(r, profs_map=ex_profs) for r in executor_rows]
         cur.execute(
             f"""SELECT * FROM {SCHEMA}.users WHERE role = 'customer' AND blocked = FALSE
+                  AND erased_at IS NULL
                 ORDER BY (last_seen > NOW() - INTERVAL '3 minutes') DESC,
                          last_seen DESC NULLS LAST LIMIT 200"""
         )
@@ -534,10 +540,13 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         customers = [_user_row(r, profs_map=cu_profs) for r in customer_rows]
         cur.execute(
             f"""SELECT
-                 (SELECT COUNT(*) FROM {SCHEMA}.users WHERE role = 'executor' AND blocked = FALSE) AS executors,
-                 (SELECT COUNT(*) FROM {SCHEMA}.users WHERE role = 'customer' AND blocked = FALSE) AS customers,
+                 (SELECT COUNT(*) FROM {SCHEMA}.users
+                  WHERE role = 'executor' AND blocked = FALSE AND erased_at IS NULL) AS executors,
+                 (SELECT COUNT(*) FROM {SCHEMA}.users
+                  WHERE role = 'customer' AND blocked = FALSE AND erased_at IS NULL) AS customers,
                  (SELECT COUNT(*) FROM {SCHEMA}.users
                   WHERE role IN ('customer','executor') AND blocked = FALSE
+                    AND erased_at IS NULL
                     AND last_seen > NOW() - INTERVAL '3 minutes') AS online"""
         )
         counts = dict(cur.fetchone())
@@ -549,7 +558,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
 
     if method == 'GET' and action == 'profile':
         uid = re.sub(r'\D', '', params.get('id', '')) or '0'
-        cur.execute(f'SELECT * FROM {SCHEMA}.users WHERE id = {uid}')
+        cur.execute(f'SELECT * FROM {SCHEMA}.users WHERE id = {uid} AND erased_at IS NULL')
         row = cur.fetchone()
         if not row:
             return _resp(404, {'error': 'not_found'})
@@ -1176,13 +1185,18 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
 
         if method == 'POST' and action == 'admin_users':
             role = body.get('role')
-            where = "WHERE role IN ('customer', 'executor')"
+            # Удалённые не показываются даже админу: строка остаётся в базе
+            # только ради заданий, личных данных в ней уже нет.
+            where = "WHERE erased_at IS NULL AND role IN ('customer', 'executor')"
             if role in ('customer', 'executor'):
-                where = f"WHERE role = '{role}'"
+                where = f"WHERE erased_at IS NULL AND role = '{role}'"
             elif role == 'demo':
-                where = "WHERE is_demo = TRUE"
+                where = 'WHERE erased_at IS NULL AND is_demo = TRUE'
             elif role == 'real':
-                where = "WHERE role IN ('customer', 'executor') AND is_demo = FALSE"
+                where = (
+                    'WHERE erased_at IS NULL '
+                    "AND role IN ('customer', 'executor') AND is_demo = FALSE"
+                )
             cur.execute(
                 f"SELECT * FROM {SCHEMA}.users {where} ORDER BY created_at DESC LIMIT 200"
             )
@@ -1246,5 +1260,111 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             item = _user_row(updated, True, cur=cur)
             item.pop('token', None)
             return _resp(200, {'user': item})
+
+        if method == 'POST' and action == 'admin_delete_user':
+            """Удаляет пользователя без возможности восстановления.
+
+            Личные данные стираются полностью, задания остаются в ленте
+            обезличенными, записи об оплатах сохраняются для отчётности.
+            """
+            uid = _int_safe(body.get('userId'))
+            if not uid:
+                return _resp(400, {'error': 'bad_user'})
+            if uid == me['id']:
+                return _resp(400, {'error': 'self_delete'})
+
+            cur.execute(
+                f"SELECT id, name, is_admin, erased_at FROM {SCHEMA}.users WHERE id = {uid}"
+            )
+            victim = cur.fetchone()
+            if not victim:
+                return _resp(404, {'error': 'not_found'})
+            if victim['erased_at']:
+                return _resp(400, {'error': 'already_deleted'})
+            # Админа удалить нельзя: иначе можно потерять доступ к панели
+            if victim['is_admin']:
+                return _resp(400, {'error': 'admin_protected'})
+
+            # Всё внутри одной транзакции: либо стирается целиком,
+            # либо не меняется ничего. Иначе при сбое на середине
+            # остался бы профиль без переписки или наоборот.
+            conn.autocommit = False
+            try:
+                # 1. Личное: переписка, отклики, приглашения, уведомления,
+                #    обращения в поддержку, специализации, отзывы.
+                for sql in (
+                    f'DELETE FROM {SCHEMA}.direct_messages WHERE from_id = {uid} OR to_id = {uid}',
+                    f'DELETE FROM {SCHEMA}.dm_archive WHERE user_id = {uid} OR peer_id = {uid}',
+                    f'DELETE FROM {SCHEMA}.job_messages WHERE author_id = {uid}',
+                    f'DELETE FROM {SCHEMA}.job_responses WHERE executor_id = {uid}',
+                    f'DELETE FROM {SCHEMA}.job_invites WHERE customer_id = {uid} OR executor_id = {uid}',
+                    f'DELETE FROM {SCHEMA}.push_subscriptions WHERE user_id = {uid}',
+                    f'DELETE FROM {SCHEMA}.push_log WHERE user_id = {uid}',
+                    f'DELETE FROM {SCHEMA}.support_tickets WHERE user_id = {uid}',
+                    f'DELETE FROM {SCHEMA}.user_professions WHERE user_id = {uid}',
+                    f'DELETE FROM {SCHEMA}.reviews WHERE author_id = {uid} OR target_id = {uid}',
+                    f"DELETE FROM {SCHEMA}.login_codes WHERE max_user_id = '{_esc(str(uid))}'",
+                ):
+                    cur.execute(sql)
+
+                # 2. Активные задания снимаются с публикации: откликаться
+                #    и договариваться уже не с кем. Завершённые остаются
+                #    в истории — на них держится статистика сервиса.
+                cur.execute(
+                    f"""UPDATE {SCHEMA}.jobs
+                        SET status = 'cancelled'
+                        WHERE owner_id = {uid} AND status IN ('open', 'expiring', 'assigned')"""
+                )
+                # Если человек был назначен исполнителем — задание
+                # возвращается заказчику свободным.
+                cur.execute(
+                    f"""UPDATE {SCHEMA}.jobs
+                        SET assigned_executor_id = NULL,
+                            status = CASE WHEN status = 'assigned' THEN 'open' ELSE status END
+                        WHERE assigned_executor_id = {uid}"""
+                )
+
+                # 3. Профиль обезличивается. Строку нельзя убрать физически:
+                #    задания жёстко ссылаются на автора и исчезли бы вместе
+                #    с ним. Вместо этого стираем все личные поля, а флаг
+                #    erased_at убирает человека из лент, списков и поиска.
+                #    Записи об оплатах при этом сохраняются — они больше
+                #    не ведут к живому профилю.
+                stamp = secrets.token_hex(8)
+                cur.execute(
+                    f"""UPDATE {SCHEMA}.users SET
+                            max_id = 'erased_{stamp}',
+                            max_user_id = NULL,
+                            name = 'Пользователь удалён',
+                            city = '',
+                            phone = NULL,
+                            contact = NULL,
+                            skill = NULL,
+                            about = NULL,
+                            avatar = NULL,
+                            gender = '',
+                            token = 'erased_{secrets.token_urlsafe(24)}',
+                            blocked = TRUE,
+                            verified = FALSE,
+                            rating = 0,
+                            reviews_count = 0,
+                            done_count = 0,
+                            last_seen = NULL,
+                            subscription_until = NULL,
+                            subscription_auto_renew = FALSE,
+                            notify_messages = FALSE,
+                            notify_responses = FALSE,
+                            notify_status = FALSE,
+                            erased_at = NOW()
+                        WHERE id = {uid}"""
+                )
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
+            finally:
+                conn.autocommit = True
+
+            return _resp(200, {'ok': True, 'deleted': uid})
 
     return _resp(404, {'error': 'unknown_action'})

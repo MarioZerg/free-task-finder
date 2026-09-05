@@ -57,6 +57,15 @@
         "mode": "preview"
       },
       "expectedStatus": 403
+    },
+    {
+      "name": "Удаление пользователя закрыто без прав",
+      "method": "POST",
+      "path": "/?action=admin_delete_user",
+      "body": {
+        "userId": 1
+      },
+      "expectedStatus": 403
     }
   ]
 }
