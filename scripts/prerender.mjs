@@ -14,9 +14,11 @@
  * заменяет статичный текст живым интерфейсом.
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, rmSync } from 'node:fs';
+import { mkdtemp } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { resolve, dirname, join } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -26,29 +28,42 @@ const OUT = resolve(root, 'dist');
 /** Данные лежат в .ts с алиасами «@/» — собираем их в один временный
  *  модуль, чтобы прочитать реальные значения, а не парсить текст регулярками. */
 const loadData = async () => {
-  const entry = resolve(root, 'node_modules/.cache/prerender-entry.mjs');
-  mkdirSync(dirname(entry), { recursive: true });
-  writeFileSync(
-    entry,
-    `export { CITY_PAGES } from '@/data/cityPages';
-     export { DISTRICT_PAGES } from '@/data/districtPages';
-     export { PROFESSIONS } from '@/data/professionsCatalog';
-     export { PROFESSION_CITY_PAGES } from '@/data/professionCityPages';`,
-    'utf8',
-  );
+  // Пишем во временный каталог системы, а не в node_modules: на сборочном
+  // сервере зависимости часто монтируются только для чтения, и попытка
+  // создать там файл роняла весь процесс сборки.
+  const dir = await mkdtemp(join(tmpdir(), 'dodelay-prerender-'));
+  const entry = join(dir, 'entry.mjs');
+  const bundle = join(dir, 'data.mjs');
 
-  const bundle = resolve(root, 'node_modules/.cache/prerender-data.mjs');
-  await build({
-    entryPoints: [entry],
-    bundle: true,
-    format: 'esm',
-    platform: 'node',
-    outfile: bundle,
-    logLevel: 'silent',
-    alias: { '@': resolve(root, 'src') },
-  });
+  try {
+    writeFileSync(
+      entry,
+      `export { CITY_PAGES } from '@/data/cityPages';
+       export { DISTRICT_PAGES } from '@/data/districtPages';
+       export { PROFESSIONS } from '@/data/professionsCatalog';
+       export { PROFESSION_CITY_PAGES } from '@/data/professionCityPages';`,
+      'utf8',
+    );
 
-  return import(`${bundle}?t=${Date.now()}`);
+    await build({
+      entryPoints: [entry],
+      bundle: true,
+      format: 'esm',
+      platform: 'node',
+      outfile: bundle,
+      logLevel: 'silent',
+      alias: { '@': resolve(root, 'src') },
+    });
+
+    // Абсолютный путь через file:// — иначе импорт ломается на Windows
+    return await import(`${pathToFileURL(bundle).href}?t=${Date.now()}`);
+  } finally {
+    try {
+      rmSync(dir, { recursive: true, force: true });
+    } catch {
+      /* временные файлы удалит система */
+    }
+  }
 };
 
 /** Экранирование: тексты попадают в HTML как есть, любые «<» и «&»
@@ -99,9 +114,15 @@ const jsonLd = (obj) =>
 const main = async () => {
   const { CITY_PAGES, DISTRICT_PAGES, PROFESSIONS, PROFESSION_CITY_PAGES } = await loadData();
 
-  const tpl = readFileSync(resolve(OUT, 'index.html'), 'utf8');
+  const indexFile = resolve(OUT, 'index.html');
+  if (!existsSync(indexFile)) {
+    console.warn('prerender: dist/index.html не найден — пропускаю');
+    return;
+  }
+
+  const tpl = readFileSync(indexFile, 'utf8');
   if (!tpl.includes('id="seo-fallback"')) {
-    console.error('prerender: в index.html нет блока seo-fallback — пропускаю');
+    console.warn('prerender: в index.html нет блока seo-fallback — пропускаю');
     return;
   }
 
@@ -366,7 +387,10 @@ const main = async () => {
   console.log(`prerender: ${written} страниц`);
 };
 
+// Пререндер — надстройка над готовой сборкой: dist к этому моменту уже
+// собран и рабочий. Если генерация статики не удалась, сайт всё равно
+// должен опубликоваться, поэтому выходим с нулевым кодом и пишем причину.
 main().catch((e) => {
-  console.error('prerender: ошибка —', e.message);
-  process.exit(1);
+  console.warn('prerender: пропущен —', e && e.message ? e.message : e);
+  process.exit(0);
 });
