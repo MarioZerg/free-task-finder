@@ -25,7 +25,7 @@ Allow: /*.png$
 Allow: /manifest.webmanifest
 Disallow: /dashboard
 Disallow: /admin
-Clean-param: utm_source&utm_medium&utm_campaign&utm_term&utm_content&yclid&gclid&from&ref
+Clean-param: utm_source&utm_medium&utm_campaign&utm_term&utm_content&yclid&gclid&ysclid&etext&ybaip&from&ref&openstat&_openstat&fbclid&sid&calltouch_tm&roistat
 Sitemap: https://dodelay.ru/sitemap.xml
 
 User-agent: Twitterbot
@@ -39,6 +39,6 @@ Allow: /
 Allow: /podrabotka/
 Disallow: /dashboard
 Disallow: /admin
-Clean-param: utm_source&utm_medium&utm_campaign&utm_term&utm_content&yclid&gclid&from&ref
+Clean-param: utm_source&utm_medium&utm_campaign&utm_term&utm_content&yclid&gclid&ysclid&etext&ybaip&from&ref&openstat&_openstat&fbclid&sid&calltouch_tm&roistat
 
 Sitemap: https://dodelay.ru/sitemap.xml
