@@ -41,7 +41,21 @@ interface Props {
   /** Заголовок секции */
   heading?: string;
   limit?: number;
+  /** Сдвиг выборки и подводки: страницы одного города показывают разные
+   *  заказы и разные формулировки, иначе тексты дублируют друг друга. */
+  seed?: number;
+  /** Скрыть описания задач — на страницах, где текста и так много */
+  compact?: boolean;
 }
+
+/** Подводка к ленте — вариант выбирается по seed страницы */
+const LEADS = [
+  'Реальные задачи, размещённые заказчиками. Чтобы откликнуться, войдите через MAX — отклик бесплатный.',
+  'Это живые заявки из ленты, а не витрина примеров. Отклик ничего не стоит: вход через MAX занимает меньше минуты.',
+  'Задачи опубликованы обычными людьми и ждут исполнителя. Комиссию с оплаты мы не берём — расчёт идёт напрямую.',
+  'Свежие заявки за последние дни. Откликнуться может любой: сервис не берёт плату ни за доступ, ни за отклики.',
+  'Заказы публикуют жители города каждый день. Выбирайте подходящий и связывайтесь с заказчиком без посредников.',
+];
 
 const RecentJobs = ({
   cityNominative,
@@ -50,15 +64,21 @@ const RecentJobs = ({
   category,
   heading,
   limit = 6,
+  seed = 0,
+  compact = false,
 }: Props) => {
   const { feed, openLogin } = useAppState();
 
   const target = cityNominative.trim().toLowerCase();
-  const jobs: JobItem[] = feed
+  const all: JobItem[] = feed
     .filter((j) => j.city.split(',')[0].trim().toLowerCase() === target)
     .filter((j) => (category ? j.category === category : true))
-    .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
-    .slice(0, limit);
+    .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+
+  // Разные страницы одного города берут разный срез ленты: иначе шесть
+  // страниц показывают шесть одинаковых карточек и выглядят копиями.
+  const start = all.length > limit ? Math.abs(seed) % (all.length - limit + 1) : 0;
+  const jobs = all.slice(start, start + limit);
 
   if (jobs.length === 0) return null;
 
@@ -69,8 +89,7 @@ const RecentJobs = ({
         {heading || `Последние заказы в ${cityPrepositional}`}
       </h2>
       <p className="mt-3 max-w-[620px] text-sm text-muted-foreground">
-        Реальные задачи, размещённые заказчиками. Чтобы откликнуться, войдите через MAX —
-        отклик бесплатный.
+        {LEADS[Math.abs(seed) % LEADS.length]}
       </p>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -90,7 +109,7 @@ const RecentJobs = ({
               )}
             </div>
 
-            {job.description && (
+            {!compact && job.description && (
               <p className="mt-2.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                 {job.description}
               </p>

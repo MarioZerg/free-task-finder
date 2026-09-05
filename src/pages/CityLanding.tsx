@@ -8,27 +8,64 @@ import Icon from '@/components/ui/icon';
 import useSeo from '@/hooks/use-seo';
 import useLdJson from '@/hooks/use-ld-json';
 import { CATEGORY_META } from '@/data/categories';
-import { countOpenJobsInCity, getCityPage, getCityPagesBySlug, pluralJobs } from '@/data/cityPages';
+import { CITY_PAGES, countOpenJobsInCity, getCityPage, getCityPagesBySlug, pluralJobs } from '@/data/cityPages';
 import { professionsByGroup, PROFESSIONS } from '@/data/professionsCatalog';
 import { getDistrictPagesByCity } from '@/data/districtPages';
 import NotFound from '@/pages/PageNotFound';
 import CityContent from '@/components/landing/CityContent';
 import RecentJobs from '@/components/landing/RecentJobs';
+import { pick, FREE_ANSWERS, LOGIN_ANSWERS, SCHEDULE_ANSWERS } from '@/data/faqVariants';
 
-const TASK_HINTS: Record<string, string> = {
-  move: 'Переезды, погрузка и разгрузка — самый частый запрос',
-  repair: 'Сборка мебели, мелкий ремонт, повесить полку или карниз',
-  clean: 'Уборка после ремонта, генеральная уборка квартиры',
-  garden: 'Работы на участке: покос травы, грядки, уборка территории',
-  other: 'Разовые бытовые задачи, которые не подходят под другие категории',
-};
+/** Подсказки к категориям. Три набора формулировок: города берут разные,
+ *  чтобы блок не повторялся слово в слово на всех страницах. */
+const TASK_HINT_SETS: Record<string, string>[] = [
+  {
+    move: 'Переезды, погрузка и разгрузка — самый частый запрос',
+    repair: 'Сборка мебели, мелкий ремонт, повесить полку или карниз',
+    clean: 'Уборка после ремонта, генеральная уборка квартиры',
+    garden: 'Работы на участке: покос травы, грядки, уборка территории',
+    other: 'Разовые бытовые задачи, которые не подходят под другие категории',
+  },
+  {
+    move: 'Перевозка вещей, помощь грузчиков, вынос мебели',
+    repair: 'Мелкий бытовой ремонт, монтаж полок, сборка шкафов',
+    clean: 'Наведение порядка после стройки, мытьё окон, генеральная уборка',
+    garden: 'Дача и огород: покос, грядки, вывоз веток и мусора',
+    other: 'Всё остальное — от помощи по хозяйству до разовых поручений',
+  },
+  {
+    move: 'Помощь с переездом и погрузкой — лидер по числу заявок',
+    repair: 'Починить, закрепить, собрать: задачи на пару часов',
+    clean: 'Уборка квартир и помещений, в том числе после ремонта',
+    garden: 'Загородные работы: участок, теплицы, покос, уборка листвы',
+    other: 'Нестандартные просьбы, не попавшие в остальные категории',
+  },
+];
 
-const PRICE_ROWS = [
-  { task: 'Помощь при переезде (2–4 часа)', price: 'от 1 000 до 2 500 ₽' },
-  { task: 'Сборка мебели', price: 'от 800 до 2 000 ₽' },
-  { task: 'Уборка после ремонта', price: 'от 1 500 до 3 500 ₽' },
-  { task: 'Работы на участке', price: 'от 900 до 2 500 ₽' },
-  { task: 'Мелкий ремонт и разное', price: 'от 500 до 1 500 ₽' },
+/** Ориентиры по ценам. Наборы работ различаются по городам: одинаковая
+ *  таблица на шести страницах — заметный кусок совпадающего текста. */
+const PRICE_SETS = [
+  [
+    { task: 'Помощь при переезде (2–4 часа)', price: 'от 1 000 до 2 500 ₽' },
+    { task: 'Сборка мебели', price: 'от 800 до 2 000 ₽' },
+    { task: 'Уборка после ремонта', price: 'от 1 500 до 3 500 ₽' },
+    { task: 'Работы на участке', price: 'от 900 до 2 500 ₽' },
+    { task: 'Мелкий ремонт и разное', price: 'от 500 до 1 500 ₽' },
+  ],
+  [
+    { task: 'Разгрузка машины, подъём на этаж', price: 'от 700 до 2 000 ₽' },
+    { task: 'Собрать шкаф или кухонный гарнитур', price: 'от 800 до 2 000 ₽' },
+    { task: 'Генеральная уборка квартиры', price: 'от 1 500 до 3 500 ₽' },
+    { task: 'Покос травы, уборка участка', price: 'от 900 до 2 500 ₽' },
+    { task: 'Повесить полку, карниз, люстру', price: 'от 500 до 1 500 ₽' },
+  ],
+  [
+    { task: 'Переезд с грузчиками', price: 'от 1 000 до 2 500 ₽' },
+    { task: 'Монтаж мебели по инструкции', price: 'от 800 до 2 000 ₽' },
+    { task: 'Вывоз строительного мусора', price: 'от 1 500 до 3 500 ₽' },
+    { task: 'Работы в саду и на грядках', price: 'от 900 до 2 500 ₽' },
+    { task: 'Замена смесителя или розетки', price: 'от 500 до 1 500 ₽' },
+  ],
 ];
 
 const CityLandingInner = ({ slug }: { slug: string }) => {
@@ -40,6 +77,12 @@ const CityLandingInner = ({ slug }: { slug: string }) => {
 
   // Вопросы строятся из данных города — районы, соседи, население,
   // поэтому у шести городов получаются разные наборы формулировок.
+  // Номер города — база для выбора формулировок: у шести городов разные ответы
+  const cityIdx = CITY_PAGES.findIndex((c) => c.slug === city.slug);
+  // Тот же приём, что и в тексте страницы: перемешанный порядок вместо
+  // линейного сдвига, иначе часть городов делит одинаковые формулировки.
+  const seed = [0, 4, 1, 5, 2, 3][cityIdx % 6] ?? 0;
+
   const faq = [
     {
       q: `Как найти подработку в ${city.name}?`,
@@ -55,7 +98,7 @@ const CityLandingInner = ({ slug }: { slug: string }) => {
     },
     {
       q: 'Можно ли работать по выходным или вечерам?',
-      a: 'Да, график полностью свободный. Вы сами решаете, какие задачи брать и в какие дни выходить — многие совмещают разовые заказы с основной работой.',
+      a: pick(SCHEDULE_ANSWERS, seed),
     },
     {
       q: `Как часто появляются новые заказы в ${city.name}?`,
@@ -63,11 +106,11 @@ const CityLandingInner = ({ slug }: { slug: string }) => {
     },
     {
       q: 'Нужно ли платить за доступ к заказам?',
-      a: 'Нет. Сервис бесплатный и для заказчиков, и для исполнителей: ни абонентской платы, ни комиссии с заказа. Если кто-то просит взнос за регистрацию или доступ к заявкам — это мошенник.',
+      a: pick(FREE_ANSWERS, seed),
     },
     {
       q: 'Можно разместить задачу без регистрации на сайте?',
-      a: 'Вход только через мессенджер MAX — это заменяет и регистрацию, и пароль, занимает меньше минуты. Публикация объявлений бесплатна.',
+      a: pick(LOGIN_ANSWERS, seed),
     },
     {
       q: `Работает ли сервис в пригороде ${city.nameGenitive}?`,
@@ -291,7 +334,7 @@ const CityLandingInner = ({ slug }: { slug: string }) => {
                 </span>
                 <h3 className="mt-4 font-head text-base font-medium">{c.label}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  {TASK_HINTS[c.id]}
+                  {TASK_HINT_SETS[seed % TASK_HINT_SETS.length][c.id]}
                 </p>
               </article>
             ))}
@@ -339,13 +382,19 @@ const CityLandingInner = ({ slug }: { slug: string }) => {
             Ориентировочные цены в {city.name}
           </h2>
           <p className="mt-3 max-w-[620px] text-sm text-muted-foreground">
-            Сумму всегда назначает заказчик — это лишь ориентир по типовым задачам, итоговую цену
-            стороны согласуют напрямую.
+            {pick(
+              [
+                'Сумму всегда назначает заказчик — это лишь ориентир по типовым задачам, итоговую цену стороны согласуют напрямую.',
+                `Таблица носит справочный характер: в ${city.name} цену определяет тот, кто размещает задачу, а окончательный расчёт стороны обсуждают между собой.`,
+                'Это средние значения по частым работам. Конкретную стоимость заказчик и исполнитель определяют сами — сервис в переговоры не вмешивается.',
+              ],
+              seed,
+            )}
           </p>
           <div className="mt-6 overflow-hidden rounded-3xl border border-line">
             <table className="w-full text-left text-sm">
               <tbody>
-                {PRICE_ROWS.map((r, i) => (
+                {PRICE_SETS[seed % PRICE_SETS.length].map((r, i) => (
                   <tr key={r.task} className={i % 2 ? 'bg-tile' : 'bg-surface'}>
                     <td className="px-5 py-4 text-muted-foreground">{r.task}</td>
                     <td className="whitespace-nowrap px-5 py-4 text-right font-head font-medium">
@@ -389,6 +438,7 @@ const CityLandingInner = ({ slug }: { slug: string }) => {
           cityNominative={city.nameNominative}
           cityPrepositional={city.name}
           citySlug={city.slug}
+          seed={seed}
         />
 
         <CityContent city={city} />

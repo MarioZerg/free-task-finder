@@ -22,6 +22,7 @@ import NotFound from '@/pages/PageNotFound';
 import Loader from '@/components/Loader';
 import ProfessionContent from '@/components/landing/ProfessionContent';
 import RecentJobs from '@/components/landing/RecentJobs';
+import { pick, FREE_ANSWERS, TRUST_ANSWERS } from '@/data/faqVariants';
 
 
 /** Дата последнего обновления страниц каталога */
@@ -73,6 +74,13 @@ const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
 
   // Вопросы собираются из данных профессии и города: у каждой из 300 страниц
   // свой набор формулировок, а не один шаблон на весь сайт.
+  // Сдвиг считаем из слага профессии и города: одна профессия в разных
+  // городах и разные профессии в одном городе получают разные ответы.
+  const seed =
+    (page.professionSlug + city.slug)
+      .split('')
+      .reduce((a, c) => a + c.charCodeAt(0), 0) + 1;
+
   const faq = [
     {
       q: `Как быстро найти ${page.professionGenitive} в ${city.name}?`,
@@ -97,6 +105,14 @@ const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
     {
       q: `Можно ли заказать ${page.professionGenitive} без регистрации на сайте?`,
       a: 'Разместить задачу можно после входа через MAX — это заменяет обычную регистрацию и пароль, занимает меньше минуты. Публикация объявлений бесплатна, скрытых платежей нет.',
+    },
+    {
+      q: `Как выбрать ${page.professionGenitive} и не ошибиться?`,
+      a: pick(TRUST_ANSWERS, seed),
+    },
+    {
+      q: 'Берёт ли сервис комиссию с оплаты?',
+      a: pick(FREE_ANSWERS, seed),
     },
     {
       q: `Что делать, если работа выполнена плохо?`,
@@ -381,6 +397,8 @@ const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
           cityPrepositional={city.name}
           citySlug={city.slug}
           heading={`Свежие заказы в ${city.name}`}
+          seed={seed}
+          compact
         />
 
         <ProfessionContent page={page} city={city} />

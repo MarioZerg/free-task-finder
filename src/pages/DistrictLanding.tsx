@@ -19,6 +19,7 @@ import NotFound from '@/pages/PageNotFound';
 import { PROFESSIONS } from '@/data/professionsCatalog';
 import DistrictContent from '@/components/landing/DistrictContent';
 import RecentJobs from '@/components/landing/RecentJobs';
+import { pick, FREE_ANSWERS, LOGIN_ANSWERS, TRUST_ANSWERS } from '@/data/faqVariants';
 
 const TASK_HINTS: Record<string, string> = {
   move: 'Переезды, погрузка и разгрузка — самый частый запрос',
@@ -54,6 +55,11 @@ const DistrictLandingInner = ({ district }: { district: DistrictPage }) => {
     .slice(0, 3)
     .join(', ');
 
+  // Свой сдвиг у каждого района: соседние районы одного города не должны
+  // получить одинаковые формулировки общих ответов.
+  const seed =
+    district.slug.split('').reduce((a, c) => a + c.charCodeAt(0), 0) + 2;
+
   const faq = [
     {
       q: `Как найти подработку в ${district.name}?`,
@@ -77,11 +83,15 @@ const DistrictLandingInner = ({ district }: { district: DistrictPage }) => {
     },
     {
       q: 'Нужно ли платить за доступ к заказам?',
-      a: 'Нет. Сервис бесплатный и для заказчиков, и для исполнителей: ни абонентской платы, ни комиссии с заказа. Если кто-то просит взнос за регистрацию или доступ к заявкам — это мошенник.',
+      a: pick(FREE_ANSWERS, seed),
     },
     {
       q: 'Можно разместить задачу без регистрации на сайте?',
-      a: 'Вход только через мессенджер MAX — это заменяет и регистрацию, и пароль, занимает меньше минуты. Публикация объявлений бесплатна.',
+      a: pick(LOGIN_ANSWERS, seed),
+    },
+    {
+      q: 'Как понять, что исполнителю можно доверять?',
+      a: pick(TRUST_ANSWERS, seed),
     },
   ];
 
@@ -264,6 +274,8 @@ const DistrictLandingInner = ({ district }: { district: DistrictPage }) => {
           cityPrepositional={city.name}
           citySlug={city.slug}
           heading={`Свежие заказы в ${city.name}`}
+          seed={seed}
+          compact
         />
 
         <DistrictContent district={district} city={city} />

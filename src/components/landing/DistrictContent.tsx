@@ -3,6 +3,7 @@ import Icon from '@/components/ui/icon';
 import type { CityPage } from '@/data/cityPages';
 import type { DistrictPage } from '@/data/districtPages';
 import { PROFESSIONS } from '@/data/professionsCatalog';
+import { pick } from '@/data/faqVariants';
 
 /** Развёрнутый текст страницы района. В отличие от городов, здесь почти
  *  нет общих формулировок: каждый блок построен на собственных данных
@@ -16,6 +17,10 @@ const DistrictContent = ({
   district: DistrictPage;
   city: CityPage;
 }) => {
+  // Сдвиг по слагу района: соседние районы одного города получают разные
+  // связки и подзаголовки, иначе страницы читаются как копии.
+  const seed = district.slug.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+
   const top = district.topProfessions
     .map((slug) => PROFESSIONS.find((p) => p.slug === slug))
     .filter((p): p is (typeof PROFESSIONS)[number] => !!p);
@@ -25,23 +30,39 @@ const DistrictContent = ({
       <section className="mt-16 max-w-[820px]">
         <p className="text-sm uppercase tracking-[0.2em] text-chip">Район</p>
         <h2 className="mt-3 font-head text-2xl font-medium tracking-tight md:text-3xl">
-          Какие заказы чаще всего в {district.name}
+          {pick(
+            [
+              `Какие заказы чаще всего в ${district.name}`,
+              `Что заказывают в ${district.name}: частые задачи`,
+              `Спрос на мастеров в ${district.name}`,
+            ],
+            seed,
+          )}
         </h2>
         <p className="mt-5 text-base leading-relaxed text-muted-foreground">
           {district.demand}
         </p>
 
-        <h3 className="mt-8 font-head text-lg font-medium">Застройка и жилой фонд</h3>
+        <h3 className="mt-8 font-head text-lg font-medium">
+          {pick(['Застройка и жилой фонд', 'Каким жильём застроен район', 'Дома и инфраструктура'], seed, 1)}
+        </h3>
         <p className="mt-3 text-base leading-relaxed text-muted-foreground">
           {district.housing}
         </p>
 
         <h3 className="mt-8 font-head text-lg font-medium">
-          Микрорайоны и местные названия
+          {pick(['Микрорайоны и местные названия', 'Как здесь называют места', 'Части района на слуху у жителей'], seed, 2)}
         </h3>
         <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-          Жители обычно называют не район, а свою часть города. В объявлении пишите привычное
-          название — так исполнитель быстрее поймёт, куда ехать:
+          {pick(
+            [
+              'Жители обычно называют не район, а свою часть города. В объявлении пишите привычное название — так исполнитель быстрее поймёт, куда ехать:',
+              'В обиходе официальное имя района звучит редко — люди ориентируются по местным названиям. Используйте их в заявке, мастеру будет понятнее:',
+              'Указывайте в объявлении то название, которым пользуются соседи: исполнитель определит маршрут с первого взгляда, не уточняя адрес отдельно:',
+            ],
+            seed,
+            2,
+          )}
         </p>
         <div className="mt-4 flex flex-wrap gap-2.5">
           {district.areas.map((a) => (
@@ -61,7 +82,7 @@ const DistrictContent = ({
 
       <section className="mt-14 max-w-[820px]">
         <h2 className="font-head text-2xl font-medium tracking-tight md:text-3xl">
-          Как добраться и что учесть
+          {pick(['Как добраться и что учесть', 'Дорога и транспортная доступность', 'Что учесть исполнителю при выезде'], seed, 3)}
         </h2>
         <p className="mt-5 text-base leading-relaxed text-muted-foreground">
           {district.logistics}
@@ -73,8 +94,15 @@ const DistrictContent = ({
           Востребованные мастера в {district.name}
         </h2>
         <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-          Специальности, которые здесь заказывают чаще остальных — с ориентиром по цене
-          типовой работы:
+          {pick(
+            [
+              'Специальности, которые здесь заказывают чаще остальных — с ориентиром по цене типовой работы:',
+              'Ниже — направления с самым устойчивым спросом в районе и примерная стоимость стандартной задачи:',
+              'Эти мастера получают больше всего заявок именно отсюда. Рядом — ориентировочная цена типовой работы:',
+            ],
+            seed,
+            4,
+          )}
         </p>
         <div className="mt-6 overflow-hidden rounded-3xl border border-line">
           <table className="w-full text-left text-sm">
@@ -99,8 +127,15 @@ const DistrictContent = ({
           </table>
         </div>
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-          Цены указаны за работу и служат ориентиром: точную сумму заказчик и исполнитель
-          согласуют между собой. Комиссию сервис не удерживает.
+          {pick(
+            [
+              'Цены указаны за работу и служат ориентиром: точную сумму заказчик и исполнитель согласуют между собой. Комиссию сервис не удерживает.',
+              'Суммы приведены без учёта материалов и носят справочный характер — окончательную цену стороны обсуждают напрямую, без нашего участия.',
+              'Это средние расценки по району: конкретная стоимость зависит от объёма и срочности. Процент с оплаты площадка не берёт.',
+            ],
+            seed,
+            5,
+          )}
         </p>
       </section>
 
