@@ -49,11 +49,24 @@ export interface User {
   name: string;
   city: string;
   skill?: string | null;
+  /** Описание себя как исполнителя: опыт, инструмент, когда свободен. */
   about?: string | null;
+  /** Описание себя как заказчика: какие задачи поручает, что важно. */
+  aboutCustomer?: string | null;
   avatar?: string | null;
+  /** Два независимых режима: можно включить оба или оставить один. */
+  asExecutor?: boolean;
+  asCustomer?: boolean;
   rating: number;
   reviewsCount: number;
   doneCount: number;
+  /** Сколько задач человек разместил. */
+  createdCount?: number;
+  /** Репутация делится по стороне сделки: работа и заказы оцениваются отдельно. */
+  ratingExecutor?: number;
+  reviewsExecutor?: number;
+  ratingCustomer?: number;
+  reviewsCustomer?: number;
   verified?: boolean;
   online?: boolean;
   lastSeen?: string | null;
@@ -89,8 +102,15 @@ export interface BillingConfig {
 
 export interface PeopleCounts {
   members: number;
+  /** Сколько человек готовы брать заказы и сколько размещают задачи.
+   *  Один и тот же человек попадает в оба числа, если включил оба режима. */
+  executors: number;
+  customers: number;
   online: number;
 }
+
+/** Фильтр вкладки «Люди»: все, только исполнители или только заказчики. */
+export type PeopleMode = 'all' | 'executor' | 'customer';
 
 export const billingConfig = (): Promise<BillingConfig> =>
   api.auth('billing_config') as Promise<BillingConfig>;
@@ -124,10 +144,12 @@ export const payCheck = (paymentId: number): Promise<{ status: 'paid' | 'pending
 
 export const people = (options: {
   city?: string;
+  mode?: PeopleMode;
   professions?: string[];
 } = {}): Promise<{ members: User[]; counts: PeopleCounts }> => {
   const params: Record<string, string> = {};
   if (options.city) params.city = options.city;
+  if (options.mode && options.mode !== 'all') params.mode = options.mode;
   if (options.professions && options.professions.length)
     params.professions = options.professions.join(',');
   return api.auth('people', { params }) as Promise<{
@@ -181,8 +203,20 @@ export interface ReviewItem {
   text: string;
   created_at: string;
   author_name: string;
+  author_avatar?: string | null;
   job_title: string;
   final_price: number | null;
+  /** За какую сторону сделки выставлен отзыв. */
+  target_side?: 'executor' | 'customer';
+}
+
+/** Ответ на запрос чужого профиля: сам профиль и отзывы, разложенные
+ *  по двум сторонам — о работе и о заказах. */
+export interface ProfileResponse {
+  user: User;
+  reviews: ReviewItem[];
+  reviewsExecutor: ReviewItem[];
+  reviewsCustomer: ReviewItem[];
 }
 
 export interface ChatMessage {

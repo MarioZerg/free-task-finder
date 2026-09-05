@@ -61,6 +61,23 @@ const PersonCard = memo(
             <p className="mt-1 text-xs text-chip">
               ★ {user.rating.toFixed(1)} · {user.reviewsCount} отзывов
               {user.doneCount > 0 ? ` · ${user.doneCount} работ` : ''}
+              {user.createdCount ? ` · ${user.createdCount} задач` : ''}
+            </p>
+            {/* Показываем, чем человек занимается: берёт заказы,
+                размещает задачи или и то и другое. */}
+            <p className="mt-1.5 flex flex-wrap gap-1">
+              {user.asExecutor !== false && (
+                <span className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                  <Icon name="Hammer" size={11} />
+                  Берёт заказы
+                </span>
+              )}
+              {user.asCustomer !== false && (
+                <span className="flex items-center gap-1 rounded-full bg-tile px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                  <Icon name="ClipboardList" size={11} />
+                  Заказчик
+                </span>
+              )}
             </p>
           </div>
           <Icon name="ChevronRight" size={18} className="shrink-0 text-chip" />

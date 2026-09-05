@@ -9,7 +9,8 @@ import {
 import Icon from '@/components/ui/icon';
 import { api } from '@/lib/api';
 import type { ReviewItem, User } from '@/lib/api';
-import { money } from '@/data/mock';
+import ProfileStats from '@/components/profile/ProfileStats';
+import ProfileReviews from '@/components/profile/ProfileReviews';
 import Avatar from '@/components/Avatar';
 
 interface Props {
@@ -30,18 +31,17 @@ const seenText = (u: User) => {
   return 'давно не заходил';
 };
 
-const dateRu = (v: string) =>
-  new Date(v).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
-
 const ProfileDialog = ({ userId, onOpenChange, showDetails = false }: Props) => {
   const [profile, setProfile] = useState<User | null>(null);
-  const [reviews, setReviews] = useState<ReviewItem[]>([]);
+  const [exReviews, setExReviews] = useState<ReviewItem[]>([]);
+  const [cuReviews, setCuReviews] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!userId) {
       setProfile(null);
-      setReviews([]);
+      setExReviews([]);
+      setCuReviews([]);
       return;
     }
     let alive = true;
@@ -51,7 +51,8 @@ const ProfileDialog = ({ userId, onOpenChange, showDetails = false }: Props) => 
       .then((r) => {
         if (!alive) return;
         setProfile(r.user);
-        setReviews(r.reviews || []);
+        setExReviews(r.reviewsExecutor || []);
+        setCuReviews(r.reviewsCustomer || []);
       })
       .catch(() => {
         if (alive) setProfile(null);
@@ -114,75 +115,60 @@ const ProfileDialog = ({ userId, onOpenChange, showDetails = false }: Props) => 
               </div>
             )}
 
-            <div className="grid grid-cols-3 gap-2 rounded-3xl border border-line bg-tile p-4 text-center sm:p-5">
-              <div>
-                <p className="font-head text-lg text-primary">★ {profile.rating.toFixed(1)}</p>
-                <p className="text-xs text-chip">рейтинг</p>
-              </div>
-              <div>
-                <p className="font-head text-lg">{profile.doneCount}</p>
-                <p className="text-xs text-chip">работ</p>
-              </div>
-              <div>
-                <p className="font-head text-lg">{profile.reviewsCount}</p>
-                <p className="text-xs text-chip">отзывов</p>
-              </div>
-            </div>
+            <ProfileStats user={profile} />
 
-            {showDetails && (profile.about || profile.city || profile.skill) && (
-              <div className="rounded-3xl border border-line bg-tile p-5">
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-chip">
-                  {profile.city && (
-                    <span className="flex items-center gap-1.5">
-                      <Icon name="MapPin" size={14} />
-                      {profile.city}
-                    </span>
-                  )}
-                  {profile.skill && (
-                    <span className="flex items-center gap-1.5">
-                      <Icon name="Hammer" size={14} />
-                      {profile.skill}
-                    </span>
-                  )}
-                </div>
-                {profile.about && (
-                  <>
-                    <h4 className="mt-3 font-head text-base font-medium">О себе</h4>
-                    <p className="mt-1 whitespace-pre-line break-words text-sm text-muted-foreground">
-                      {profile.about}
-                    </p>
-                  </>
-                )}
-              </div>
-            )}
+            {showDetails &&
+              (profile.about || profile.aboutCustomer || profile.city || profile.skill) && (
+                <div className="rounded-3xl border border-line bg-tile p-5">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-chip">
+                    {profile.city && (
+                      <span className="flex items-center gap-1.5">
+                        <Icon name="MapPin" size={14} />
+                        {profile.city}
+                      </span>
+                    )}
+                    {profile.skill && (
+                      <span className="flex items-center gap-1.5">
+                        <Icon name="Hammer" size={14} />
+                        {profile.skill}
+                      </span>
+                    )}
+                  </div>
 
-            <div className="border-t border-line pt-4">
-              <h4 className="font-head text-lg font-medium">Отзывы</h4>
-              {reviews.length === 0 ? (
-                <p className="mt-2 text-sm text-chip">Отзывов пока нет.</p>
-              ) : (
-                <div className="mt-3 space-y-3">
-                  {reviews.map((r, i) => (
-                    <div key={i} className="rounded-2xl border border-line bg-tile p-4">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="min-w-0 break-words text-sm font-medium">{r.author_name}</span>
-                        <span className="text-sm text-primary">
-                          {'★'.repeat(r.rating)}
-                          <span className="text-chip">{'★'.repeat(5 - r.rating)}</span>
-                        </span>
-                      </div>
-                      <p className="mt-1 break-words text-xs text-chip">
-                        {r.job_title}
-                        {r.final_price ? ` · ${money(r.final_price)}` : ''} · {dateRu(r.created_at)}
+                  {/* Два описания: под работу и под заказы. Показываем
+                      только заполненные и только для включённых режимов. */}
+                  {profile.asExecutor !== false && profile.about && (
+                    <>
+                      <h4 className="mt-3 flex items-center gap-1.5 font-head text-base font-medium">
+                        <Icon name="Hammer" size={15} className="text-primary" />
+                        Как исполнитель
+                      </h4>
+                      <p className="mt-1 whitespace-pre-line break-words text-sm text-muted-foreground">
+                        {profile.about}
                       </p>
-                      {r.text && (
-                        <p className="mt-2 break-words text-sm text-muted-foreground">{r.text}</p>
-                      )}
-                    </div>
-                  ))}
+                    </>
+                  )}
+
+                  {profile.asCustomer !== false && profile.aboutCustomer && (
+                    <>
+                      <h4 className="mt-4 flex items-center gap-1.5 font-head text-base font-medium">
+                        <Icon name="ClipboardList" size={15} className="text-primary" />
+                        Как заказчик
+                      </h4>
+                      <p className="mt-1 whitespace-pre-line break-words text-sm text-muted-foreground">
+                        {profile.aboutCustomer}
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
-            </div>
+
+            <ProfileReviews
+              asExecutor={profile.asExecutor !== false}
+              asCustomer={profile.asCustomer !== false}
+              executorReviews={exReviews}
+              customerReviews={cuReviews}
+            />
           </>
         )}
       </DialogContent>

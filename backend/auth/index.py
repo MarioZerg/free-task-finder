@@ -210,12 +210,24 @@ def _user_row(
         'city': row['city'],
         'skill': row['skill'],
         'about': row['about'],
+        'aboutCustomer': row.get('about_customer') or '',
         'avatar': row.get('avatar'),
         'gender': row.get('gender') or '',
         'professions': professions,
+        # Два независимых режима профиля: человек может брать заказы,
+        # размещать задачи или делать и то и другое.
+        'asExecutor': bool(row.get('as_executor', True)),
+        'asCustomer': bool(row.get('as_customer', True)),
         'rating': float(row['rating']) if row['rating'] is not None else 0.0,
         'reviewsCount': row['reviews_count'],
         'doneCount': row['done_count'],
+        'createdCount': int(row.get('created_count') or 0),
+        # Рейтинг разделён по стороне сделки: работа исполнителя и
+        # поведение заказчика оцениваются отдельно.
+        'ratingExecutor': float(row.get('rating_executor') or 0),
+        'reviewsExecutor': int(row.get('reviews_executor') or 0),
+        'ratingCustomer': float(row.get('rating_customer') or 0),
+        'reviewsCustomer': int(row.get('reviews_customer') or 0),
         'verified': bool(row.get('verified')),
         'online': _online(row.get('last_seen')),
         'lastSeen': row.get('last_seen'),
@@ -518,38 +530,47 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     WHERE up.user_id = users.id
                       AND (LOWER(p.slug) IN ({slugs}){id_cond})
                 )"""
-        # Список людей теперь один: деления на заказчиков и исполнителей нет.
-        # Ключ executors в ответе сохранён, чтобы старые версии приложения,
-        # открытые в браузере, не сломались до обновления страницы.
+        # Фильтр по режиму профиля: показать только тех, кто берёт заказы,
+        # только тех, кто их размещает, или всех подряд.
+        mode = str(params.get('mode') or '').strip().lower()
+        mode_cond = ''
+        if mode == 'executor':
+            mode_cond = ' AND as_executor = TRUE'
+        elif mode == 'customer':
+            mode_cond = ' AND as_customer = TRUE'
+
+        base = "role = 'member' AND blocked = FALSE AND erased_at IS NULL"
+        # Сортировка зависит от того, что человек ищет: исполнителя оценивают
+        # по выполненным работам, заказчика — по размещённым задачам.
+        order = (
+            'rating_customer DESC, created_count DESC'
+            if mode == 'customer'
+            else 'rating_executor DESC, done_count DESC'
+        )
         cur.execute(
             f"""SELECT * FROM {SCHEMA}.users
-                WHERE role = 'member' AND blocked = FALSE AND erased_at IS NULL{prof_join}
+                WHERE {base}{mode_cond}{prof_join}
                 ORDER BY (last_seen > NOW() - INTERVAL '3 minutes') DESC,
-                         rating DESC, done_count DESC LIMIT 200"""
+                         {order} LIMIT 200"""
         )
         rows = [dict(r) for r in cur.fetchall()]
         profs = _professions_map(cur, [r['id'] for r in rows])
         members = [_user_row(r, profs_map=profs) for r in rows]
         cur.execute(
             f"""SELECT
+                 (SELECT COUNT(*) FROM {SCHEMA}.users WHERE {base}) AS members,
                  (SELECT COUNT(*) FROM {SCHEMA}.users
-                  WHERE role = 'member' AND blocked = FALSE AND erased_at IS NULL) AS members,
+                  WHERE {base} AND as_executor = TRUE) AS executors,
                  (SELECT COUNT(*) FROM {SCHEMA}.users
-                  WHERE role = 'member' AND blocked = FALSE AND erased_at IS NULL
+                  WHERE {base} AND as_customer = TRUE) AS customers,
+                 (SELECT COUNT(*) FROM {SCHEMA}.users
+                  WHERE {base}
                     AND last_seen > NOW() - INTERVAL '3 minutes') AS online"""
         )
         counts = dict(cur.fetchone())
-        total = int(counts.get('members') or 0)
         return _resp(200, {
             'members': members,
-            'executors': members,
-            'customers': [],
-            'counts': {
-                'members': total,
-                'executors': total,
-                'customers': 0,
-                'online': int(counts.get('online') or 0),
-            },
+            'counts': {k: int(v or 0) for k, v in counts.items()},
         })
 
     if method == 'GET' and action == 'profile':
@@ -558,17 +579,29 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         row = cur.fetchone()
         if not row:
             return _resp(404, {'error': 'not_found'})
+        # Отзывы делим по стороне сделки: как человек выполнял работу и как
+        # он вёл себя в роли заказчика — это разные репутации.
         cur.execute(
-            f"""SELECT r.rating, r.text, r.created_at, u.name AS author_name,
+            f"""SELECT r.rating, r.text, r.created_at, r.target_side,
+                       u.name AS author_name, u.avatar AS author_avatar,
                        j.title AS job_title, j.final_price
                 FROM {SCHEMA}.reviews r
                 JOIN {SCHEMA}.users u ON u.id = r.author_id
                 JOIN {SCHEMA}.jobs j ON j.id = r.job_id
                 WHERE r.target_id = {uid} AND r.hidden = FALSE
-                ORDER BY r.created_at DESC LIMIT 30"""
+                ORDER BY r.created_at DESC LIMIT 60"""
         )
-        reviews = [dict(r) for r in cur.fetchall()]
-        return _resp(200, {'user': _user_row(row, cur=cur), 'reviews': reviews})
+        all_reviews = [dict(r) for r in cur.fetchall()]
+        return _resp(200, {
+            'user': _user_row(row, cur=cur),
+            'reviews': all_reviews,
+            'reviewsExecutor': [
+                r for r in all_reviews if r.get('target_side') != 'customer'
+            ],
+            'reviewsCustomer': [
+                r for r in all_reviews if r.get('target_side') == 'customer'
+            ],
+        })
 
     if method == 'GET' and action == 'login_status':
         code = re.sub(r'\W', '', params.get('code', ''))[:12]
@@ -1009,6 +1042,17 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         contact = str(body.get('contact', row['contact'] or '')).strip()[:200]
         skill = str(body.get('skill', row['skill'] or '')).strip()[:200]
         about = str(body.get('about', row['about'] or '')).strip()[:1000]
+        about_customer = str(
+            body.get('aboutCustomer', row.get('about_customer') or '')
+        ).strip()[:1000]
+
+        # Режимы профиля. Совсем выключить оба нельзя — иначе человек
+        # пропал бы из вкладки «Люди» и не смог бы ни заказывать, ни работать.
+        as_executor = bool(body.get('asExecutor', row.get('as_executor', True)))
+        as_customer = bool(body.get('asCustomer', row.get('as_customer', True)))
+        if not as_executor and not as_customer:
+            return _resp(400, {'error': 'need_one_mode'})
+
         avatar_sql = ''
         if body.get('avatar'):
             url = _upload_avatar(str(body['avatar']), row['id'])
@@ -1023,7 +1067,10 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         cur.execute(
             f"""UPDATE {SCHEMA}.users SET name = '{_esc(name)}', city = '{_esc(city)}',
                 phone = '{_esc(phone)}', contact = '{_esc(contact)}',
-                skill = '{_esc(skill)}', about = '{_esc(about)}'{avatar_sql}{gender_sql}
+                skill = '{_esc(skill)}', about = '{_esc(about)}',
+                about_customer = '{_esc(about_customer)}',
+                as_executor = {'TRUE' if as_executor else 'FALSE'},
+                as_customer = {'TRUE' if as_customer else 'FALSE'}{avatar_sql}{gender_sql}
                 WHERE id = {row['id']} RETURNING *"""
         )
         return _resp(200, {'user': _user_row(cur.fetchone(), True, cur=cur)})

@@ -19,6 +19,9 @@ export interface ProfilePayload {
   contact?: string;
   skill?: string;
   about?: string;
+  aboutCustomer?: string;
+  asExecutor?: boolean;
+  asCustomer?: boolean;
   avatar?: string;
   gender?: string;
 }

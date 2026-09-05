@@ -1,9 +1,19 @@
 import Icon from '@/components/ui/icon';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import type { PeopleCounts, Profession } from '@/lib/api';
+import type { PeopleCounts, PeopleMode, Profession } from '@/lib/api';
+
+// Один человек может быть и в исполнителях, и в заказчиках — это не
+// взаимоисключающие группы, а два режима профиля.
+const tabs: { id: PeopleMode; label: string; icon: string }[] = [
+  { id: 'all', label: 'Все', icon: 'Users' },
+  { id: 'executor', label: 'Исполнители', icon: 'Hammer' },
+  { id: 'customer', label: 'Заказчики', icon: 'ClipboardList' },
+];
 
 const PeopleFilters = ({
   counts,
+  mode,
+  onMode,
   professions,
   picked,
   onPicked,
@@ -12,6 +22,8 @@ const PeopleFilters = ({
   onPro,
 }: {
   counts: PeopleCounts;
+  mode: PeopleMode;
+  onMode: (m: PeopleMode) => void;
   professions: Profession[];
   picked: string[];
   onPicked: (v: string[]) => void;
@@ -28,6 +40,31 @@ const PeopleFilters = ({
         <p className="mt-2 text-sm text-chip">
           {counts.members} участников · {counts.online} сейчас в сети
         </p>
+      </div>
+
+      <div className="scrollbar-none flex w-full gap-1 overflow-x-auto rounded-full border border-line bg-surface p-1 sm:w-auto">
+        {tabs.map((t) => {
+          const n =
+            t.id === 'executor'
+              ? counts.executors
+              : t.id === 'customer'
+                ? counts.customers
+                : counts.members;
+          return (
+            <button
+              key={t.id}
+              onClick={() => onMode(t.id)}
+              className={`flex min-h-[44px] shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-medium transition-colors ${
+                mode === t.id
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Icon name={t.icon} size={15} />
+              {t.label} · {n}
+            </button>
+          );
+        })}
       </div>
     </div>
 

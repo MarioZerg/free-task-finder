@@ -8,7 +8,7 @@ import DirectThreads from '@/components/people/DirectThreads';
 import PeopleGrid from '@/components/people/PeopleGrid';
 import { useAppState } from '@/hooks/use-app-state';
 import { dmArchive, dmList, listProfessions, people } from '@/lib/api';
-import type { DirectThread, PeopleCounts, Profession, User } from '@/lib/api';
+import type { DirectThread, PeopleCounts, PeopleMode, Profession, User } from '@/lib/api';
 
 const PER_PAGE = 15;
 
@@ -17,9 +17,16 @@ const PeopleList = () => {
   const [invite, setInvite] = useState<User | null>(null);
   const [message, setMessage] = useState<User | null>(null);
   const [proOpen, setProOpen] = useState(false);
-  // Список людей теперь один: делить не на что — каждый и заказывает, и работает.
+  // Список один, но его можно сузить: показать только тех, кто берёт
+  // заказы, или только тех, кто их размещает.
+  const [mode, setMode] = useState<PeopleMode>('all');
   const [members, setMembers] = useState<User[]>([]);
-  const [counts, setCounts] = useState<PeopleCounts>({ members: 0, online: 0 });
+  const [counts, setCounts] = useState<PeopleCounts>({
+    members: 0,
+    executors: 0,
+    customers: 0,
+    online: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [profileId, setProfileId] = useState<number | null>(null);
   const [page, setPage] = useState(1);
@@ -45,10 +52,10 @@ const PeopleList = () => {
     let alive = true;
     const load = async () => {
       try {
-        const r = await people({ professions: key ? key.split(',') : [] });
+        const r = await people({ mode, professions: key ? key.split(',') : [] });
         if (!alive) return;
         setMembers(r.members || []);
-        setCounts(r.counts || { members: 0, online: 0 });
+        setCounts(r.counts || { members: 0, executors: 0, customers: 0, online: 0 });
       } catch {
         /* тихо */
       } finally {
@@ -63,9 +70,9 @@ const PeopleList = () => {
       alive = false;
       window.clearInterval(id);
     };
-  }, [key]);
+  }, [key, mode]);
 
-  useEffect(() => setPage(1), [key]);
+  useEffect(() => setPage(1), [key, mode]);
 
   useEffect(() => {
     let alive = true;
@@ -130,6 +137,8 @@ const PeopleList = () => {
     <section>
       <PeopleFilters
         counts={counts}
+        mode={mode}
+        onMode={setMode}
         professions={professions}
         picked={picked}
         onPicked={setPicked}

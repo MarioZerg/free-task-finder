@@ -361,12 +361,32 @@ def _active_customer_job(cur, user_id: int, pro: bool = False):
 
 
 def _recalc(cur, user_id: int):
+    """Пересчёт рейтингов после нового отзыва.
+
+    Кроме общего рейтинга ведём два отдельных: как человек выполняет работу
+    и каким он был заказчиком. Смешивать их нельзя — это разные репутации,
+    и в профиле они показываются раздельно.
+    """
     cur.execute(
         f"""UPDATE {SCHEMA}.users SET
               rating = COALESCE((SELECT ROUND(AVG(rating)::numeric, 2) FROM {SCHEMA}.reviews
                                  WHERE target_id = {user_id} AND hidden = FALSE), 0),
               reviews_count = (SELECT COUNT(*) FROM {SCHEMA}.reviews
-                               WHERE target_id = {user_id} AND hidden = FALSE)
+                               WHERE target_id = {user_id} AND hidden = FALSE),
+              rating_executor = COALESCE((
+                  SELECT ROUND(AVG(rating)::numeric, 2) FROM {SCHEMA}.reviews
+                  WHERE target_id = {user_id} AND hidden = FALSE
+                    AND target_side = 'executor'), 0),
+              reviews_executor = (SELECT COUNT(*) FROM {SCHEMA}.reviews
+                                  WHERE target_id = {user_id} AND hidden = FALSE
+                                    AND target_side = 'executor'),
+              rating_customer = COALESCE((
+                  SELECT ROUND(AVG(rating)::numeric, 2) FROM {SCHEMA}.reviews
+                  WHERE target_id = {user_id} AND hidden = FALSE
+                    AND target_side = 'customer'), 0),
+              reviews_customer = (SELECT COUNT(*) FROM {SCHEMA}.reviews
+                                  WHERE target_id = {user_id} AND hidden = FALSE
+                                    AND target_side = 'customer')
             WHERE id = {user_id}"""
     )
 
@@ -777,6 +797,12 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 RETURNING id"""
         )
         new_id = cur.fetchone()['id']
+        # Счётчик размещённых задач — он показывается в профиле рядом
+        # с числом выполненных работ.
+        cur.execute(
+            f"UPDATE {SCHEMA}.users SET created_count = created_count + 1 "
+            f"WHERE id = {me['id']}"
+        )
         _notify_admins(
             cur,
             f'Новое объявление на проверку: «{title}» за {price} ₽ '
@@ -1309,18 +1335,26 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
     if method == 'POST' and action == 'review':
         if job['status'] != 'done':
             return _resp(400, {'error': 'not_done'})
+        # Сторону сделки фиксируем прямо в отзыве: автор задачи оценивает
+        # работу исполнителя, исполнитель — поведение заказчика.
         if me['id'] == job['owner_id']:
             target = job['assigned_executor_id']
+            side = 'executor'
         elif me['id'] == job['assigned_executor_id']:
             target = job['owner_id']
+            side = 'customer'
         else:
             return _resp(403, {'error': 'not_participant'})
         rating = max(1, min(5, _int(body.get('rating'), 5)))
         text = str(body.get('text', '')).strip()[:1000]
         cur.execute(
-            f"""INSERT INTO {SCHEMA}.reviews (job_id, author_id, target_id, rating, text)
-                VALUES ({job_id}, {me['id']}, {target}, {rating}, '{_esc(text)}')
-                ON CONFLICT (job_id, author_id) DO UPDATE SET rating = EXCLUDED.rating, text = EXCLUDED.text"""
+            f"""INSERT INTO {SCHEMA}.reviews
+                  (job_id, author_id, target_id, rating, text, target_side)
+                VALUES ({job_id}, {me['id']}, {target}, {rating},
+                        '{_esc(text)}', '{side}')
+                ON CONFLICT (job_id, author_id) DO UPDATE
+                  SET rating = EXCLUDED.rating, text = EXCLUDED.text,
+                      target_side = EXCLUDED.target_side"""
         )
         _recalc(cur, target)
         send_push(

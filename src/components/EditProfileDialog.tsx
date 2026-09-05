@@ -13,6 +13,7 @@ import SubscriptionDialog from '@/components/SubscriptionDialog';
 import NotificationSettings from '@/components/NotificationSettings';
 import InstallPwa from '@/components/InstallPwa';
 import ProfileSection from '@/components/profile/ProfileSection';
+import ProfileModes from '@/components/profile/ProfileModes';
 import SupportPanel from '@/components/profile/SupportPanel';
 import { useAppState } from '@/hooks/use-app-state';
 import { CITIES } from '@/data/mock';
@@ -81,6 +82,10 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
   const [contact, setContact] = useState('');
   const [skill, setSkill] = useState('');
   const [about, setAbout] = useState('');
+  const [aboutCustomer, setAboutCustomer] = useState('');
+  // Режимы профиля: что человек готов делать на сервисе.
+  const [asExecutor, setAsExecutor] = useState(true);
+  const [asCustomer, setAsCustomer] = useState(true);
   const [gender, setGender] = useState('');
   const [busy, setBusy] = useState(false);
   const [proOpen, setProOpen] = useState(false);
@@ -96,6 +101,9 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
     setContact(user.contact || '');
     setSkill(user.skill || '');
     setAbout(user.about || '');
+    setAboutCustomer(user.aboutCustomer || '');
+    setAsExecutor(user.asExecutor !== false);
+    setAsCustomer(user.asCustomer !== false);
     setGender(user.gender || '');
     setSelected((user.professions || []).map((p) => p.id));
   }, [open, user]);
@@ -115,8 +123,8 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
 
   if (!user) return null;
 
-  // Специальности указывает любой участник: заказы берут все.
-  const isExecutor = true;
+  // Специальности нужны только тем, кто берёт заказы.
+  const isExecutor = asExecutor;
 
   const toggleProfession = (id: number) => {
     setSelected((prev) => {
@@ -143,6 +151,15 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
       toast({ title: 'Введите имя', description: 'Минимум 2 символа.' });
       return;
     }
+    // Совсем без режима профиль потеряет смысл: человек пропадёт
+    // из вкладки «Люди» и не сможет ни заказывать, ни работать.
+    if (!asExecutor && !asCustomer) {
+      toast({
+        title: 'Выберите хотя бы одно',
+        description: 'Отметьте, что вы готовы брать заказы, размещать задачи или и то и другое.',
+      });
+      return;
+    }
     setBusy(true);
     try {
       await updateProfile({
@@ -152,6 +169,9 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
         contact: contact.trim(),
         skill: skill.trim(),
         about: about.trim(),
+        aboutCustomer: aboutCustomer.trim(),
+        asExecutor,
+        asCustomer,
         gender,
         ...(avatar && avatar !== user.avatar ? { avatar } : {}),
       });
@@ -260,26 +280,18 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
             placeholder="Контакт для связи: MAX, Telegram"
             className={field}
           />
-          {isExecutor && (
-            <>
-              <div>
-                <input
-                  value={skill}
-                  onChange={(e) => setSkill(e.target.value)}
-                  placeholder="Коротко о себе как о специалисте"
-                  className={field}
-                />
-                <p className="mt-1 px-1 text-xs text-chip">
-                  Одна строка в карточке — например «Электрик с допуском, работаю по области».
-                </p>
-              </div>
-              <textarea
-                value={about}
-                onChange={(e) => setAbout(e.target.value)}
-                placeholder="О себе: опыт, инструмент, когда свободны"
-                className={`${field} min-h-[90px] resize-none`}
+          {asExecutor && (
+            <div>
+              <input
+                value={skill}
+                onChange={(e) => setSkill(e.target.value)}
+                placeholder="Коротко о себе как о специалисте"
+                className={field}
               />
-            </>
+              <p className="mt-1 px-1 text-xs text-chip">
+                Одна строка в карточке — например «Электрик с допуском, работаю по области».
+              </p>
+            </div>
           )}
 
           <div>
@@ -306,6 +318,52 @@ const EditProfileDialog = ({ open, onOpenChange }: Props) => {
             </div>
           </div>
         </div>
+        </ProfileSection>
+
+        <ProfileSection icon="UserRoundCog" title="Чем занимаетесь на сервисе">
+          <p className="text-sm text-chip">
+            Профиль один, но показывать его можно по-разному. Отметьте, что вам подходит —
+            от этого зависит, в каком списке вкладки «Люди» вас найдут.
+          </p>
+
+          <div className="mt-4">
+            <ProfileModes
+              asExecutor={asExecutor}
+              asCustomer={asCustomer}
+              onExecutor={setAsExecutor}
+              onCustomer={setAsCustomer}
+            />
+          </div>
+
+          {asExecutor && (
+            <div className="mt-4">
+              <p className="px-1 text-sm font-medium">О себе как об исполнителе</p>
+              <textarea
+                value={about}
+                onChange={(e) => setAbout(e.target.value)}
+                placeholder="Опыт, инструмент, когда свободны, как добираетесь"
+                className={`${field} mt-2 min-h-[90px] resize-none`}
+              />
+              <p className="mt-1 px-1 text-xs text-chip">
+                Это описание видят заказчики, когда выбирают исполнителя.
+              </p>
+            </div>
+          )}
+
+          {asCustomer && (
+            <div className="mt-4">
+              <p className="px-1 text-sm font-medium">О себе как о заказчике</p>
+              <textarea
+                value={aboutCustomer}
+                onChange={(e) => setAboutCustomer(e.target.value)}
+                placeholder="Какие задачи обычно поручаете, что для вас важно в работе"
+                className={`${field} mt-2 min-h-[90px] resize-none`}
+              />
+              <p className="mt-1 px-1 text-xs text-chip">
+                Это описание видят исполнители, прежде чем откликнуться на вашу задачу.
+              </p>
+            </div>
+          )}
         </ProfileSection>
 
         {isExecutor && (
