@@ -23,7 +23,27 @@ import { build } from 'esbuild';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SITE = 'https://dodelay.ru';
-const OUT = resolve(root, 'dist');
+
+/** Каталог собранного сайта.
+ *
+ *  Платформа публикации собирает проект в свою папку и передаёт её так:
+ *  `npm run build -- --outDir /builds/<хеш>/`. npm дописывает эти аргументы
+ *  в КОНЕЦ всей цепочки команд, то есть они достаются не vite, а последнему
+ *  скрипту — этому. Из-за этого vite складывал сайт в dist, а платформа
+ *  искала его в своей папке и считала сборку пустой.
+ *
+ *  Поэтому разбираем аргументы сами и работаем с тем же каталогом, что и
+ *  vite: сначала --outDir из командной строки, иначе dist. */
+const readOutDir = () => {
+  const argv = process.argv.slice(2);
+  const i = argv.findIndex((a) => a === '--outDir' || a === '--out-dir');
+  if (i !== -1 && argv[i + 1]) return argv[i + 1];
+  const inline = argv.find((a) => a.startsWith('--outDir=') || a.startsWith('--out-dir='));
+  if (inline) return inline.split('=').slice(1).join('=');
+  return 'dist';
+};
+
+const OUT = resolve(root, readOutDir());
 
 /** Данные лежат в .ts с алиасами «@/» — собираем их в один временный
  *  модуль, чтобы прочитать реальные значения, а не парсить текст регулярками. */
@@ -116,7 +136,7 @@ const main = async () => {
 
   const indexFile = resolve(OUT, 'index.html');
   if (!existsSync(indexFile)) {
-    console.warn('prerender: dist/index.html не найден — пропускаю');
+    console.warn(`prerender: ${indexFile} не найден — пропускаю`);
     return;
   }
 
