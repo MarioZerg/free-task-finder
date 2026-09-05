@@ -36,7 +36,10 @@ const ProfessionSelect = ({
         group: g.group,
         items: g.items.filter(
           (p) =>
-            p.label.toLowerCase().includes(q) || p.short.toLowerCase().includes(q),
+            p.label.toLowerCase().includes(q) ||
+            p.short.toLowerCase().includes(q) ||
+            // Синонимы: человек ищет «клининг», а в каталоге «Уборка»
+            (p.synonyms || []).some((sy) => sy.toLowerCase().includes(q)),
         ),
       }))
       .filter((g) => g.items.length > 0);

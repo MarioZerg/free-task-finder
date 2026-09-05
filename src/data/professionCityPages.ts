@@ -36,12 +36,25 @@ export interface ProfessionCityPage {
   h1: string;
   intro: string;
   tasks: { task: string; price: string }[];
+  /** Синонимы услуги — выводим в тексте, чтобы страницу находили
+   *  и по второму названию («клининг» вместо «уборка»). */
+  synonyms?: string[];
 }
 
 /** Заголовок и описание чередуем по городу, чтобы страницы не были
  *  шаблонными копиями друг друга — иначе поисковики склеивают их между собой. */
 const titleFor = (p: ProfessionEntry, cityPrep: string, i: number): string => {
+  // Основной синоним — второе название услуги, по которому её тоже ищут
+  // («клининг» для уборки). Ставим в заголовок: без него страница не
+  // показывается по целому пласту запросов.
+  const syn = p.synonyms?.[0];
   const variants = [
+    ...(syn
+      ? [
+          `${p.label} в ${cityPrep} — ${syn} и услуги мастеров | Доделай.ру`,
+          `${syn.charAt(0).toUpperCase() + syn.slice(1)} в ${cityPrep}: цены и исполнители — Доделай.ру`,
+        ]
+      : []),
     `${p.label} в ${cityPrep} — вызвать мастера недорого | Доделай.ру`,
     `${p.label} в ${cityPrep}: цены и мастера рядом — Доделай.ру`,
     `Найти ${p.genitive} в ${cityPrep} — частные мастера | Доделай.ру`,
@@ -53,9 +66,21 @@ const titleFor = (p: ProfessionEntry, cityPrep: string, i: number): string => {
 };
 
 const descriptionFor = (p: ProfessionEntry, cityPrep: string, i: number): string => {
-  const first = p.tasks[0]?.price.replace('от ', '') || '500 ₽';
+  // Для описания берём цену обычной работы, а не расценку за квадратный метр:
+  // «уборка от 45 ₽» вводит в заблуждение — это стоимость одного м².
+  // Отсеиваем только расценки ЗА единицу («Поклейка обоев, м²»), но не
+  // задачи, где площадь — часть названия («Квартира 50 м² генеральная»).
+  const isUnitRate = (task: string) => /,\s*(м²|пог\.?\s?м|шт\.|час)\s*$/i.test(task);
+  const priceTask = p.tasks.find((t) => !isUnitRate(t.task)) || p.tasks[p.tasks.length - 1];
+  const first = priceTask?.price.replace('от ', '') || '500 ₽';
+  const syn = p.synonyms?.[0];
   const variants = [
-    `Нужен ${p.genitive} в ${cityPrep}? Разместите заявку бесплатно — мастера откликнутся сами. Цены от ${first}, оплата напрямую без комиссии сервиса.`,
+    ...(syn
+      ? [
+          `${p.label} и ${syn} в ${cityPrep}: частные мастера, цены от ${first}. Разместите заявку бесплатно — исполнители откликнутся сами, комиссию сервис не берёт.`,
+        ]
+      : []),
+    `${p.label} в ${cityPrep}: разместите заявку бесплатно — мастера откликнутся сами. Цены от ${first}, оплата напрямую без комиссии сервиса.`,
     `${p.label} в ${cityPrep}: частные мастера с рейтингом и отзывами. Опишите задачу за минуту, услуги от ${first}. Комиссию не берём.`,
     `Вызвать ${p.genitive} в ${cityPrep} — быстро и без посредников. Работы от ${first}, вы сами выбираете исполнителя и договариваетесь о цене.`,
     `Ищете ${p.genitive} в ${cityPrep}? Смотрите анкеты мастеров рядом с домом. Стоимость работ от ${first}, оплата напрямую исполнителю.`,
@@ -93,6 +118,7 @@ export const PROFESSION_CITY_PAGES: ProfessionCityPage[] = CITY_PAGES.flatMap(
         h1: h1For(p, city.name, shift),
         intro: p.intro.replace('{city}', city.name),
         tasks: p.tasks,
+        synonyms: p.synonyms,
       };
     }),
 );

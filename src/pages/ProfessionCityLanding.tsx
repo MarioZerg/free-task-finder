@@ -238,6 +238,17 @@ const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
           {page.intro}
         </p>
 
+        {/* Одну и ту же услугу ищут разными словами: «уборка» и «клининг»,
+            «грузчик» и «такелажник». Перечисляем варианты в живой фразе —
+            так страница отвечает на оба запроса и остаётся читаемой. */}
+        {page.synonyms && page.synonyms.length > 1 && (
+          <p className="mt-3 max-w-[680px] text-sm leading-relaxed text-chip">
+            Эту услугу в {city.name} ищут по-разному:{' '}
+            {page.synonyms.slice(0, 5).join(', ')}. Все такие заявки попадают в общую
+            ленту — описывайте задачу привычными словами, мастера поймут.
+          </p>
+        )}
+
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
             to="/dashboard"

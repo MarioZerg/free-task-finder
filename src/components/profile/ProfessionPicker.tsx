@@ -31,13 +31,21 @@ const ProfessionPicker = ({
     return m;
   }, []);
 
+  // Синонимы профессий: поиск по слову «клининг» должен находить «Уборку»
+  const synOf = useMemo(() => {
+    const m = new Map<string, string>();
+    PROFESSIONS.forEach((p) => m.set(p.slug, (p.synonyms || []).join(' ').toLowerCase()));
+    return m;
+  }, []);
+
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = q
       ? professions.filter(
           (p) =>
             p.label.toLowerCase().includes(q) ||
-            (shortOf.get(p.slug) || '').toLowerCase().includes(q),
+            (shortOf.get(p.slug) || '').toLowerCase().includes(q) ||
+            (synOf.get(p.slug) || '').includes(q),
         )
       : professions;
 
