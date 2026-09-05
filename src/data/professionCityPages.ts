@@ -81,11 +81,11 @@ const descriptionFor = (p: ProfessionEntry, cityPrep: string, i: number): string
         ]
       : []),
     `${p.label} в ${cityPrep}: разместите заявку бесплатно — мастера откликнутся сами. Цены от ${first}, оплата напрямую без комиссии сервиса.`,
-    `${p.label} в ${cityPrep}: частные мастера с рейтингом и отзывами. Опишите задачу за минуту, услуги от ${first}. Комиссию не берём.`,
-    `Вызвать ${p.genitive} в ${cityPrep} — быстро и без посредников. Работы от ${first}, вы сами выбираете исполнителя и договариваетесь о цене.`,
-    `Ищете ${p.genitive} в ${cityPrep}? Смотрите анкеты мастеров рядом с домом. Стоимость работ от ${first}, оплата напрямую исполнителю.`,
-    `${p.label} в ${cityPrep} — разовые заказы и срочный выезд. Разместите задачу бесплатно, цены начинаются от ${first}.`,
-    `Услуги ${p.genitive} в ${cityPrep}: цены от ${first}, проверенные исполнители, отклики в день размещения. Сервис бесплатный.`,
+    `${p.label} в ${cityPrep}: частные мастера с рейтингом и отзывами. Опишите задачу за минуту — услуги от ${first}, комиссию с оплаты не берём.`,
+    `Вызвать ${p.genitive} в ${cityPrep} — быстро и без посредников. Работы от ${first}: вы сами выбираете исполнителя и договариваетесь о цене напрямую.`,
+    `Ищете ${p.genitive} в ${cityPrep}? Смотрите анкеты мастеров рядом с домом, стоимость работ от ${first}. Оплата напрямую исполнителю, без комиссии сервиса.`,
+    `${p.label} в ${cityPrep} — разовые заказы и срочный выезд в день обращения. Разместите задачу бесплатно: цены начинаются от ${first}, комиссию сервис не берёт.`,
+    `Услуги ${p.genitive} в ${cityPrep}: цены от ${first}, исполнители с рейтингом и отзывами, отклики в день размещения. Сервис бесплатный, платите мастеру напрямую.`,
   ];
   return variants[i % variants.length];
 };
@@ -105,7 +105,10 @@ const h1For = (p: ProfessionEntry, cityPrep: string, i: number): string => {
 export const PROFESSION_CITY_PAGES: ProfessionCityPage[] = CITY_PAGES.flatMap(
   (city, cityIndex) =>
     PROFESSIONS.map((p, profIndex) => {
-      const shift = cityIndex + profIndex;
+      // Сложение индексов давало коллизии: пары (0,3) и (1,2) получали
+      // один и тот же shift, а с ним одинаковые title и description.
+      // Умножение на число профессий делает номер страницы уникальным.
+      const shift = cityIndex * PROFESSIONS.length + profIndex;
       return {
         professionSlug: p.slug,
         citySlug: city.slug,
