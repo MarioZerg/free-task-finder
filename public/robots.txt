@@ -2,11 +2,15 @@ User-agent: Googlebot
 Allow: /
 Allow: /podrabotka/
 Allow: /google*.html
-Allow: /*.txt$
 Allow: /*.png$
 Allow: /*.webp$
 Disallow: /dashboard
 Disallow: /admin
+Disallow: /*.csv$
+Disallow: /obhod-
+Disallow: /keywords-plain.txt
+Disallow: /topvisor-
+Disallow: /support-request.txt
 Sitemap: https://dodelay.ru/sitemap.xml
 
 User-agent: Bingbot
@@ -14,6 +18,11 @@ Allow: /
 Allow: /podrabotka/
 Disallow: /dashboard
 Disallow: /admin
+Disallow: /*.csv$
+Disallow: /obhod-
+Disallow: /keywords-plain.txt
+Disallow: /topvisor-
+Disallow: /support-request.txt
 Sitemap: https://dodelay.ru/sitemap.xml
 
 User-agent: Yandex
@@ -25,6 +34,11 @@ Allow: /*.png$
 Allow: /manifest.webmanifest
 Disallow: /dashboard
 Disallow: /admin
+Disallow: /*.csv$
+Disallow: /obhod-
+Disallow: /keywords-plain.txt
+Disallow: /topvisor-
+Disallow: /support-request.txt
 Clean-param: utm_source&utm_medium&utm_campaign&utm_term&utm_content&yclid&gclid&ysclid&etext&ybaip&from&ref&openstat&_openstat&fbclid&sid&calltouch_tm&roistat
 Sitemap: https://dodelay.ru/sitemap.xml
 
@@ -39,6 +53,11 @@ Allow: /
 Allow: /podrabotka/
 Disallow: /dashboard
 Disallow: /admin
+Disallow: /*.csv$
+Disallow: /obhod-
+Disallow: /keywords-plain.txt
+Disallow: /topvisor-
+Disallow: /support-request.txt
 Clean-param: utm_source&utm_medium&utm_campaign&utm_term&utm_content&yclid&gclid&ysclid&etext&ybaip&from&ref&openstat&_openstat&fbclid&sid&calltouch_tm&roistat
 
 Sitemap: https://dodelay.ru/sitemap.xml
