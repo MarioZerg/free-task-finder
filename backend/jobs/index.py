@@ -30,8 +30,32 @@ BOT_TOKEN = os.environ.get('MAX_BOT_TOKEN', '')
 SITE_URL = os.environ.get('SITE_URL', 'https://dodelay.ru')
 
 
+_DEMO_MAX_IDS: set = set()
+
+
+def _load_demo_max_ids(cur) -> None:
+    """Запоминает MAX-адреса демо-профилей один раз за вызов функции."""
+    global _DEMO_MAX_IDS
+    _DEMO_MAX_IDS = set()
+    try:
+        cur.execute(
+            f"SELECT max_user_id FROM {SCHEMA}.users "
+            f"WHERE is_demo = TRUE AND max_user_id IS NOT NULL AND max_user_id <> ''"
+        )
+        _DEMO_MAX_IDS = {str(r['max_user_id']) for r in cur.fetchall()}
+    except Exception:
+        pass
+
+
 def _notify(max_user_id: Any, text: str):
+    """Пишет человеку в MAX. Демо-профилям не пишем.
+
+    Проверку держим здесь, а не в каждом вызове: точек отправки полтора
+    десятка, и любая забытая означала бы «пришёл заказ» живому человеку.
+    """
     if not BOT_TOKEN or not max_user_id:
+        return
+    if str(max_user_id) in _DEMO_MAX_IDS:
         return
     try:
         req = urllib.request.Request(
@@ -73,11 +97,15 @@ def _notify_executors_new_job(cur, job_id: int):
         return
     try:
         cur.execute(
-            f"""SELECT title, price, city, category, profession_slug, is_demo, owner_id
-                FROM {SCHEMA}.jobs WHERE id = {int(job_id)}"""
+            f"""SELECT j.title, j.price, j.city, j.category, j.profession_slug,
+                       j.is_demo, j.owner_id, u.is_demo AS owner_demo
+                FROM {SCHEMA}.jobs j
+                JOIN {SCHEMA}.users u ON u.id = j.owner_id
+                WHERE j.id = {int(job_id)}"""
         )
         job = cur.fetchone()
-        if not job or job['is_demo']:
+        # Заказ демо-профиля тоже не рассылаем, даже если сам он не помечен.
+        if not job or job['is_demo'] or job['owner_demo']:
             return
         base_city = str(job['city']).split(',')[0].strip()
         slug = (job['profession_slug'] or '').strip()
@@ -405,6 +433,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
     conn = _conn()
     conn.autocommit = True
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    _load_demo_max_ids(cur)
     _expire(cur)
     me = _viewer(cur, token)
     if me:

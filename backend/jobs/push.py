@@ -39,9 +39,13 @@ def send_push(
             return 0
         uid = int(user_id)
 
-        cur.execute(f'SELECT notify_{kind} AS allowed FROM {schema}.users WHERE id = {uid}')
+        # Демо-профили создаются для проверок и наполнения ленты. Живой человек
+        # за ними не стоит, а на телефон тестировщика прилетал бы настоящий push.
+        cur.execute(
+            f'SELECT notify_{kind} AS allowed, is_demo FROM {schema}.users WHERE id = {uid}'
+        )
         row = cur.fetchone()
-        if not row or not row['allowed']:
+        if not row or not row['allowed'] or row.get('is_demo'):
             return 0
 
         cur.execute(

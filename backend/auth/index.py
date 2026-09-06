@@ -357,9 +357,28 @@ def _audience_where(audience: str) -> str:
     )
 
 
+_DEMO_MAX_IDS: set = set()
+
+
+def _load_demo_max_ids(cur) -> None:
+    """Запоминает MAX-адреса демо-профилей один раз за вызов функции."""
+    global _DEMO_MAX_IDS
+    _DEMO_MAX_IDS = set()
+    try:
+        cur.execute(
+            f"SELECT max_user_id FROM {SCHEMA}.users "
+            f"WHERE is_demo = TRUE AND max_user_id IS NOT NULL AND max_user_id <> ''"
+        )
+        _DEMO_MAX_IDS = {str(r['max_user_id']) for r in cur.fetchall()}
+    except Exception:
+        pass
+
+
 def _notify(max_user_id: Any, text: str):
-    """Сообщение пользователю в мессенджер MAX. Никогда не бросает исключений."""
+    """Сообщение пользователю в мессенджер MAX. Демо-профилям не пишем."""
     if not BOT_TOKEN or not max_user_id:
+        return
+    if str(max_user_id) in _DEMO_MAX_IDS:
         return
     try:
         req = urllib.request.Request(
@@ -507,6 +526,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
     conn = _conn()
     conn.autocommit = True
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    _load_demo_max_ids(cur)
     _expire_subscriptions(cur)
 
     if method == 'GET' and action == 'config':

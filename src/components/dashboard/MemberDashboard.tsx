@@ -12,6 +12,7 @@ import { toast } from '@/hooks/use-toast';
 import DashTabs, { hoursLeft } from '@/components/dashboard/DashTabs';
 import CustomerJobCard from '@/components/dashboard/CustomerJobCard';
 import SubscriptionDialog from '@/components/SubscriptionDialog';
+import DashBottomNav from '@/components/dashboard/DashBottomNav';
 
 const feedWord = (n: number) => {
   const d = n % 10;
@@ -77,8 +78,26 @@ const MemberDashboard = () => {
     setCreateOpen(true);
   };
 
+  const tabItems = [
+    { id: 'feed', label: 'Лента заказов', icon: 'Radio' },
+    { id: 'work', label: `Моя работа · ${working.length + waiting.length}`, icon: 'Briefcase' },
+    { id: 'jobs', label: `Мои задачи · ${ownActive.length}`, icon: 'ClipboardList' },
+    { id: 'done', label: `Завершённые · ${ownFinished.length}`, icon: 'CheckCheck' },
+    { id: 'people', label: 'Люди', icon: 'Users', badge: unread.total },
+  ];
+
+  // На узкой панели длинные подписи не помещаются — оставляем короткие,
+  // счётчики и так видны на самих карточках.
+  const navItems = [
+    { id: 'feed', label: 'Лента', icon: 'Radio' },
+    { id: 'work', label: 'Работа', icon: 'Briefcase', badge: working.length + waiting.length },
+    { id: 'jobs', label: 'Задачи', icon: 'ClipboardList', badge: ownActive.length },
+    { id: 'done', label: 'Готово', icon: 'CheckCheck' },
+    { id: 'people', label: 'Люди', icon: 'Users', badge: unread.total },
+  ];
+
   return (
-    <div className="safe-x safe-bottom mx-auto w-full max-w-[1400px] px-5 py-8 md:px-10 md:py-12 lg:px-16">
+    <div className="safe-x mx-auto w-full max-w-[1400px] px-5 py-8 md:px-10 md:py-12 lg:px-16">
       <span className="role-accent-bar mb-5 block h-1 w-24 rounded-full" />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -133,18 +152,8 @@ const MemberDashboard = () => {
         </div>
       )}
 
-      <div className="mt-7">
-        <DashTabs
-          value={tab}
-          onChange={setTab}
-          items={[
-            { id: 'feed', label: 'Лента заказов' },
-            { id: 'work', label: `Моя работа · ${working.length + waiting.length}` },
-            { id: 'jobs', label: `Мои задачи · ${ownActive.length}` },
-            { id: 'done', label: `Завершённые · ${ownFinished.length}` },
-            { id: 'people', label: 'Люди', badge: unread.total },
-          ]}
-        />
+      <div className="mt-7 hidden md:block">
+        <DashTabs value={tab} onChange={setTab} items={tabItems} />
       </div>
 
       <div className="mt-8">
@@ -256,6 +265,10 @@ const MemberDashboard = () => {
       />
       <ProfileDialog userId={profileId} showDetails onOpenChange={() => setProfileId(null)} />
       <SubscriptionDialog open={proOpen} onOpenChange={setProOpen} />
+
+      {/* Запас снизу, чтобы панель не перекрывала последнюю карточку. */}
+      <div className="h-24 md:hidden" />
+      <DashBottomNav value={tab} onChange={setTab} items={navItems} />
     </div>
   );
 };
