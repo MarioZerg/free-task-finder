@@ -40,6 +40,8 @@ export interface Limits {
 interface AppState {
   user: User | null;
   loading: boolean;
+  /** Профиль ещё проверяется: показывать кнопку входа рано. */
+  authPending: boolean;
   limits: Limits;
   maxEnabled: boolean;
   feed: JobItem[];
@@ -125,6 +127,9 @@ const emptyLimits: Limits = {
 export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  /* Ключ входа лежит в браузере — значит человек входил раньше, и профиль
+     вот-вот подтянется. Гостю ждать нечего: ему кнопку показываем сразу. */
+  const [authPending, setAuthPending] = useState(() => !!getToken());
   const [feed, setFeed] = useState<JobItem[]>([]);
   const [myJobs, setMyJobs] = useState<JobItem[]>([]);
   const [stats, setStats] = useState(emptyStats);
@@ -185,12 +190,30 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
           clearToken();
         }
       }
-      await refresh();
+      /* Профиль уже известен — снимаем ожидание сразу, не дожидаясь ленты.
+         Шапка перерисуется один раз, без мигания кнопкой входа. */
+      setAuthPending(false);
       setLoading(false);
+      await refresh();
       loadStats();
     };
     init();
   }, [refresh, loadStats]);
+
+  /* Возврат «назад» на телефоне. Браузер достаёт страницу из своей памяти
+     в том виде, в каком её покинули, — а вход мог произойти уже после.
+     Поэтому при восстановлении заново спрашиваем, кто зашёл. */
+  useEffect(() => {
+    const onShow = (e: PageTransitionEvent) => {
+      if (!e.persisted || !getToken()) return;
+      api
+        .auth('me')
+        .then((r) => setUser(r.user))
+        .catch(() => undefined);
+    };
+    window.addEventListener('pageshow', onShow);
+    return () => window.removeEventListener('pageshow', onShow);
+  }, []);
 
   useLive(refresh, 4000);
 
@@ -270,6 +293,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     () => ({
       user,
       loading,
+      authPending,
       limits,
       maxEnabled,
       feed,
@@ -306,6 +330,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     [
       user,
       loading,
+      authPending,
       limits,
       maxEnabled,
       feed,

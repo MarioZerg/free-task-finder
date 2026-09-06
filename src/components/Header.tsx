@@ -13,7 +13,7 @@ const anchors = [
 ];
 
 const Header = () => {
-  const { user, openLogin, logout } = useAppState();
+  const { user, authPending, openLogin, logout } = useAppState();
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
   const onHome = pathname === '/';
@@ -44,7 +44,13 @@ const Header = () => {
         </nav>
 
         <div className="hidden lg:block">
-          {user ? (
+          {/* Пока проверяем вошедшего, держим место кнопки пустым. Показать
+              «Войти», а через миг подменить на профиль — значит заставить
+              человека решить, что вход слетел. Гостю ждать нечего:
+              для него кнопка появляется сразу. */}
+          {authPending ? (
+            <span className="block h-[52px] w-[212px] rounded-full bg-tile/60" />
+          ) : user ? (
             <div className="flex items-center gap-3">
               <Avatar src={user.avatar} name={user.name} size={44} />
               <span className="text-sm font-medium">{user.name}</span>
@@ -109,7 +115,9 @@ const Header = () => {
             <div className="[&>button]:min-h-[44px] [&>button]:w-full">
               <InstallPwa />
             </div>
-            {user ? (
+            {authPending ? (
+              <span className="block h-[56px] w-full rounded-full bg-tile/60" />
+            ) : user ? (
               <div className="space-y-3">
                 <Link
                   to="/dashboard"
