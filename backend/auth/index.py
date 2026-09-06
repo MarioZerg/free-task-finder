@@ -895,7 +895,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             'paymentMethod': 'full_payment',
             'paymentObject': 'service',
             'vatType': 'none',
-            'measure': 'pc',
+            'measure': 'шт.',
         }]
         payload = json.dumps({'Data': data_block}).encode()
         try:
