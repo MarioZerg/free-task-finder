@@ -162,6 +162,17 @@ const AdminAds = () => {
             />
           </label>
         </div>
+        <p className="mt-3 flex items-start gap-2.5 rounded-2xl border border-line bg-tile px-4 py-3 text-sm text-muted-foreground">
+          <Icon name="Info" size={16} className="mt-0.5 shrink-0 text-primary" />
+          <span>
+            Дневной бюджет задаётся в самой кампании — в файл импорта он не
+            передаётся, такого поля в формате Директа нет. При ставке {bid} ₽
+            бюджет 500 ₽ в день — это примерно {Math.floor(500 / Math.max(1, bid))}{' '}
+            переходов. Если включите автоматическую стратегию, ставки из файла
+            Директ проигнорирует и будет управлять ценой сам.
+          </span>
+        </p>
+
         <div className="mt-3 flex flex-wrap gap-2">
           {[15, 30, 50, 100].map((v) => (
             <button
@@ -287,7 +298,10 @@ const AdminAds = () => {
             файла». Выберите скачанный файл.
           </li>
           <li>5. Проверьте результат и отправьте кампанию на сервер.</li>
-          <li>6. Задайте дневной бюджет кампании.</li>
+          <li>
+            6. В настройках кампании задайте дневной бюджет и стратегию — через
+            файл они не передаются.
+          </li>
         </ol>
         <p className="mt-4 rounded-2xl border border-line bg-tile p-4 text-sm text-muted-foreground">
           Регионы показа, ставки и минус-слова уже проставлены в файле —
