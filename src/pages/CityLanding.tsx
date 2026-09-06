@@ -15,6 +15,7 @@ import NotFound from '@/pages/PageNotFound';
 import CityContent from '@/components/landing/CityContent';
 import RecentJobs from '@/components/landing/RecentJobs';
 import { pick, FREE_ANSWERS, LOGIN_ANSWERS, SCHEDULE_ANSWERS } from '@/data/faqVariants';
+import { useOpenFeed } from '@/hooks/use-open-feed';
 
 /** Подсказки к категориям. Три набора формулировок: города берут разные,
  *  чтобы блок не повторялся слово в слово на всех страницах. */
@@ -70,7 +71,8 @@ const PRICE_SETS = [
 
 const CityLandingInner = ({ slug }: { slug: string }) => {
   const city = getCityPage(slug)!;
-  const { openLogin, feed } = useAppState();
+  const { feed } = useAppState();
+  const openFeed = useOpenFeed();
   const nearby = getCityPagesBySlug(city.nearbyCities);
   const openCount = countOpenJobsInCity(feed, city.nameNominative);
   const districtPages = getDistrictPagesByCity(city.slug);
@@ -267,7 +269,7 @@ const CityLandingInner = ({ slug }: { slug: string }) => {
           <p className="mt-4 flex flex-wrap items-center gap-2 text-sm text-chip">
             Заказов пока нет — станьте первым, кто разместит задачу
             <button
-              onClick={() => openLogin()}
+              onClick={openFeed}
               className="font-medium text-primary underline-offset-4 hover:underline"
             >
               Разместить задачу
@@ -284,7 +286,7 @@ const CityLandingInner = ({ slug }: { slug: string }) => {
             <Icon name="ArrowRight" size={18} />
           </Link>
           <button
-            onClick={() => openLogin()}
+            onClick={openFeed}
             className="min-h-[44px] rounded-full border border-line bg-surface px-7 py-4 text-base font-medium transition-colors hover:border-primary"
           >
             Разместить задачу

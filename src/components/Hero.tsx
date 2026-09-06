@@ -1,8 +1,18 @@
+import { useNavigate } from 'react-router-dom';
 import { useAppState } from '@/hooks/use-app-state';
 import HeroPhone from '@/components/HeroPhone';
 
 const Hero = () => {
-  const { openLogin } = useAppState();
+  const { user, openLogin } = useAppState();
+  const navigate = useNavigate();
+
+  /* Вошедшего ведём прямо в ленту заказов, гостю показываем вход.
+     Раньше кнопка всем открывала окно входа: у вошедшего оно тут же
+     закрывалось, и выглядело так, будто кнопка не работает. */
+  const openFeed = () => {
+    if (user) navigate('/dashboard');
+    else openLogin();
+  };
 
   return (
     <section id="top" className="relative overflow-hidden bg-background pb-4">
@@ -16,7 +26,7 @@ const Hero = () => {
             </h1>
 
             <button
-              onClick={() => openLogin()}
+              onClick={openFeed}
               className="mt-10 flex min-h-[44px] w-full max-w-[308px] items-center justify-between border-b border-foreground/40 pb-5 text-base transition-colors hover:border-primary md:mt-12"
             >
               <span>Открыть ленту заказов</span>

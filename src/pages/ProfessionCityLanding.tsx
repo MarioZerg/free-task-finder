@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { AppStateProvider, useAppState } from '@/hooks/use-app-state';
+import { AppStateProvider } from '@/hooks/use-app-state';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import LoginDialog from '@/components/LoginDialog';
@@ -23,6 +23,7 @@ import Loader from '@/components/Loader';
 import ProfessionContent from '@/components/landing/ProfessionContent';
 import RecentJobs from '@/components/landing/RecentJobs';
 import { pick, FREE_ANSWERS, TRUST_ANSWERS } from '@/data/faqVariants';
+import { useOpenFeed } from '@/hooks/use-open-feed';
 
 
 /** Дата последнего обновления страниц каталога */
@@ -33,7 +34,7 @@ const cityMatch = (userCity: string, nameNominative: string) =>
 
 const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
   const city = getCityPage(page.citySlug)!;
-  const { openLogin } = useAppState();
+  const openFeed = useOpenFeed();
   const [executors, setExecutors] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -258,7 +259,7 @@ const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
             <Icon name="ArrowRight" size={18} />
           </Link>
           <button
-            onClick={() => openLogin()}
+            onClick={openFeed}
             className="min-h-[44px] rounded-full border border-line bg-surface px-7 py-4 text-base font-medium transition-colors hover:border-primary"
           >
             Разместить задачу
@@ -282,7 +283,7 @@ const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
                 Станьте первым — заполните профиль исполнителя, и заказчики увидят вас в поиске.
               </p>
               <button
-                onClick={() => openLogin()}
+                onClick={openFeed}
                 className="mt-4 min-h-[44px] rounded-full border border-line bg-surface px-5 py-2.5 text-sm font-medium transition-colors hover:border-primary/60 hover:text-primary"
               >
                 Стать исполнителем

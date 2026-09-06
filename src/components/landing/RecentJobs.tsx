@@ -3,6 +3,7 @@ import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
 import type { JobItem } from '@/lib/api';
 import { priceText } from '@/lib/price';
+import { useOpenFeed } from '@/hooks/use-open-feed';
 
 /** Лента последних заявок для посадочных страниц.
  *  Даёт две вещи сразу: посетитель видит, что сервис живой и заказы
@@ -68,7 +69,8 @@ const RecentJobs = ({
   seed = 0,
   compact = false,
 }: Props) => {
-  const { feed, openLogin } = useAppState();
+  const { feed } = useAppState();
+  const openFeed = useOpenFeed();
 
   const target = cityNominative.trim().toLowerCase();
   const all: JobItem[] = feed
@@ -139,7 +141,7 @@ const RecentJobs = ({
           <Icon name="ArrowRight" size={15} />
         </Link>
         <button
-          onClick={() => openLogin()}
+          onClick={openFeed}
           className="flex min-h-[44px] items-center rounded-full border border-line bg-surface px-6 text-sm font-medium transition-colors hover:border-primary"
         >
           Разместить задачу

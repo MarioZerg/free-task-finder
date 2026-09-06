@@ -20,6 +20,7 @@ import { PROFESSIONS } from '@/data/professionsCatalog';
 import DistrictContent from '@/components/landing/DistrictContent';
 import RecentJobs from '@/components/landing/RecentJobs';
 import { pick, FREE_ANSWERS, LOGIN_ANSWERS, TRUST_ANSWERS } from '@/data/faqVariants';
+import { useOpenFeed } from '@/hooks/use-open-feed';
 
 const TASK_HINTS: Record<string, string> = {
   move: 'Переезды, погрузка и разгрузка — самый частый запрос',
@@ -39,7 +40,8 @@ const PRICE_ROWS = [
 
 const DistrictLandingInner = ({ district }: { district: DistrictPage }) => {
   const city = getCityPage(district.citySlug)!;
-  const { openLogin, feed } = useAppState();
+  const { feed } = useAppState();
+  const openFeed = useOpenFeed();
   const openCount = countOpenJobsInDistrict(feed, district.label);
   const otherDistricts = getDistrictPagesByCity(district.citySlug).filter(
     (d) => d.slug !== district.slug,
@@ -200,7 +202,7 @@ const DistrictLandingInner = ({ district }: { district: DistrictPage }) => {
           <p className="mt-4 flex flex-wrap items-center gap-2 text-sm text-chip">
             Заказов пока нет — станьте первым, кто разместит задачу
             <button
-              onClick={() => openLogin()}
+              onClick={openFeed}
               className="font-medium text-primary underline-offset-4 hover:underline"
             >
               Разместить задачу
@@ -217,7 +219,7 @@ const DistrictLandingInner = ({ district }: { district: DistrictPage }) => {
             <Icon name="ArrowRight" size={18} />
           </Link>
           <button
-            onClick={() => openLogin()}
+            onClick={openFeed}
             className="min-h-[44px] rounded-full border border-line bg-surface px-7 py-4 text-base font-medium transition-colors hover:border-primary"
           >
             Разместить задачу

@@ -1,6 +1,6 @@
 import Icon from '@/components/ui/icon';
-import { useAppState } from '@/hooks/use-app-state';
 import { PHOTO_MOVERS } from '@/data/mock';
+import { useOpenFeed } from '@/hooks/use-open-feed';
 
 const facts = [
   { icon: 'CircleDollarSign', title: 'Ноль комиссий', text: 'Оплата напрямую от заказчика. Сервис не берёт ни рубля.' },
@@ -9,7 +9,7 @@ const facts = [
 ];
 
 const ExecutorsCta = () => {
-  const { openLogin } = useAppState();
+  const openFeed = useOpenFeed();
 
   return (
     <section id="executors" className="bg-surface py-20 md:py-28">
@@ -53,7 +53,7 @@ const ExecutorsCta = () => {
             </ul>
 
             <button
-              onClick={() => openLogin()}
+              onClick={openFeed}
               className="btn-shine mt-10 flex items-center gap-2 rounded-full bg-primary px-8 py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.03]"
             >
               Смотреть заказы
