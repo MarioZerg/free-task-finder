@@ -37,7 +37,7 @@ const errorText: Record<string, string> = {
 const CODE_TTL = 15 * 60;
 
 const LoginDialog = () => {
-  const { loginOpen, setLoginOpen, signIn, startMaxLogin } = useAppState();
+  const { user, loginOpen, setLoginOpen, signIn, startMaxLogin } = useAppState();
   const navigate = useNavigate();
 
   const [step, setStep] = useState<'start' | 'code' | 'register'>('start');
@@ -107,6 +107,13 @@ const LoginDialog = () => {
       setAdminHint(false);
     }
   }, [loginOpen, reset]);
+
+  /* Страховка на все случаи: если человек уже вошёл, форме входа висеть
+     не за чем. Что бы ни случилось по дороге — сорвалась проверка, вход
+     произошёл в другой вкладке, — окно закроется само. */
+  useEffect(() => {
+    if (user && loginOpen && !adminHint) setLoginOpen(false);
+  }, [user, loginOpen, adminHint, setLoginOpen]);
 
   const success = (isAdmin?: boolean) => {
     toast({
@@ -184,8 +191,13 @@ const LoginDialog = () => {
     return () => window.clearInterval(tick);
   }, [step, code]);
 
+  /* Ждём подтверждения из MAX.
+     Проверяем, пока окно входа открыто и код получен, — независимо от шага.
+     Раньше проверка шла только на экране «код», и если человек возвращался
+     из мессенджера в другой момент, вход не подхватывался: форма продолжала
+     висеть, хотя в MAX всё было подтверждено. */
   useEffect(() => {
-    if (step !== 'code' || !code) return;
+    if (!loginOpen || !code || step === 'register') return;
 
     const check = async () => {
       if (doneRef.current) return;
@@ -204,24 +216,26 @@ const LoginDialog = () => {
       }
     };
 
-    const poll = window.setInterval(check, 3000);
+    const poll = window.setInterval(check, 2000);
 
     /* Человек подтвердил вход в MAX и переключился обратно на сайт —
-       проверяем сразу, а не ждём очередные три секунды. Иначе он видит
-       форму входа, хотя вход уже прошёл. */
+       проверяем сразу, а не ждём очередной круг. Иначе он видит форму
+       входа, хотя вход уже прошёл. */
     const onBack = () => {
       if (document.visibilityState === 'visible') check();
     };
     document.addEventListener('visibilitychange', onBack);
     window.addEventListener('focus', onBack);
+    window.addEventListener('pageshow', onBack);
 
     return () => {
       window.clearInterval(poll);
       document.removeEventListener('visibilitychange', onBack);
       window.removeEventListener('focus', onBack);
+      window.removeEventListener('pageshow', onBack);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, code]);
+  }, [loginOpen, code, step]);
 
   const register = async () => {
     if (name.trim().length < 2) {

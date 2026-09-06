@@ -314,7 +314,14 @@ def _upload_avatar(data_url: str, user_id: int) -> Optional[str]:
 
 
 def _bot_send(chat_id: Any, text: str):
-    if not BOT_TOKEN:
+    """Отправляет сообщение в MAX.
+
+    Ошибки глушим намеренно: сообщение бота — приятное дополнение, а не
+    условие входа. Если мессенджер не принял сообщение (закрыт чат, не тот
+    идентификатор), человек всё равно должен войти на сайт. Раньше падение
+    здесь роняло весь запрос, и вход срывался уже после подтверждения кода.
+    """
+    if not BOT_TOKEN or not chat_id:
         return
     payload = json.dumps({'text': text}).encode()
     url = f'https://botapi.max.ru/messages?chat_id={chat_id}'
@@ -323,7 +330,10 @@ def _bot_send(chat_id: Any, text: str):
         data=payload,
         headers={'Content-Type': 'application/json', 'Authorization': BOT_TOKEN},
     )
-    urllib.request.urlopen(req, timeout=4).read()
+    try:
+        urllib.request.urlopen(req, timeout=4).read()
+    except Exception:
+        pass
 
 
 _LAUNCH_LETTER = (
