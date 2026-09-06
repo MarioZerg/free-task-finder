@@ -41,6 +41,18 @@ export interface ProfessionCityPage {
   synonyms?: string[];
 }
 
+/** Поиск показывает примерно 60 знаков заголовка, остальное отбрасывает.
+ *  У длинных пар вроде «Помощь по хозяйству в Переславле-Залесском» хвост
+ *  съедал название сервиса, а иногда и город — то есть ровно то, ради чего
+ *  человек и кликает. Поэтому берём первый вариант, который влезает
+ *  целиком, и только если не влез ни один — самый короткий из них. */
+const TITLE_LIMIT = 60;
+const DESCRIPTION_LIMIT = 160;
+
+const bestFit = (variants: string[], limit: number): string =>
+  variants.find((v) => v.length <= limit) ||
+  [...variants].sort((a, b) => a.length - b.length)[0];
+
 /** Заголовок и описание чередуем по городу, чтобы страницы не были
  *  шаблонными копиями друг друга — иначе поисковики склеивают их между собой. */
 const titleFor = (p: ProfessionEntry, cityPrep: string, i: number): string => {
@@ -62,7 +74,17 @@ const titleFor = (p: ProfessionEntry, cityPrep: string, i: number): string => {
     `${p.label} в ${cityPrep}: заказать частного мастера — Доделай.ру`,
     `Услуги ${p.genitive} в ${cityPrep} — цены 2026 | Доделай.ру`,
   ];
-  return variants[i % variants.length];
+  // Начинаем перебор с варианта, выпавшего этой странице: так заголовки
+  // остаются разными, но ни один не выходит за границу выдачи.
+  const rotated = [...variants.slice(i % variants.length), ...variants.slice(0, i % variants.length)];
+  const short = [
+    `${p.label} в ${cityPrep} — цены | Доделай.ру`,
+    `${p.label} в ${cityPrep} | Доделай.ру`,
+    // Совсем длинные пары («Интернет и видеонаблюдение» + «Переславль-
+    // Залесский») не вмещают даже бренд — город важнее, его и оставляем.
+    `${p.label} в ${cityPrep}`,
+  ];
+  return bestFit([...rotated, ...short], TITLE_LIMIT);
 };
 
 const descriptionFor = (p: ProfessionEntry, cityPrep: string, i: number): string => {
@@ -87,7 +109,14 @@ const descriptionFor = (p: ProfessionEntry, cityPrep: string, i: number): string
     `${p.label} в ${cityPrep} — разовые заказы и срочный выезд в день обращения. Разместите задачу бесплатно: цены начинаются от ${first}, комиссию сервис не берёт.`,
     `Услуги ${p.genitive} в ${cityPrep}: цены от ${first}, исполнители с рейтингом и отзывами, отклики в день размещения. Сервис бесплатный, платите мастеру напрямую.`,
   ];
-  return variants[i % variants.length];
+  // Описание поиск обрезает примерно на 160 знаках, причём по живому.
+  // Держим варианты покороче на случай, когда основной не помещается.
+  const rotated = [...variants.slice(i % variants.length), ...variants.slice(0, i % variants.length)];
+  const short = [
+    `${p.label} в ${cityPrep}: цены от ${first}. Разместите заявку бесплатно — мастера откликнутся сами, комиссию не берём.`,
+    `${p.label} в ${cityPrep}: частные мастера, цены от ${first}. Бесплатно, без комиссии с оплаты.`,
+  ];
+  return bestFit([...rotated, ...short], DESCRIPTION_LIMIT);
 };
 
 const h1For = (p: ProfessionEntry, cityPrep: string, i: number): string => {
