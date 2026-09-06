@@ -53,6 +53,23 @@ const Toast = React.forwardRef<
 })
 Toast.displayName = ToastPrimitives.Root.displayName
 
+/**
+ * Убывающая полоска внизу уведомления.
+ *
+ * Показывает, сколько времени осталось до закрытия: человек видит, что
+ * сообщение исчезнет само, и не гадает, надо ли что-то нажимать. При
+ * наведении мышью или касании отсчёт замирает — уведомление не должно
+ * убегать, пока его читают.
+ */
+const ToastTimer = ({ duration }: { duration: number }) => (
+  <span className="pointer-events-none absolute bottom-0 left-0 right-0 h-1 overflow-hidden rounded-b-md bg-foreground/10">
+    <span
+      className="block h-full origin-left bg-primary/70 group-hover:[animation-play-state:paused] group-focus-within:[animation-play-state:paused] group-[.destructive]:bg-red-100/80"
+      style={{ animation: `toast-timer ${duration}ms linear forwards` }}
+    />
+  </span>
+)
+
 const ToastAction = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Action>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Action>
@@ -75,7 +92,9 @@ const ToastClose = React.forwardRef<
   <ToastPrimitives.Close
     ref={ref}
     className={cn(
-      "absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-[.destructive]:text-red-300 group-[.destructive]:hover:text-red-50 group-[.destructive]:focus:ring-red-400 group-[.destructive]:focus:ring-offset-red-600",
+      // Крестик видно всегда: раньше он проявлялся только при наведении
+      // мышью, и на телефоне закрыть уведомление было нечем.
+      "absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full text-foreground/60 opacity-100 transition-colors hover:bg-foreground/10 hover:text-foreground focus:outline-none focus:ring-2 group-[.destructive]:text-red-200 group-[.destructive]:hover:bg-red-50/15 group-[.destructive]:hover:text-red-50 group-[.destructive]:focus:ring-red-400",
       className
     )}
     toast-close=""
@@ -124,4 +143,5 @@ export {
   ToastDescription,
   ToastClose,
   ToastAction,
+  ToastTimer,
 }

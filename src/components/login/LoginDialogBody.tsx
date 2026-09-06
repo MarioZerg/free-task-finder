@@ -123,6 +123,9 @@ const LoginDialog = () => {
       setLoginOpen(true);
       return;
     }
+    // Вход прошёл — окно должно уйти само. Иначе человек возвращается
+    // из MAX и видит поверх личного кабинета зависшую форму входа.
+    setLoginOpen(false);
     navigate('/dashboard');
   };
 
@@ -177,7 +180,8 @@ const LoginDialog = () => {
 
   useEffect(() => {
     if (step !== 'code' || !code) return;
-    const poll = window.setInterval(async () => {
+
+    const check = async () => {
       if (doneRef.current) return;
       try {
         const r = await api.auth('login_status', { params: { code } });
@@ -190,10 +194,26 @@ const LoginDialog = () => {
           handleError(e);
         }
       } catch {
-        /* keep polling */
+        /* молча ждём следующей попытки */
       }
-    }, 3000);
-    return () => window.clearInterval(poll);
+    };
+
+    const poll = window.setInterval(check, 3000);
+
+    /* Человек подтвердил вход в MAX и переключился обратно на сайт —
+       проверяем сразу, а не ждём очередные три секунды. Иначе он видит
+       форму входа, хотя вход уже прошёл. */
+    const onBack = () => {
+      if (document.visibilityState === 'visible') check();
+    };
+    document.addEventListener('visibilitychange', onBack);
+    window.addEventListener('focus', onBack);
+
+    return () => {
+      window.clearInterval(poll);
+      document.removeEventListener('visibilitychange', onBack);
+      window.removeEventListener('focus', onBack);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, code]);
 

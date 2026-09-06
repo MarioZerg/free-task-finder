@@ -288,6 +288,17 @@
     }
   }
 
+  /* Полоска обратного отсчёта в уведомлении: сжимается слева направо
+     ровно за то время, что живёт сообщение. */
+  @keyframes toast-timer {
+    from {
+      transform: scaleX(1);
+    }
+    to {
+      transform: scaleX(0);
+    }
+  }
+
   .role-accent-text {
     color: hsl(var(--role-accent));
   }
