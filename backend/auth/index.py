@@ -41,7 +41,7 @@ TOCHKA_TERMINAL_ID = os.environ.get('TOCHKA_TERMINAL_ID', '').strip()
 TOCHKA_API = 'https://enter.tochka.com/uapi/acquiring/v1.0/payments'
 TOCHKA_RECEIPT_API = 'https://enter.tochka.com/uapi/acquiring/v1.0/payments_with_receipt'
 SITE_URL = os.environ.get('SITE_URL', 'https://dodelay.ru')
-PRO_PRICE = 990
+PRO_PRICE = 2000
 PAID_STATUSES = ('approved', 'confirmed', 'paid', 'success', 'succeeded')
 
 FEMALE_NAMES = {

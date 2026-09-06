@@ -21,7 +21,7 @@ import { useAppState } from '@/hooks/use-app-state';
 import { billingConfig } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
 
-export const PRO_PRICE = 990;
+export const PRO_PRICE = 2000;
 
 const MONTHS = [1, 3, 6];
 
