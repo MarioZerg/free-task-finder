@@ -7,6 +7,8 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
+import LockedAbout from '@/components/profile/LockedAbout';
+import ProviderIcon from '@/components/ui/provider-icon';
 import { api } from '@/lib/api';
 import type { ReviewItem, User } from '@/lib/api';
 import ProfileStats from '@/components/profile/ProfileStats';
@@ -94,6 +96,7 @@ const ProfileDialog = ({ userId, onOpenChange, showDetails = false }: Props) => 
                   {profile.verified && (
                     <Icon name="BadgeCheck" size={16} className="shrink-0 text-primary" />
                   )}
+                  <ProviderIcon provider={profile.authProvider} size={15} />
                   {profile.isPro && (
                     <span className="flex shrink-0 items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-600">
                       <Icon name="Crown" size={11} />
@@ -125,30 +128,12 @@ const ProfileDialog = ({ userId, onOpenChange, showDetails = false }: Props) => 
 
             <ProfileStats user={profile} />
 
-            {showDetails && profile.aboutLocked && (
-              <div className="rounded-3xl border border-amber-500/40 bg-amber-500/5 p-5 text-center">
-                <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-600">
-                  <Icon name="Lock" size={18} />
-                </span>
-                <p className="mt-3 font-head text-base font-medium">
-                  Человек рассказал о себе
-                </p>
-                <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
-                  Описание профиля — опыт, инструмент и условия работы — открыто
-                  для подписчиков Доделай PRO.
-                </p>
-                <button
-                  onClick={() => setProOpen(true)}
-                  className="btn-shine mx-auto mt-4 flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.02]"
-                >
-                  <Icon name="Crown" size={16} />
-                  Открыть с PRO
-                </button>
-              </div>
-            )}
-
             {showDetails &&
-              (profile.about || profile.aboutCustomer || profile.city || profile.skill) && (
+              (profile.about ||
+                profile.aboutCustomer ||
+                profile.aboutLocked ||
+                profile.city ||
+                profile.skill) && (
                 <div className="rounded-3xl border border-line bg-tile p-5">
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-chip">
                     {profile.city && (
@@ -179,6 +164,17 @@ const ProfileDialog = ({ userId, onOpenChange, showDetails = false }: Props) => 
                     </>
                   )}
 
+                  {profile.asExecutor !== false &&
+                    !profile.about &&
+                    !!profile.aboutLen && (
+                      <LockedAbout
+                        length={profile.aboutLen}
+                        title="Как исполнитель"
+                        icon="Hammer"
+                        onOpenPro={() => setProOpen(true)}
+                      />
+                    )}
+
                   {profile.asCustomer !== false && profile.aboutCustomer && (
                     <>
                       <h4 className="mt-4 flex items-center gap-1.5 font-head text-base font-medium">
@@ -190,6 +186,17 @@ const ProfileDialog = ({ userId, onOpenChange, showDetails = false }: Props) => 
                       </p>
                     </>
                   )}
+
+                  {profile.asCustomer !== false &&
+                    !profile.aboutCustomer &&
+                    !!profile.aboutCustomerLen && (
+                      <LockedAbout
+                        length={profile.aboutCustomerLen}
+                        title="Как заказчик"
+                        icon="ClipboardList"
+                        onOpenPro={() => setProOpen(true)}
+                      />
+                    )}
                 </div>
               )}
 

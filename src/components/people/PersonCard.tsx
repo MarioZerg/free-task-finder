@@ -2,6 +2,7 @@ import { memo } from 'react';
 import Icon from '@/components/ui/icon';
 import Avatar from '@/components/Avatar';
 import type { User } from '@/lib/api';
+import ProviderIcon from '@/components/ui/provider-icon';
 
 export const lastSeenText = (u: User) => {
   if (u.online) return 'в сети';
@@ -48,6 +49,13 @@ const PersonCard = memo(
               {user.name}
               {user.verified && (
                 <Icon name="BadgeCheck" size={15} className="shrink-0 text-primary" />
+              )}
+              <ProviderIcon provider={user.authProvider} size={14} />
+              {user.isPro && (
+                <span className="flex shrink-0 items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-amber-600">
+                  <Icon name="Crown" size={9} />
+                  PRO
+                </span>
               )}
               {unread > 0 && (
                 <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-semibold leading-none text-destructive-foreground">

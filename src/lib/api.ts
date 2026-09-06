@@ -84,6 +84,11 @@ export interface User {
   subscriptionUntil?: string | null;
   autoRenew?: boolean;
   isPro?: boolean;
+  /** Через какой мессенджер человек вошёл: пока только 'max' */
+  authProvider?: string;
+  /** Длина скрытого описания — сам текст под PRO сервер не отдаёт */
+  aboutLen?: number;
+  aboutCustomerLen?: number;
   notifyMessages?: boolean;
   notifyResponses?: boolean;
   notifyStatus?: boolean;

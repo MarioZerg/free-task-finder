@@ -241,6 +241,10 @@ def _user_row(
         'subscriptionUntil': row.get('subscription_until'),
         'autoRenew': bool(row.get('subscription_auto_renew')),
         'isPro': _is_pro(row.get('subscription_until')),
+        # Через какой мессенджер человек вошёл. Пока способ один, но поле
+        # отдаём сразу: интерфейс уже умеет показывать значок, а появление
+        # второго способа не потребует правок на сервере.
+        'authProvider': row.get('auth_provider') or 'max',
         'blocked': bool(row.get('blocked')),
         'isDemo': bool(row.get('is_demo')),
         'createdAt': row['created_at'],
@@ -618,6 +622,11 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 if int(m['id']) == me_id:
                     continue
                 m['aboutLocked'] = bool(m.get('about') or m.get('aboutCustomer'))
+                # Отдаём только длину: сам текст остаётся на сервере.
+                # Размытие — это стиль в браузере, его снимают в один клик,
+                # поэтому под замком должно быть нечего подсматривать.
+                m['aboutLen'] = len(m.get('about') or '')
+                m['aboutCustomerLen'] = len(m.get('aboutCustomer') or '')
                 m['about'] = ''
                 m['aboutCustomer'] = ''
         cur.execute(
@@ -671,6 +680,12 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         if not can_read_about:
             profile_row['aboutLocked'] = bool(
                 profile_row.get('about') or profile_row.get('aboutCustomer')
+            )
+            # Длина нужна, чтобы заглушка повторяла объём реального текста
+            # и было видно: за замком правда что-то есть.
+            profile_row['aboutLen'] = len(profile_row.get('about') or '')
+            profile_row['aboutCustomerLen'] = len(
+                profile_row.get('aboutCustomer') or ''
             )
             profile_row['about'] = ''
             profile_row['aboutCustomer'] = ''

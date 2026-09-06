@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import MaxLogo from '@/components/ui/max-logo';
 import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
 import InstallPwa from '@/components/InstallPwa';
@@ -23,6 +24,7 @@ const Footer = () => {
               onClick={() => openLogin()}
               className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-7 py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.03] sm:w-auto"
             >
+              <MaxLogo size={19} />
               Войти через MAX
               <Icon name="ArrowRight" size={18} />
             </button>

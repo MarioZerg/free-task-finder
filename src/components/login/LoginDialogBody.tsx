@@ -7,6 +7,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import ProviderIcon from '@/components/ui/provider-icon';
 import Icon from '@/components/ui/icon';
 import InstallPwa from '@/components/InstallPwa';
 import { useAppState } from '@/hooks/use-app-state';
@@ -349,7 +350,7 @@ const LoginDialog = () => {
                   botLink ? '' : 'pointer-events-none opacity-60'
                 }`}
               >
-                <Icon name="MessageCircle" size={18} />
+                <ProviderIcon provider="max" size={18} />
                 {botLink ? 'Войти через MAX' : 'Готовим вход…'}
               </a>
             ) : null}
