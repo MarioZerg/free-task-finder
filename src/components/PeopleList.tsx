@@ -65,7 +65,7 @@ const PeopleList = () => {
     load();
     const id = window.setInterval(() => {
       if (document.visibilityState === 'visible') load();
-    }, 60000);
+    }, 10000);
     return () => {
       alive = false;
       window.clearInterval(id);
@@ -87,7 +87,7 @@ const PeopleList = () => {
     load();
     const id = window.setInterval(() => {
       if (document.visibilityState === 'visible') load();
-    }, 30000);
+    }, 6000);
     return () => {
       alive = false;
       window.clearInterval(id);

@@ -3,8 +3,8 @@ import Icon from '@/components/ui/icon';
 import Avatar from '@/components/Avatar';
 import { useAppState } from '@/hooks/use-app-state';
 import type { JobInvite } from '@/lib/api';
-import { money } from '@/data/mock';
 import { toast } from '@/hooks/use-toast';
+import { priceText } from '@/lib/price';
 
 const InviteCard = ({ invite }: { invite: JobInvite }) => {
   const { acceptInvite, declineInvite } = useAppState();
@@ -52,7 +52,7 @@ const InviteCard = ({ invite }: { invite: JobInvite }) => {
       <div className="mt-3 flex items-start justify-between gap-3">
         <h4 className="min-w-0 break-words font-head text-lg font-medium">{invite.title}</h4>
         <span className="shrink-0 font-head text-xl font-semibold text-primary">
-          {money(invite.price)}
+          {priceText(invite)}
         </span>
       </div>
       <p className="mt-1 text-xs text-chip">

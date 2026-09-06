@@ -4,6 +4,7 @@ import Avatar from '@/components/Avatar';
 import { api } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
 import Loader from '@/components/Loader';
+import { dateTimeMsk } from '@/lib/time';
 
 interface Ticket {
   id: number;
@@ -36,12 +37,7 @@ const statusMeta: Record<string, { label: string; cls: string }> = {
 };
 
 const dateRu = (v: string) =>
-  new Date(v).toLocaleDateString('ru-RU', {
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  dateTimeMsk(v);
 
 const AdminSupport = ({ onProfile }: { onProfile: (id: number) => void }) => {
   const [status, setStatus] = useState('');

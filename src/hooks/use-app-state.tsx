@@ -11,6 +11,7 @@ import {
 import { api, clearToken, getToken, payStart, setToken } from '@/lib/api';
 import type { JobInvite, JobItem, UnreadInfo, User } from '@/lib/api';
 import { reachGoal } from '@/hooks/use-metrika';
+import { useLive } from '@/hooks/use-live';
 
 export interface ProfilePayload {
   name?: string;
@@ -191,19 +192,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     init();
   }, [refresh, loadStats]);
 
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      if (document.visibilityState === 'visible') refresh();
-    }, 12000);
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') refresh();
-    };
-    document.addEventListener('visibilitychange', onVisible);
-    return () => {
-      window.clearInterval(id);
-      document.removeEventListener('visibilitychange', onVisible);
-    };
-  }, [refresh]);
+  useLive(refresh, 4000);
 
   const openLogin = useCallback(() => {
     setLoginOpen(true);

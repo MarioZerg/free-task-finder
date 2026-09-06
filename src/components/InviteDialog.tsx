@@ -8,13 +8,15 @@ import {
 } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
 import { api } from '@/lib/api';
-import { money } from '@/data/mock';
 import { toast } from '@/hooks/use-toast';
+import { priceText } from '@/lib/price';
 
 interface OpenJob {
   id: number;
   title: string;
   price: number;
+  priceType?: 'fixed' | 'range' | 'negotiable';
+  priceMax?: number | null;
 }
 
 interface Props {
@@ -102,7 +104,7 @@ const InviteDialog = ({ executor, onOpenChange }: Props) => {
             >
               {jobs.map((j) => (
                 <option key={j.id} value={j.id}>
-                  {j.title} · {money(j.price)}
+                  {j.title} · {priceText(j)}
                 </option>
               ))}
             </select>

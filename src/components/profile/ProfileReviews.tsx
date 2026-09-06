@@ -3,9 +3,10 @@ import Icon from '@/components/ui/icon';
 import Avatar from '@/components/Avatar';
 import { money } from '@/data/mock';
 import type { ReviewItem } from '@/lib/api';
+import { dateMsk } from '@/lib/time';
 
 const dateRu = (v: string) =>
-  new Date(v).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+  dateMsk(v);
 
 const ReviewCard = ({ r }: { r: ReviewItem }) => (
   <div className="rounded-2xl border border-line bg-tile p-4">

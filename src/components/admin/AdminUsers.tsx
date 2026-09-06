@@ -23,6 +23,7 @@ import type { User } from '@/lib/api';
 import { CITIES } from '@/data/mock';
 import { toast } from '@/hooks/use-toast';
 import Loader from '@/components/Loader';
+import { dateMsk } from '@/lib/time';
 
 const field =
   'w-full rounded-2xl border border-line bg-tile px-4 py-3 text-base outline-none transition-colors placeholder:text-chip focus:border-primary/60';
@@ -32,7 +33,7 @@ const proUntilText = (u: User | null) => {
   const d = new Date(u.subscriptionUntil);
   // Бессрочную подписку держим датой далеко в будущем — показываем словом.
   if (d.getFullYear() >= 2099) return 'бессрочно';
-  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+  return dateMsk(d.toISOString());
 };
 
 const filters = [

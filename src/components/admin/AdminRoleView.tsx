@@ -6,6 +6,7 @@ import type { JobItem } from '@/lib/api';
 import { money } from '@/data/mock';
 import { statusLabel } from '@/components/admin/AdminJobs';
 import Loader from '@/components/Loader';
+import { priceText } from '@/lib/price';
 
 const Ghost = ({ children }: { children: string }) => (
   <button
@@ -74,7 +75,7 @@ const AdminRoleView = ({ mode }: { mode: 'customer' | 'executor' }) => {
               <div className="flex items-baseline justify-between gap-3">
                 <h4 className="min-w-0 break-words font-head text-lg font-medium leading-snug">{job.title}</h4>
                 <span className="whitespace-nowrap font-head text-lg font-medium text-primary">
-                  {money(job.price)}
+                  {priceText(job)}
                 </span>
               </div>
               <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">
@@ -114,7 +115,7 @@ const AdminRoleView = ({ mode }: { mode: 'customer' | 'executor' }) => {
             </div>
             <div className="shrink-0 text-right">
               <span className="font-head text-xl font-medium text-primary">
-                {money(job.finalPrice || job.price)}
+                {job.finalPrice ? money(job.finalPrice) : priceText(job)}
               </span>
               <p className="mt-1 text-xs text-chip">{statusLabel[job.status]}</p>
             </div>

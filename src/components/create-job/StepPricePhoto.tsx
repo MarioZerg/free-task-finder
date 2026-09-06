@@ -4,6 +4,7 @@ import { money } from '@/data/mock';
 import { categoryMeta } from '@/data/categories';
 import { prepareJobPhoto } from '@/lib/image';
 import { toast } from '@/hooks/use-toast';
+import { PRICE_TYPES, priceText, type PriceType } from '@/lib/price';
 
 const field =
   'w-full rounded-2xl border border-line bg-tile px-4 py-3.5 text-base outline-none transition-colors placeholder:text-chip focus:border-primary/60';
@@ -13,6 +14,10 @@ const PRICE_CHIPS = [500, 1000, 1500, 2000, 3000];
 interface Props {
   price: string;
   setPrice: (v: string) => void;
+  priceType: PriceType;
+  setPriceType: (v: PriceType) => void;
+  priceMax: string;
+  setPriceMax: (v: string) => void;
   avgPrice: number;
   errors: Record<string, string>;
   photoThumb: string;
@@ -32,6 +37,10 @@ interface Props {
 const StepPricePhoto = ({
   price,
   setPrice,
+  priceType,
+  setPriceType,
+  priceMax,
+  setPriceMax,
   avgPrice,
   errors,
   photoThumb,
@@ -55,41 +64,96 @@ const StepPricePhoto = ({
   return (
     <>
       <div>
-        <label className="mb-2 block text-sm font-medium">Сумма оплаты</label>
-        <div className="relative">
-          <input
-            className={`${field} pr-12 font-head text-2xl font-medium`}
-            inputMode="numeric"
-            placeholder="0"
-            value={price ? Number(price).toLocaleString('ru-RU') : ''}
-            onChange={(e) => setPrice(e.target.value.replace(/\D/g, '').slice(0, 7))}
-          />
-          <span className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 font-head text-2xl text-chip">
-            ₽
-          </span>
-        </div>
-        <div className="mt-2.5 flex flex-wrap gap-2">
-          {PRICE_CHIPS.map((p) => (
+        <label className="mb-2 block text-sm font-medium">Оплата</label>
+
+        {/* Три способа назвать цену. Заказчик не всегда знает сумму заранее,
+            и вынуждать его выдумывать число — верный путь к спорам потом. */}
+        <div className="mb-3 grid grid-cols-3 gap-2">
+          {PRICE_TYPES.map((t) => (
             <button
-              key={p}
-              onClick={() => setPrice(String(p))}
-              className={`min-h-[44px] rounded-full border px-4 py-2 text-sm transition-colors ${
-                Number(price) === p
-                  ? 'border-primary bg-primary text-primary-foreground'
+              key={t.id}
+              onClick={() => setPriceType(t.id)}
+              className={`min-h-[44px] rounded-2xl border px-2 py-2.5 text-center transition-colors ${
+                priceType === t.id
+                  ? 'border-primary bg-primary/10 text-primary'
                   : 'border-line bg-tile text-muted-foreground hover:border-primary/50'
               }`}
             >
-              {p.toLocaleString('ru-RU')} ₽
+              <span className="block text-sm font-medium">{t.label}</span>
+              <span className="mt-0.5 block text-[11px] leading-tight opacity-80">{t.hint}</span>
             </button>
           ))}
         </div>
-        <p className="mt-2.5 flex items-start gap-2 text-xs text-chip">
-          <Icon name="Info" size={14} className="mt-0.5 shrink-0" />
-          {avgPrice
-            ? `Средняя цена по похожим задачам в ленте — около ${money(avgPrice)}.`
-            : 'Ориентир по области: простая помощь — от 700 ₽, работа на несколько часов — 1500–3000 ₽.'}
-        </p>
+
+        {priceType === 'negotiable' ? (
+          <p className="flex items-start gap-2 rounded-2xl border border-line bg-tile px-4 py-3.5 text-sm text-muted-foreground">
+            <Icon name="MessagesSquare" size={17} className="mt-0.5 shrink-0 text-primary" />
+            Сумму обсудите с исполнителем. В ленте заказ покажется с пометкой
+            «Договорная» — опишите объём работы подробнее, так откликов будет больше.
+          </p>
+        ) : (
+          <>
+            <div className={priceType === 'range' ? 'flex items-center gap-2' : ''}>
+              <div className="relative flex-1">
+                {priceType === 'range' && (
+                  <span className="mb-1 block text-xs text-chip">От</span>
+                )}
+                <input
+                  className={`${field} pr-12 font-head text-2xl font-medium`}
+                  inputMode="numeric"
+                  placeholder="0"
+                  value={price ? Number(price).toLocaleString('ru-RU') : ''}
+                  onChange={(e) => setPrice(e.target.value.replace(/\D/g, '').slice(0, 7))}
+                />
+                <span className="pointer-events-none absolute bottom-3.5 right-5 font-head text-2xl text-chip">
+                  ₽
+                </span>
+              </div>
+              {priceType === 'range' && (
+                <div className="relative flex-1">
+                  <span className="mb-1 block text-xs text-chip">До</span>
+                  <input
+                    className={`${field} pr-12 font-head text-2xl font-medium`}
+                    inputMode="numeric"
+                    placeholder="0"
+                    value={priceMax ? Number(priceMax).toLocaleString('ru-RU') : ''}
+                    onChange={(e) => setPriceMax(e.target.value.replace(/\D/g, '').slice(0, 7))}
+                  />
+                  <span className="pointer-events-none absolute bottom-3.5 right-5 font-head text-2xl text-chip">
+                    ₽
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {priceType === 'fixed' && (
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                {PRICE_CHIPS.map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setPrice(String(p))}
+                    className={`min-h-[44px] rounded-full border px-4 py-2 text-sm transition-colors ${
+                      Number(price) === p
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'border-line bg-tile text-muted-foreground hover:border-primary/50'
+                    }`}
+                  >
+                    {p.toLocaleString('ru-RU')} ₽
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <p className="mt-2.5 flex items-start gap-2 text-xs text-chip">
+              <Icon name="Info" size={14} className="mt-0.5 shrink-0" />
+              {avgPrice
+                ? `Средняя цена по похожим задачам в ленте — около ${money(avgPrice)}.`
+                : 'Ориентир по области: простая помощь — от 700 ₽, работа на несколько часов — 1500–3000 ₽.'}
+            </p>
+          </>
+        )}
         {err('price')}
+        {err('priceMax')}
       </div>
 
       <div>
@@ -171,7 +235,11 @@ const StepPricePhoto = ({
                   {title.trim() || 'Название задачи'}
                 </p>
                 <span className="shrink-0 whitespace-nowrap font-head text-xl font-semibold leading-none text-primary">
-                  {money(Number(price) || 0)}
+                  {priceText({
+                    price: Number(price) || 0,
+                    priceType,
+                    priceMax: Number(priceMax) || null,
+                  })}
                 </span>
               </div>
               <p className="mt-1 truncate text-xs text-chip">

@@ -20,6 +20,7 @@ import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
 import { billingConfig } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
+import { dateMsk } from '@/lib/time';
 
 export const PRO_PRICE = 2000;
 
@@ -39,7 +40,7 @@ const PRO_PERKS = [
 ];
 
 const dateRu = (v?: string | null) =>
-  v ? new Date(v).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+  v ? dateMsk(v) : '';
 
 interface Props {
   open: boolean;

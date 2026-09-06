@@ -12,13 +12,13 @@ import {
 import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
 import type { JobItem } from '@/lib/api';
-import { money } from '@/data/mock';
 import ActiveJobCard from '@/components/ActiveJobCard';
 import Avatar, { OnlineBadge } from '@/components/Avatar';
 import PhotoViewer from '@/components/PhotoViewer';
 import { toast } from '@/hooks/use-toast';
 import { hoursLeft, statusLabel } from '@/components/dashboard/DashTabs';
 import { categoryMeta } from '@/data/categories';
+import { priceText } from '@/lib/price';
 
 const CustomerJobCard = ({
   job,
@@ -115,7 +115,7 @@ const CustomerJobCard = ({
         </div>
         <div className="shrink-0 text-right">
           <span className="block whitespace-nowrap font-head text-2xl font-semibold leading-none tracking-tight text-primary md:text-3xl">
-            {money(job.price)}
+            {priceText(job)}
           </span>
           <p className="mt-1 text-xs text-chip">{statusLabel[job.status]}</p>
         </div>

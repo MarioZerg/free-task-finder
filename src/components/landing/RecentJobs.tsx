@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
 import type { JobItem } from '@/lib/api';
+import { priceText } from '@/lib/price';
 
 /** Лента последних заявок для посадочных страниц.
  *  Даёт две вещи сразу: посетитель видит, что сервис живой и заказы
@@ -102,9 +103,9 @@ const RecentJobs = ({
               <h3 className="font-head text-base font-medium leading-snug text-foreground">
                 {job.title}
               </h3>
-              {job.price > 0 && (
+              {(job.price > 0 || job.priceType === 'negotiable') && (
                 <span className="btn-shine whitespace-nowrap rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-                  {job.price.toLocaleString('ru-RU')} ₽
+                  {priceText(job)}
                 </span>
               )}
             </div>

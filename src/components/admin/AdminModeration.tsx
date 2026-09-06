@@ -3,8 +3,8 @@ import Icon from '@/components/ui/icon';
 import Avatar from '@/components/Avatar';
 import { api } from '@/lib/api';
 import type { JobItem } from '@/lib/api';
-import { money } from '@/data/mock';
 import { toast } from '@/hooks/use-toast';
+import { priceText } from '@/lib/price';
 
 const AdminModeration = () => {
   const [jobs, setJobs] = useState<JobItem[]>([]);
@@ -84,7 +84,7 @@ const AdminModeration = () => {
               <p className="mt-1.5 break-words text-sm text-muted-foreground">{job.description}</p>
             </div>
             <span className="shrink-0 font-head text-2xl font-semibold leading-none text-primary md:text-3xl">
-              {money(job.price)}
+              {priceText(job)}
             </span>
           </div>
 

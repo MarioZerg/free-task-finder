@@ -278,7 +278,7 @@ def _clean_phone(v) -> str:
 def _online(seen) -> bool:
     if not seen:
         return False
-    return dt.datetime.now() - seen < dt.timedelta(minutes=3)
+    return dt.datetime.now() - seen < dt.timedelta(seconds=90)
 
 
 def _me(cur, token: str) -> Optional[Dict[str, Any]]:
@@ -587,7 +587,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         cur.execute(
             f"""SELECT * FROM {SCHEMA}.users
                 WHERE {base}{mode_cond}{prof_join}
-                ORDER BY (last_seen > NOW() - INTERVAL '3 minutes') DESC,
+                ORDER BY (last_seen > NOW() - INTERVAL '90 seconds') DESC,
                          {order} LIMIT 200"""
         )
         rows = [dict(r) for r in cur.fetchall()]
@@ -613,7 +613,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                   WHERE {base} AND as_customer = TRUE) AS customers,
                  (SELECT COUNT(*) FROM {SCHEMA}.users
                   WHERE {base}
-                    AND last_seen > NOW() - INTERVAL '3 minutes') AS online"""
+                    AND last_seen > NOW() - INTERVAL '90 seconds') AS online"""
         )
         counts = dict(cur.fetchone())
         return _resp(200, {
@@ -696,17 +696,29 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         return _resp(200, {
             'code': code,
             'botName': BOT_NAME,
-            'botLink': f'https://max.ru/{BOT_NAME}',
+            # Код уезжает прямо в ссылке: человек жмёт кнопку, MAX открывает
+            # бота и сам отдаёт код. Копировать и вводить ничего не нужно.
+            'botLink': f'https://max.ru/{BOT_NAME}?start={code}',
             'maxEnabled': bool(BOT_TOKEN),
         })
 
     if method == 'POST' and action == 'bot_webhook':
+        # MAX присылает два вида событий. bot_started — человек открыл бота
+        # по ссылке, код лежит в payload, копировать ничего не надо.
+        # message_created — прислал код сообщением, оставляем как запасной путь.
+        upd = str(body.get('update_type') or '')
         message = (body.get('message') or {})
-        sender = (message.get('sender') or {})
+        sender = (message.get('sender') or body.get('user') or {})
         recipient = (message.get('recipient') or {})
         text = str(((message.get('body') or {}).get('text') or '')).strip()
-        code = re.sub(r'\D', '', text)[:6]
-        chat_id = recipient.get('chat_id') or sender.get('user_id')
+        payload = str(body.get('payload') or '').strip()
+        started = upd == 'bot_started' or bool(payload)
+        code = re.sub(r'\D', '', payload or text)[:6]
+        chat_id = (
+            recipient.get('chat_id')
+            or body.get('chat_id')
+            or sender.get('user_id')
+        )
         if len(code) == 6:
             username = str(sender.get('username') or f"max{sender.get('user_id', '')}").lower()
             name = str(sender.get('name') or username)[:200]
@@ -720,9 +732,11 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     RETURNING id"""
             )
             if cur.fetchone():
-                _bot_send(chat_id, 'Код принят. Вернитесь на сайт Доделай.ру — вход выполнен.')
+                _bot_send(chat_id, 'Вход подтверждён. Возвращайтесь на сайт Доделай.ру — вы уже вошли.')
             else:
-                _bot_send(chat_id, 'Код не найден или устарел. Получите новый код на сайте.')
+                _bot_send(chat_id, 'Ссылка устарела. Нажмите «Войти через MAX» на сайте ещё раз.')
+        elif started:
+            _bot_send(chat_id, 'Здравствуйте! Нажмите «Войти через MAX» на сайте Доделай.ру — вход пройдёт сам.')
         else:
             _bot_send(chat_id, 'Пришлите шестизначный код с сайта Доделай.ру, чтобы войти.')
         return _resp(200, {'ok': True})

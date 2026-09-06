@@ -280,6 +280,8 @@ export const dmSend = (toId: number, text: string) =>
   api.jobs('dm_send', { method: 'POST', body: { toId, text } });
 
 export interface JobInvite {
+  priceType?: 'fixed' | 'range' | 'negotiable';
+  priceMax?: number | null;
   id: number;
   jobId: number;
   note: string;
@@ -314,6 +316,10 @@ export interface JobResponseItem {
 export type JobStatus = 'open' | 'assigned' | 'expiring' | 'done' | 'cancelled';
 
 export interface JobItem {
+  /** Как назначена цена: точная, вилка «от и до» или договорная. */
+  priceType?: 'fixed' | 'range' | 'negotiable';
+  /** Верхняя граница вилки. У остальных типов пусто. */
+  priceMax?: number | null;
   id: number;
   title: string;
   description: string;

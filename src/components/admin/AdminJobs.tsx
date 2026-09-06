@@ -29,6 +29,8 @@ import {
 import { money } from '@/data/mock';
 import { toast } from '@/hooks/use-toast';
 import Loader from '@/components/Loader';
+import { dayMsk } from '@/lib/time';
+import { priceText } from '@/lib/price';
 
 const field =
   'w-full rounded-2xl border border-line bg-tile px-4 py-3 text-base outline-none transition-colors placeholder:text-chip focus:border-primary/60';
@@ -50,7 +52,7 @@ const filterLabel: Record<string, string> = {
 };
 
 const dateRu = (v?: string | null) =>
-  v ? new Date(v).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) : '—';
+  v ? dayMsk(v) : '—';
 
 const AdminJobs = () => {
   const [status, setStatus] = useState('all');
@@ -189,7 +191,7 @@ const AdminJobs = () => {
                   )}
                 </p>
                 <p className="mt-1 break-words text-sm text-chip">
-                  {money(j.finalPrice || j.price)} · {j.city} · {dateRu(j.createdAt)}
+                  {j.finalPrice ? money(j.finalPrice) : priceText(j)} · {j.city} · {dateRu(j.createdAt)}
                 </p>
                 <p className="mt-0.5 break-words text-xs text-chip">
                   Заказчик: {j.ownerName} · Исполнитель: {j.executorName || '—'}

@@ -17,6 +17,7 @@ import Avatar, { OnlineBadge } from '@/components/Avatar';
 import JobChat from '@/components/JobChat';
 import PhotoViewer from '@/components/PhotoViewer';
 import { toast } from '@/hooks/use-toast';
+import { priceText } from '@/lib/price';
 
 const leftText = (deadline?: string | null) => {
   if (!deadline) return '';
@@ -71,7 +72,9 @@ const ActiveJobCard = ({
   const [, setTick] = useState(0);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [completeOpen, setCompleteOpen] = useState(false);
-  const [finalPrice, setFinalPrice] = useState(String(job.price));
+  // У договорных заказов заранее суммы нет — поле остаётся пустым,
+  // и завершить работу без итоговой суммы нельзя.
+  const [finalPrice, setFinalPrice] = useState(job.price ? String(job.price) : '');
   const [rating, setRating] = useState(5);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -146,7 +149,7 @@ const ActiveJobCard = ({
         </div>
         <div className="flex items-center gap-2">
           <span className="whitespace-nowrap font-head text-xl font-medium text-primary">
-            {money(job.finalPrice || job.price)}
+            {job.finalPrice ? money(job.finalPrice) : priceText(job)}
           </span>
           {collapsible && (
             <Icon
@@ -227,7 +230,7 @@ const ActiveJobCard = ({
                 {job.category}
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-                {money(job.price)}
+                {priceText(job)}
                 {job.finalPrice && job.finalPrice !== job.price
                   ? ` → ${money(job.finalPrice)}`
                   : ''}
@@ -402,7 +405,9 @@ const ActiveJobCard = ({
               {job.isOwner ? 'Укажите, сколько вы заплатили' : 'Укажите, сколько вы заработали'}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
-              Итоговую сумму подтверждает заказчик.
+              {job.priceType === 'negotiable'
+                ? 'Цена была договорной — укажите, на какой сумме сошлись.'
+                : 'Итоговую сумму подтверждает заказчик.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <input
@@ -414,11 +419,12 @@ const ActiveJobCard = ({
           <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
             <AlertDialogCancel className="rounded-full border-line bg-tile">Назад</AlertDialogCancel>
             <AlertDialogAction
+              disabled={Number(finalPrice) < 1}
               onClick={(e) => {
                 e.preventDefault();
                 doComplete();
               }}
-              className="rounded-full bg-primary text-primary-foreground"
+              className="rounded-full bg-primary text-primary-foreground disabled:opacity-50"
             >
               Завершить
             </AlertDialogAction>

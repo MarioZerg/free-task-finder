@@ -97,7 +97,8 @@ def _notify_executors_new_job(cur, job_id: int):
         return
     try:
         cur.execute(
-            f"""SELECT j.title, j.price, j.city, j.category, j.profession_slug,
+            f"""SELECT j.title, j.price, j.price_type, j.price_max, j.city,
+                       j.category, j.profession_slug,
                        j.is_demo, j.owner_id, u.is_demo AS owner_demo
                 FROM {SCHEMA}.jobs j
                 JOIN {SCHEMA}.users u ON u.id = j.owner_id
@@ -140,7 +141,7 @@ def _notify_executors_new_job(cur, job_id: int):
         text = (
             f'{head}\n{base_city}\n\n'
             f"{job['title']}\n"
-            f"Оплата: {int(job['price'])} ₽\n\n"
+            f"{_price_text(job)}\n\n"
             f'Откройте Доделай.ру и откликнитесь первым — '
             f'заказчик обычно выбирает из первых откликов.'
         )
@@ -196,7 +197,40 @@ LEFT JOIN {SCHEMA}.users e ON e.id = j.assigned_executor_id
 def _online(seen) -> bool:
     if not seen:
         return False
-    return dt.datetime.now() - seen < dt.timedelta(minutes=3)
+    return dt.datetime.now() - seen < dt.timedelta(seconds=90)
+
+
+def _price_text(row: Dict[str, Any]) -> str:
+    """Цена словами — для уведомлений в MAX."""
+    ptype = row.get('price_type') or 'fixed'
+    if ptype == 'negotiable':
+        return 'Оплата договорная'
+    price = int(row.get('price') or 0)
+    if ptype == 'range' and row.get('price_max'):
+        return f"Оплата: {price}-{int(row['price_max'])} \u20bd"
+    return f'Оплата: {price} \u20bd'
+
+
+def _parse_price(body: Dict[str, Any]):
+    """Разбирает цену заказа. Возвращает (тип, от, до) или строку с ошибкой.
+
+    Договорная — сумма не указывается вовсе. Вилка — нижняя и верхняя границы,
+    верхняя обязана быть больше нижней, иначе объявление вводит в заблуждение.
+    """
+    ptype = str(body.get('priceType') or 'fixed')
+    if ptype not in ('fixed', 'range', 'negotiable'):
+        return 'bad_price_type'
+    if ptype == 'negotiable':
+        return ptype, 0, None
+    price = _int(body.get('price'))
+    if price < MIN_PRICE or price > MAX_PRICE:
+        return 'bad_price'
+    if ptype == 'fixed':
+        return ptype, price, None
+    pmax = _int(body.get('priceMax'))
+    if pmax <= price or pmax > MAX_PRICE:
+        return 'bad_price_max'
+    return ptype, price, pmax
 
 
 def _job(row: Dict[str, Any], viewer: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -207,7 +241,9 @@ def _job(row: Dict[str, Any], viewer: Optional[Dict[str, Any]]) -> Dict[str, Any
         'id': row['id'],
         'title': row['title'],
         'description': row['description'],
-        'price': row['price'],
+        'price': row['price'] or 0,
+        'priceType': row.get('price_type') or 'fixed',
+        'priceMax': row.get('price_max'),
         'city': row['city'],
         'when': row['when_text'],
         'category': row['category'],
@@ -514,7 +550,8 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         invites = []
         cur.execute(
             f"""SELECT i.id, i.job_id, i.note, i.created_at,
-                       j.title, j.price, j.city, j.when_text, j.status AS job_status,
+                       j.title, j.price, j.price_type, j.price_max, j.city,
+                       j.when_text, j.status AS job_status,
                        c.name AS customer_name, c.avatar AS customer_avatar,
                        c.rating AS customer_rating
                 FROM {SCHEMA}.job_invites i
@@ -530,7 +567,9 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 'note': r['note'],
                 'createdAt': r['created_at'],
                 'title': r['title'],
-                'price': r['price'],
+                'price': r['price'] or 0,
+                'priceType': r.get('price_type') or 'fixed',
+                'priceMax': r.get('price_max'),
                 'city': r['city'],
                 'when': r['when_text'],
                 'customerName': r['customer_name'],
@@ -636,6 +675,8 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 sets.append(f"profession_slug = '{_esc(str(body['profession'])[:40])}'")
             if body.get('price'):
                 sets.append(f'price = {min(_int(body["price"]), MAX_PRICE)}')
+            if body.get('priceType') in ('fixed', 'range', 'negotiable'):
+                sets.append(f"price_type = '{body['priceType']}'")
             moderation = str(body.get('moderation', ''))
             if moderation in ('approved', 'pending', 'rejected'):
                 sets.append(f"moderation = '{moderation}'")
@@ -799,7 +840,10 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             })
         title = str(body.get('title', '')).strip()[:200]
         description = str(body.get('description', '')).strip()[:2000]
-        price = _int(body.get('price'))
+        parsed = _parse_price(body)
+        if isinstance(parsed, str):
+            return _resp(400, {'error': parsed})
+        price_type, price, price_max = parsed
         city = str(body.get('city', me['city'])).strip()[:160]
         when_text = str(body.get('when', '')).strip()[:160] or 'Срок не указан'
         category = str(body.get('category', 'Разное')).strip()[:80]
@@ -816,13 +860,13 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             return _resp(400, {'error': 'bad_title'})
         if len(description) < 10:
             return _resp(400, {'error': 'bad_description'})
-        if price < MIN_PRICE or price > MAX_PRICE:
-            return _resp(400, {'error': 'bad_price'})
         cur.execute(
             f"""INSERT INTO {SCHEMA}.jobs
-                  (owner_id, title, description, price, city, when_text, category,
+                  (owner_id, title, description, price, price_type, price_max,
+                   city, when_text, category,
                    profession_slug, photo_thumb, photo_full, moderation, expires_at)
                 VALUES ({me['id']}, '{_esc(title)}', '{_esc(description)}', {price},
+                        '{price_type}', {price_max if price_max else 'NULL'},
                         '{_esc(city)}', '{_esc(when_text)}', '{_esc(category)}',
                         {"'" + _esc(profession) + "'" if profession else 'NULL'},
                         {"'" + _esc(photo_thumb) + "'" if photo_thumb else 'NULL'},
@@ -856,7 +900,10 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             return _resp(400, {'error': 'job_in_work'})
         title = str(body.get('title', '')).strip()[:200]
         description = str(body.get('description', '')).strip()[:2000]
-        price = _int(body.get('price'))
+        parsed = _parse_price(body)
+        if isinstance(parsed, str):
+            return _resp(400, {'error': parsed})
+        price_type, price, price_max = parsed
         city = str(body.get('city', target['city'])).strip()[:160]
         when_text = str(body.get('when', '')).strip()[:160] or 'Срок не указан'
         category = str(body.get('category', target['category'])).strip()[:80]
@@ -867,8 +914,6 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             return _resp(400, {'error': 'bad_title'})
         if len(description) < 10:
             return _resp(400, {'error': 'bad_description'})
-        if price < MIN_PRICE or price > MAX_PRICE:
-            return _resp(400, {'error': 'bad_price'})
         photo_thumb = str(body.get('photoThumb') or '')
         photo_full = str(body.get('photoFull') or '')
         photo_sets = ''
@@ -885,6 +930,8 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     title = '{_esc(title)}',
                     description = '{_esc(description)}',
                     price = {price},
+                    price_type = '{price_type}',
+                    price_max = {price_max if price_max else 'NULL'},
                     city = '{_esc(city)}',
                     when_text = '{_esc(when_text)}',
                     category = '{_esc(category)}',
@@ -975,12 +1022,12 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         )
         _notify(
             ex['max_user_id'],
-            f"{me['name']} приглашает вас на заказ «{target_job['title']}» "
-            f"за {target_job['price']} ₽. Откройте ленту Доделай.ру и откликнитесь.",
+            f"{me['name']} приглашает вас на заказ «{target_job['title']}». "
+            f"{_price_text(target_job)}. Откройте ленту Доделай.ру и откликнитесь.",
         )
         send_push(
             cur, SCHEMA, executor_id, 'responses', 'Приглашение на заказ',
-            f"{me['name']} зовёт вас на «{target_job['title']}» за {target_job['price']} ₽",
+            f"{me['name']} зовёт вас на «{target_job['title']}». {_price_text(target_job)}",
             url='/dashboard', job_id=jid, esc=_esc,
         )
         return _resp(200, {'ok': True})
@@ -1251,9 +1298,15 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         gate = cur.fetchone()
         if gate and gate['too_soon']:
             return _resp(400, {'error': 'too_soon', 'readyAt': str(gate['ready_at'])})
-        final_price = _int(body.get('finalPrice'), job['price'])
+        # У договорных заказов заранее известной суммы нет, поэтому итог
+        # обязателен — иначе заказ закроется на нулевой сумме и испортит
+        # статистику и отзывы.
+        base_price = int(job['price'] or 0)
+        final_price = _int(body.get('finalPrice'), base_price)
         if final_price < MIN_PRICE or final_price > MAX_PRICE:
-            final_price = job['price']
+            if base_price < MIN_PRICE:
+                return _resp(400, {'error': 'final_price_required'})
+            final_price = base_price
         cur.execute(
             f"""UPDATE {SCHEMA}.jobs SET status = 'done', completed_at = NOW(), final_price = {final_price}
                 WHERE id = {job_id}"""

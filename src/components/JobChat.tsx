@@ -5,9 +5,10 @@ import { api } from '@/lib/api';
 import type { ChatMessage } from '@/lib/api';
 import { useAppState } from '@/hooks/use-app-state';
 import { toast } from '@/hooks/use-toast';
+import { timeMsk } from '@/lib/time';
 
 const time = (iso: string) =>
-  new Date(iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  timeMsk(iso);
 
 const JobChat = ({ jobId }: { jobId: number; partner?: string }) => {
   const { sendMessage } = useAppState();
@@ -29,7 +30,7 @@ const JobChat = ({ jobId }: { jobId: number; partner?: string }) => {
     load();
     const id = window.setInterval(() => {
       if (document.visibilityState === 'visible') load();
-    }, 8000);
+    }, 2500);
     return () => window.clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId]);

@@ -12,9 +12,9 @@ import PhotoViewer from '@/components/PhotoViewer';
 import { useAppState } from '@/hooks/use-app-state';
 import type { JobItem } from '@/lib/api';
 import { reachGoal } from '@/hooks/use-metrika';
-import { money } from '@/data/mock';
 import { categoryMeta } from '@/data/categories';
 import { toast } from '@/hooks/use-toast';
+import { priceText } from '@/lib/price';
 
 const since = (iso: string) => {
   const sec = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
@@ -136,7 +136,7 @@ const JobFeedCard = ({ job, responded, canRespond, readOnly }: Props) => {
                 {job.title}
               </h3>
               <span className="shrink-0 whitespace-nowrap font-head text-lg font-semibold leading-none tracking-tight text-primary sm:text-2xl">
-                {money(job.price)}
+                {priceText(job)}
               </span>
             </div>
 

@@ -16,7 +16,6 @@ import { api } from '@/lib/api';
 import { isPhoneValid, phoneDigits } from '@/lib/phone';
 import AdminHintPanel from '@/components/login/AdminHintPanel';
 import CodeStep from '@/components/login/CodeStep';
-import StartStep from '@/components/login/StartStep';
 import RegisterStep from '@/components/login/RegisterStep';
 
 // Профиль один на всех: и задачи размещают, и заказы берут с него же,
@@ -38,10 +37,9 @@ const errorText: Record<string, string> = {
 const CODE_TTL = 15 * 60;
 
 const LoginDialog = () => {
-  const { loginOpen, setLoginOpen, signIn, startMaxLogin, maxEnabled } = useAppState();
+  const { loginOpen, setLoginOpen, signIn, startMaxLogin } = useAppState();
   const navigate = useNavigate();
 
-  const [maxId, setMaxId] = useState('');
   const [step, setStep] = useState<'start' | 'code' | 'register'>('start');
   const [code, setCode] = useState('');
   const [botLink, setBotLink] = useState('');
@@ -110,15 +108,11 @@ const LoginDialog = () => {
     }
   }, [loginOpen, reset]);
 
-  const cleanMax = maxId.trim().replace(/^@/, '').toLowerCase();
-  const maxValid = /^[a-z0-9._-]{3,60}$/.test(cleanMax);
-
   const success = (isAdmin?: boolean) => {
     toast({
       title: 'Вы в Доделай.ру',
       description: 'Лента заказов открыта, и можно сразу разместить свою задачу.',
     });
-    setMaxId('');
     setName('');
     setPhone('');
     setSkill('');
@@ -135,7 +129,6 @@ const LoginDialog = () => {
   const finish = async (extra: Record<string, unknown> = {}) => {
     const user = await signIn({
       ...(code ? { code } : {}),
-      ...(maxEnabled ? {} : { maxId: cleanMax }),
       ...extra,
     });
     success(user.isAdmin);
@@ -152,9 +145,13 @@ const LoginDialog = () => {
     return false;
   };
 
-  const requestCode = async () => {
+  /* Вкладку открываем ДО запроса к серверу: браузер разрешает открывать
+     окна только прямо в ответ на клик. Если ждать ответа, всплывающее окно
+     заблокируется. Поэтому сначала пустая вкладка, потом в неё адрес. */
+  const requestCode = async (openMax = true) => {
     setBusy(true);
     setError('');
+    const tab = openMax ? window.open('', '_blank') : null;
     try {
       const r = await startMaxLogin();
       setCode(r.code);
@@ -162,7 +159,10 @@ const LoginDialog = () => {
       setLeft(CODE_TTL);
       doneRef.current = false;
       setStep('code');
+      if (tab) tab.location.href = r.botLink;
+      else if (openMax) window.location.href = r.botLink;
     } catch {
+      tab?.close();
       setError(errorText.request_failed);
     } finally {
       setBusy(false);
@@ -197,22 +197,6 @@ const LoginDialog = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, code]);
 
-  const legacyLogin = async () => {
-    if (!maxValid) {
-      setError(errorText.bad_max_id);
-      return;
-    }
-    setError('');
-    setBusy(true);
-    try {
-      await finish();
-    } catch (e) {
-      handleError(e);
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const register = async () => {
     if (name.trim().length < 2) {
       setError(errorText.bad_name);
@@ -225,7 +209,7 @@ const LoginDialog = () => {
         name: name.trim(),
         city: city.trim() || CITIES[0],
         phone: isPhoneValid(phone) ? `+${phoneDigits(phone)}` : '',
-        contact: cleanMax ? `MAX: @${cleanMax}` : phone.trim(),
+        contact: phone.trim(),
         skill: skill.trim(),
         about: about.trim(),
         acceptedTerms: true,
@@ -278,10 +262,6 @@ const LoginDialog = () => {
               />
             )}
 
-            {step === 'start' && !maxEnabled && (
-              <StartStep maxId={maxId} setMaxId={setMaxId} legacyLogin={legacyLogin} />
-            )}
-
             {step === 'register' && (
               <RegisterStep
                 name={name}
@@ -312,12 +292,12 @@ const LoginDialog = () => {
               </button>
             ) : step === 'start' ? (
               <button
-                onClick={maxEnabled ? requestCode : legacyLogin}
+                onClick={() => requestCode()}
                 disabled={busy}
                 className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-60"
               >
                 <Icon name="MessageCircle" size={18} />
-                {busy ? 'Проверяем…' : maxEnabled ? 'Войти через MAX' : 'Продолжить через MAX'}
+                {busy ? 'Открываем MAX…' : 'Войти через MAX'}
               </button>
             ) : null}
 

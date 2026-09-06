@@ -63,7 +63,10 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 }, ensure_ascii=False),
                 'isBase64Encoded': False,
             }
-        subs = _call('subscriptions', 'POST', {'url': WEBHOOK_URL, 'update_types': ['message_created']})
+        subs = _call('subscriptions', 'POST', {
+            'url': WEBHOOK_URL,
+            'update_types': ['message_created', 'bot_started'],
+        })
         current = _call('subscriptions')
         body = {
             'ok': True,

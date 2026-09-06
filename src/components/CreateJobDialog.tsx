@@ -16,6 +16,7 @@ import { toast } from '@/hooks/use-toast';
 import StepTaskDetails from '@/components/create-job/StepTaskDetails';
 import StepWhenWhere from '@/components/create-job/StepWhenWhere';
 import StepPricePhoto from '@/components/create-job/StepPricePhoto';
+import type { PriceType } from '@/lib/price';
 
 interface Props {
   open: boolean;
@@ -45,6 +46,8 @@ const CreateJobDialog = ({ open, onOpenChange, job }: Props) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
+  const [priceType, setPriceType] = useState<PriceType>('fixed');
+  const [priceMax, setPriceMax] = useState('');
   const [cityName, setCityName] = useState(CITY_LIST[0]);
   const [district, setDistrict] = useState('');
   const [address, setAddress] = useState('');
@@ -65,7 +68,9 @@ const CreateJobDialog = ({ open, onOpenChange, job }: Props) => {
       setStep(0);
       setTitle(job.title);
       setDescription(job.description);
-      setPrice(String(job.price));
+      setPrice(job.price ? String(job.price) : '');
+      setPriceType(job.priceType || 'fixed');
+      setPriceMax(job.priceMax ? String(job.priceMax) : '');
       setCityName(loc.city);
       setDistrict(loc.district);
       setAddress(loc.address);
@@ -94,7 +99,9 @@ const CreateJobDialog = ({ open, onOpenChange, job }: Props) => {
   const districts = CITY_DISTRICTS[cityName] || [];
 
   const avgPrice = useMemo(() => {
-    const same = feed.filter((j) => j.category === category && j.price > 0);
+    const same = feed.filter(
+      (j) => j.category === category && j.priceType !== 'negotiable' && j.price > 0,
+    );
     if (same.length < 2) return 0;
     return Math.round(same.reduce((s, j) => s + j.price, 0) / same.length / 50) * 50;
   }, [feed, category]);
@@ -113,7 +120,12 @@ const CreateJobDialog = ({ open, onOpenChange, job }: Props) => {
       if (!when.trim()) next.when = 'Укажите, когда нужно выполнить';
     }
     if (s === 2) {
-      if (!price || Number(price) < 1) next.price = 'Укажите сумму';
+      if (priceType !== 'negotiable') {
+        if (!price || Number(price) < 1) next.price = 'Укажите сумму';
+        if (priceType === 'range' && Number(priceMax) <= Number(price)) {
+          next.priceMax = 'Верхняя граница должна быть больше нижней';
+        }
+      }
     }
     return next;
   };
@@ -131,6 +143,8 @@ const CreateJobDialog = ({ open, onOpenChange, job }: Props) => {
     if (p.profession) setProfession(p.profession);
     setDescription(p.description);
     setPrice(String(p.price));
+    setPriceType('fixed');
+    setPriceMax('');
     setErrors({});
   };
 
@@ -138,6 +152,8 @@ const CreateJobDialog = ({ open, onOpenChange, job }: Props) => {
     setStep(0);
     setTitle('');
     setDescription('');
+    setPriceType('fixed');
+    setPriceMax('');
     setPrice('');
     setAddress('');
     setWhen('Сегодня');
@@ -159,7 +175,9 @@ const CreateJobDialog = ({ open, onOpenChange, job }: Props) => {
     const payload = {
       title: title.trim(),
       description: description.trim(),
-      price: Number(price),
+      price: priceType === 'negotiable' ? 0 : Number(price),
+      priceType,
+      priceMax: priceType === 'range' ? Number(priceMax) : undefined,
       city: [cityName, district, address.trim()].filter(Boolean).join(', '),
       when: when.trim() || 'Дата не указана',
       category,
@@ -280,6 +298,10 @@ const CreateJobDialog = ({ open, onOpenChange, job }: Props) => {
             <StepPricePhoto
               price={price}
               setPrice={setPrice}
+              priceType={priceType}
+              setPriceType={setPriceType}
+              priceMax={priceMax}
+              setPriceMax={setPriceMax}
               avgPrice={avgPrice}
               errors={errors}
               photoThumb={photoThumb}

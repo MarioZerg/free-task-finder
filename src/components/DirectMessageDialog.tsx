@@ -12,9 +12,10 @@ import { dmSend, dmThread } from '@/lib/api';
 import type { DirectMessage } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
 import Loader from '@/components/Loader';
+import { timeMsk } from '@/lib/time';
 
 const time = (iso: string) =>
-  new Date(iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  timeMsk(iso);
 
 interface Props {
   peer: { id: number; name: string; avatar?: string | null } | null;
@@ -44,7 +45,7 @@ const DirectMessageDialog = ({ peer, onOpenChange }: Props) => {
     load().finally(() => setLoading(false));
     const id = window.setInterval(() => {
       if (document.visibilityState === 'visible') load();
-    }, 8000);
+    }, 2500);
     return () => window.clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [peer?.id]);

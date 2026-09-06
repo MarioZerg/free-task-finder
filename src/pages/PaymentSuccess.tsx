@@ -5,16 +5,13 @@ import Icon from '@/components/ui/icon';
 import { payCheck } from '@/lib/api';
 import useSeo from '@/hooks/use-seo';
 import { reachGoal } from '@/hooks/use-metrika';
+import { dateMsk } from '@/lib/time';
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const dateRu = (v?: string | null) =>
   v
-    ? new Date(v).toLocaleDateString('ru-RU', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      })
+    ? dateMsk(v)
     : '';
 
 type State = 'checking' | 'paid' | 'pending';

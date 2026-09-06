@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { money } from '@/data/mock';
 import { toast } from '@/hooks/use-toast';
 import Loader from '@/components/Loader';
+import { dayMsk } from '@/lib/time';
 
 interface AdminReview {
   id: number;
@@ -29,7 +30,7 @@ const filters = [
 ];
 
 const dateRu = (v: string) =>
-  new Date(v).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+  dayMsk(v);
 
 const AdminReviews = ({ onProfile }: { onProfile: (id: number) => void }) => {
   const [direction, setDirection] = useState('');
