@@ -783,9 +783,14 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             'customerCode': TOCHKA_CUSTOMER_CODE,
             'terminalId': TOCHKA_TERMINAL_ID,
         }
+        # Список торговых точек банк отдаёт только вместе с кодом клиента —
+        # без него отвечает «Field customerCode: Field required».
+        retailers_url = 'https://enter.tochka.com/uapi/acquiring/v1.0/retailers'
+        if TOCHKA_CUSTOMER_CODE:
+            retailers_url += f'?customerCode={urllib.parse.quote(TOCHKA_CUSTOMER_CODE)}'
         probes = [
             ('customers', 'https://enter.tochka.com/uapi/open-banking/v1.0/customers'),
-            ('retailers', 'https://enter.tochka.com/uapi/acquiring/v1.0/retailers'),
+            ('retailers', retailers_url),
         ]
         for name, url in probes:
             try:
