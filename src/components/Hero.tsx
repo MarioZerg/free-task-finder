@@ -25,7 +25,7 @@ const Hero = () => {
 
             <p className="mt-8 max-w-[420px] text-base text-muted-foreground">
               Разовые заказы от частных лиц. Ярославль, Рыбинск,
-              Тутаев, Переславль, Углич и Ростов. Бесплатно, без комиссий и подписок. Вход через MAX.
+              Тутаев, Переславль, Углич и Ростов. Бесплатно, без комиссий с оплаты. Вход через MAX.
             </p>
             <p className="mt-4 flex items-center gap-2 text-sm text-chip">
               <span className="btn-shine h-1.5 w-1.5 rounded-full bg-primary" />
