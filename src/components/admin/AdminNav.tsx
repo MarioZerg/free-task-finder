@@ -9,6 +9,7 @@ export type SectionId =
   | 'chats'
   | 'users'
   | 'broadcast'
+  | 'ads'
   | 'preview'
   | 'sandbox';
 
@@ -85,6 +86,12 @@ export const navGroups: { title: string; items: NavItem[] }[] = [
         label: 'Рассылка',
         icon: 'Send',
         hint: 'Сообщение участникам в MAX',
+      },
+      {
+        id: 'ads',
+        label: 'Реклама',
+        icon: 'Megaphone',
+        hint: 'Кампании для Яндекс Директа одним файлом',
       },
       {
         id: 'preview',

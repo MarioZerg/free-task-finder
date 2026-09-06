@@ -1,0 +1,189 @@
+import { PROFESSIONS } from '@/data/professionsCatalog';
+import { CITY_PAGES } from '@/data/cityPages';
+import { PROFESSION_KEYWORDS, COMMERCIAL_MODIFIERS, ALL_NEGATIVES } from '@/data/adKeywords';
+
+/** Сборка кампаний для Яндекс Директа в формате Директ Коммандера.
+ *
+ *  Правило кампании: одна профессия в одном городе — одна группа со своей
+ *  посадочной страницей. Если свалить всё в общую группу, объявление про
+ *  кондиционеры покажется по запросу «сборка мебели», и CTR обвалится.
+ */
+
+/** Лимиты Директа. Всё, что длиннее, объявление не пройдёт модерацию. */
+export const LIMITS = {
+  title: 56,
+  title2: 30,
+  text: 81,
+  phrase: 4096,
+};
+
+export interface ExportOptions {
+  professions: string[];
+  cities: string[];
+  /** Дневной бюджет кампании, рублей */
+  budget: number;
+  siteUrl: string;
+  utm: boolean;
+}
+
+export interface AdRow {
+  campaign: string;
+  group: string;
+  phrase: string;
+  title: string;
+  title2: string;
+  text: string;
+  url: string;
+}
+
+const SITE = 'https://dodelay.ru';
+
+/** Обрезаем по границе слова: Директ режет молча, а обрубок в середине
+ *  слова выглядит как ошибка и снижает доверие к объявлению. */
+const fit = (s: string, limit: number): string => {
+  if (s.length <= limit) return s;
+  const cut = s.slice(0, limit);
+  const space = cut.lastIndexOf(' ');
+  return (space > limit * 0.6 ? cut.slice(0, space) : cut).replace(/[\s,.—-]+$/, '');
+};
+
+/** Заголовок объявления: услуга + город. Именно так человек и ищет.
+ *  Город — в предложном падеже («в Ярославле»), иначе заголовок читается
+ *  как ошибка и режет доверие с первой секунды. */
+const titleFor = (label: string, cityPrep: string): string =>
+  fit(`${label} в ${cityPrep}`, LIMITS.title);
+
+const title2For = (): string[] => [
+  'Бесплатно, без комиссий',
+  'Мастера рядом с домом',
+  'Отклики в день заявки',
+  'Оплата напрямую мастеру',
+];
+
+/** Для каждого текста держим короткий запасной вариант.
+ *  У длинных городов вроде «Переславля-Залесского» полная фраза не влезает
+ *  в 81 знак, и обрезка съедала концовку: «Бесплатно, комиссию» вместо
+ *  «комиссию не берём». Лучше показать короткую, но законченную мысль. */
+const pick = (...variants: string[]): string =>
+  variants.find((v) => v.length <= LIMITS.text) || fit(variants[variants.length - 1], LIMITS.text);
+
+const textFor = (genitive: string, cityPrep: string): string[] => [
+  pick(
+    `Найдите ${genitive} в ${cityPrep} без посредников. Бесплатно, комиссию не берём.`,
+    `Найдите ${genitive} без посредников. Бесплатно, комиссию не берём.`,
+    `Найдите ${genitive} без посредников. Комиссию не берём.`,
+    `Мастера без посредников. Бесплатно, комиссию не берём.`,
+  ),
+  pick(
+    `Разместите задачу — мастера откликнутся сами. Оплата напрямую исполнителю.`,
+    `Разместите задачу — мастера откликнутся сами.`,
+  ),
+  pick(
+    `Частные мастера в ${cityPrep}. Отклики в день заявки, цену обсуждаете напрямую.`,
+    `Частные мастера в ${cityPrep}. Отклики в день заявки.`,
+  ),
+];
+
+/** Ссылка на профильную страницу. Совпадение запроса, объявления и
+ *  страницы — половина успеха: человек видит ровно то, что искал. */
+export const landingUrl = (
+  professionSlug: string,
+  citySlug: string,
+  withUtm: boolean,
+  base = SITE,
+): string => {
+  const url = `${base}/podrabotka/${citySlug}/${professionSlug}`;
+  if (!withUtm) return url;
+  return `${url}?utm_source=yandex&utm_medium=cpc&utm_campaign=${citySlug}_${professionSlug}`;
+};
+
+/** Ключевые фразы группы: базовая фраза плюс коммерческие добавки и город. */
+export const buildPhrases = (professionSlug: string, cityNominative: string): string[] => {
+  const base = PROFESSION_KEYWORDS[professionSlug] || [];
+  const out: string[] = [];
+  for (const phrase of base) {
+    for (const mod of COMMERCIAL_MODIFIERS) {
+      const full = [phrase, mod, cityNominative].filter(Boolean).join(' ');
+      if (full.length <= LIMITS.phrase) out.push(full);
+    }
+  }
+  return [...new Set(out)];
+};
+
+export const buildRows = (opts: ExportOptions): AdRow[] => {
+  const rows: AdRow[] = [];
+
+  for (const citySlug of opts.cities) {
+    const city = CITY_PAGES.find((c) => c.slug === citySlug);
+    if (!city) continue;
+
+    for (const profSlug of opts.professions) {
+      const p = PROFESSIONS.find((x) => x.slug === profSlug);
+      if (!p) continue;
+
+      const campaign = `Доделай — ${city.nameNominative}`;
+      const group = `${p.label} — ${city.nameNominative}`;
+      const url = landingUrl(p.slug, city.slug, opts.utm, opts.siteUrl || SITE);
+      const phrases = buildPhrases(p.slug, city.nameNominative);
+      const titles2 = title2For();
+      const texts = textFor(p.genitive, city.name);
+
+      phrases.forEach((phrase, i) => {
+        rows.push({
+          campaign,
+          group,
+          phrase,
+          title: titleFor(p.label, city.name),
+          title2: titles2[i % titles2.length],
+          text: texts[i % texts.length],
+          url,
+        });
+      });
+    }
+  }
+  return rows;
+};
+
+const HEADERS = [
+  'Кампания',
+  'Группа',
+  'Фраза (с минус-словами)',
+  'Заголовок',
+  'Заголовок 2',
+  'Текст',
+  'Ссылка',
+];
+
+/** Разделитель — точка с запятой: Excel в русской локали иначе
+ *  сваливает всю строку в одну ячейку. */
+const cell = (v: string) => `"${String(v).replace(/"/g, '""')}"`;
+
+export const toCsv = (rows: AdRow[]): string => {
+  const lines = [HEADERS.map(cell).join(';')];
+  for (const r of rows) {
+    lines.push(
+      [r.campaign, r.group, r.phrase, r.title, r.title2, r.text, r.url]
+        .map(cell)
+        .join(';'),
+    );
+  }
+  return lines.join('\r\n');
+};
+
+/** Файл скачивается с меткой BOM — без неё Excel открывает кириллицу
+ *  кракозябрами, и человек решает, что выгрузка сломана. */
+export const downloadCsv = (rows: AdRow[], name: string) => {
+  const blob = new Blob(['\uFEFF' + toCsv(rows)], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = name;
+  link.click();
+  URL.revokeObjectURL(link.href);
+};
+
+/** Минус-слова одной строкой — их вставляют на уровне кампании, а не
+ *  в каждое объявление. В файле их держать нельзя: 111 слов × тысячи
+ *  строк раздували выгрузку до десятка мегабайт. */
+export const negativesLine = (): string => ALL_NEGATIVES.join(', ');
+
+export default buildRows;

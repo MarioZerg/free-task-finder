@@ -13,6 +13,7 @@ import AdminDemoAccess from '@/components/admin/AdminDemoAccess';
 import AdminBroadcast from '@/components/admin/AdminBroadcast';
 import AdminReviews from '@/components/admin/AdminReviews';
 import AdminChats from '@/components/admin/AdminChats';
+import AdminAds from '@/components/admin/AdminAds';
 import AdminSupport from '@/components/admin/AdminSupport';
 import AdminNav, { allNavItems } from '@/components/admin/AdminNav';
 import type { SectionId } from '@/components/admin/AdminNav';
@@ -96,6 +97,7 @@ const AdminInner = () => {
       {section === 'chats' && <AdminChats />}
       {section === 'users' && <AdminUsers onProfile={setViewProfile} />}
       {section === 'broadcast' && <AdminBroadcast />}
+      {section === 'ads' && <AdminAds />}
       {section === 'preview' && <AdminPreview />}
       {section === 'sandbox' && <AdminDemoAccess />}
     </>
