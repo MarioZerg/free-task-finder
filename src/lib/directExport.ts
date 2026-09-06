@@ -1,6 +1,13 @@
 import { PROFESSIONS } from '@/data/professionsCatalog';
 import { CITY_PAGES } from '@/data/cityPages';
-import { PROFESSION_KEYWORDS, COMMERCIAL_MODIFIERS, ALL_NEGATIVES } from '@/data/adKeywords';
+import {
+  PROFESSION_KEYWORDS,
+  COMMERCIAL_MODIFIERS,
+  ALL_NEGATIVES,
+  WORKER_KEYWORDS,
+  WORKER_PROFESSION_KEYWORDS,
+  WORKER_NEGATIVES,
+} from '@/data/adKeywords';
 
 /** Сборка кампаний для Яндекс Директа в формате Директ Коммандера.
  *
@@ -210,13 +217,19 @@ export interface CsvOptions {
   bid?: number;
   /** Ставка в сетях. Не задана — берём ставку поиска */
   bidNet?: number;
+  /** Кампания на исполнителей — у неё свой набор минус-слов */
+  audience?: 'customer' | 'worker';
 }
 
 export const toCsv = (rows: AdRow[], opts: CsvOptions = {}): string => {
   const bid = bidValue(opts.bid ?? DEFAULT_BID);
   const bidNet = bidValue(opts.bidNet ?? opts.bid ?? DEFAULT_BID);
+  // У кампаний зеркальный мусор: заказчику мешают соискатели, исполнителю —
+  // те, кто ищет мастера. Списки минус-слов поэтому разные.
+  const negativeList =
+    opts.audience === 'worker' ? WORKER_NEGATIVES : ALL_NEGATIVES;
   const lines = [HEADERS.join('\t')];
-  const negatives = ALL_NEGATIVES.join(', ');
+  const negatives = negativeList.join(', ');
 
   /** Строки с ключевыми фразами помечаются «-», дополнительные объявления
    *  группы — «+». Знак «+» не значит «не первый»: у таких строк поля
@@ -296,6 +309,108 @@ export const downloadCsv = (rows: AdRow[], name: string, opts: CsvOptions = {}) 
 /** Минус-слова одной строкой — их вставляют на уровне кампании, а не
  *  в каждое объявление. В файле их держать нельзя: 111 слов × тысячи
  *  строк раздували выгрузку до десятка мегабайт. */
-export const negativesLine = (): string => ALL_NEGATIVES.join(', ');
+export const negativesLine = (audience: 'customer' | 'worker' = 'customer'): string =>
+  (audience === 'worker' ? WORKER_NEGATIVES : ALL_NEGATIVES).join(', ');
 
 export default buildRows;
+/* ===================== КАМПАНИЯ НА ИСПОЛНИТЕЛЕЙ ===================== */
+
+/** Объявления для тех, кто ищет подработку.
+ *
+ *  Отдельная кампания, а не ещё одна группа в существующей: у заказчика и
+ *  исполнителя противоположное намерение, разные посадочные и свои
+ *  минус-слова. В одной кампании они мешают обучению и роняют отклик —
+ *  с этого и начались проблемы с динамикой.
+ *
+ *  Ведём на страницу города («Шабашка и подработка в Ярославле»), а по
+ *  специальностям — на страницу профессии: там человек сразу видит ленту
+ *  заказов по своему профилю.
+ */
+/** Берём первый вариант, который влезает в лимит объявления */
+const pickText2 = (full: string, short: string) =>
+  full.length <= LIMITS.text ? full : fit(short, LIMITS.text);
+
+const workerTitle = (cityPrep: string): string[] => [
+  `Подработка в ${cityPrep}`,
+  `Работа на день в ${cityPrep}`,
+  `Шабашка в ${cityPrep}`,
+];
+
+const workerTitle2 = (): string[] => [
+  'Оплата в день работы',
+  'Без резюме и опыта',
+  'Заказы рядом с домом',
+  'Бесплатно, без комиссий',
+];
+
+const workerText = (cityPrep: string): string[] => [
+  pickText2(
+    `Разовые заказы в ${cityPrep}: выбирайте сами, оплата напрямую от заказчика.`,
+    `Разовые заказы: выбирайте сами, оплата напрямую от заказчика.`,
+  ),
+  pickText2(
+    `Без резюме и собеседований. Вход за минуту, комиссию с оплаты не берём.`,
+    `Без резюме. Вход за минуту, комиссию не берём.`,
+  ),
+  pickText2(
+    `Заказы рядом с домом в ${cityPrep}. Берите столько работы, сколько нужно.`,
+    `Заказы рядом с домом. Берите столько работы, сколько нужно.`,
+  ),
+];
+
+export const buildWorkerRows = (opts: ExportOptions): AdRow[] => {
+  const rows: AdRow[] = [];
+
+  for (const citySlug of opts.cities) {
+    const city = CITY_PAGES.find((c) => c.slug === citySlug);
+    if (!city) continue;
+
+    const campaign = `Доделай, исполнители — ${city.nameNominative}`;
+    const region = CITY_REGION[city.slug] || 'Ярославская область';
+    const titles = workerTitle(city.name).map((t) => fit(t, LIMITS.title));
+    const titles2 = workerTitle2();
+    const texts = workerText(city.name);
+
+    // Общая группа: человек ищет подработку вообще, без специальности
+    const cityUrl = opts.utm
+      ? `${opts.siteUrl || SITE}/podrabotka/${city.slug}?utm_source=yandex&utm_medium=cpc&utm_campaign=worker_${city.slug}`
+      : `${opts.siteUrl || SITE}/podrabotka/${city.slug}`;
+
+    WORKER_KEYWORDS.forEach((base, i) => {
+      rows.push({
+        campaign,
+        group: `Подработка — ${city.nameNominative}`,
+        phrase: `${base} ${city.nameNominative}`,
+        title: titles[i % titles.length],
+        title2: titles2[i % titles2.length],
+        text: texts[i % texts.length],
+        url: cityUrl,
+        region,
+      });
+    });
+
+    // Группы по специальностям: «работа сантехником» — на страницу сантехника
+    for (const profSlug of opts.professions) {
+      const p = PROFESSIONS.find((x) => x.slug === profSlug);
+      const base = WORKER_PROFESSION_KEYWORDS[profSlug];
+      if (!p || !base?.length) continue;
+
+      const url = landingUrl(p.slug, city.slug, opts.utm, opts.siteUrl || SITE);
+      base.forEach((phrase, i) => {
+        for (const mod of ['', 'без опыта', 'с ежедневной оплатой']) {
+          rows.push({
+            campaign,
+            group: `${p.label} — работа, ${city.nameNominative}`,
+            phrase: [phrase, mod, city.nameNominative].filter(Boolean).join(' '),
+            title: fit(`${p.label}: работа в ${city.name}`, LIMITS.title),
+            title2: titles2[i % titles2.length],
+            text: texts[i % texts.length],
+            url,
+            region,
+          });
+        }
+      });
+    }
+  }
+  return rows;
+};
