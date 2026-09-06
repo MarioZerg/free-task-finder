@@ -53,12 +53,17 @@ const SubscriptionDialog = ({ open, onOpenChange, hint }: Props) => {
   const [payEnabled, setPayEnabled] = useState(true);
   const [price, setPrice] = useState(PRO_PRICE);
   const [months, setMonths] = useState(1);
+  const [email, setEmail] = useState(user?.email || '');
   const [cancelOpen, setCancelOpen] = useState(false);
   const isPro = !!user?.isPro;
   const isAdmin = !!user?.isAdmin;
   const autoRenew = user?.autoRenew !== false;
   const total = price * months;
   const perks = PRO_PERKS;
+
+  useEffect(() => {
+    if (open && user?.email) setEmail(user.email);
+  }, [open, user?.email]);
 
   useEffect(() => {
     if (!open) return;
@@ -71,9 +76,17 @@ const SubscriptionDialog = ({ open, onOpenChange, hint }: Props) => {
   }, [open]);
 
   const buy = async () => {
+    const mail = email.trim();
+    if (!/^[^@\s]+@[^@\s.]+\.[a-zA-Z]{2,}$/.test(mail)) {
+      toast({
+        title: 'Проверьте почту',
+        description: 'На неё придёт чек об оплате.',
+      });
+      return;
+    }
     setBusy(true);
     try {
-      const r = await startPayment(months);
+      const r = await startPayment(months, mail);
       if (r.paymentsEnabled && r.paymentUrl) {
         window.location.href = r.paymentUrl;
         return;
@@ -87,6 +100,8 @@ const SubscriptionDialog = ({ open, onOpenChange, hint }: Props) => {
       toast(
         code === 'payment_required'
           ? { title: 'Подписка оформляется только после оплаты' }
+          : code === 'receipt_contact_required'
+          ? { title: 'Нужна почта для чека', description: 'Укажите адрес — на него придёт чек.' }
           : { title: 'Не удалось оформить', description: 'Попробуйте ещё раз чуть позже.' },
       );
     } finally {
@@ -196,6 +211,27 @@ const SubscriptionDialog = ({ open, onOpenChange, hint }: Props) => {
             {price} ₽ × {months} мес ={' '}
             <span className="font-head text-lg text-foreground">{total} ₽</span>
           </p>
+
+          {payEnabled && (
+            <div className="space-y-1.5">
+              <label htmlFor="receipt-email" className="text-sm text-muted-foreground">
+                Почта для чека
+              </label>
+              <input
+                id="receipt-email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@mail.ru"
+                className="min-h-[44px] w-full rounded-2xl border border-line bg-tile px-4 text-base text-foreground outline-none transition-colors placeholder:text-chip focus:border-primary"
+              />
+              <p className="text-xs text-chip">
+                Пришлём электронный чек после оплаты — по закону он обязателен.
+              </p>
+            </div>
+          )}
 
           {payEnabled ? (
             <button

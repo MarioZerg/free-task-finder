@@ -39,6 +39,7 @@ TOCHKA_TOKEN = os.environ.get('TOCHKA_MERCHANT_TOKEN', '').strip()
 TOCHKA_CUSTOMER_CODE = os.environ.get('TOCHKA_CUSTOMER_CODE', '').strip()
 TOCHKA_TERMINAL_ID = os.environ.get('TOCHKA_TERMINAL_ID', '').strip()
 TOCHKA_API = 'https://enter.tochka.com/uapi/acquiring/v1.0/payments'
+TOCHKA_RECEIPT_API = 'https://enter.tochka.com/uapi/acquiring/v1.0/payments_with_receipt'
 SITE_URL = os.environ.get('SITE_URL', 'https://dodelay.ru')
 PRO_PRICE = 990
 PAID_STATUSES = ('approved', 'confirmed', 'paid', 'success', 'succeeded')
@@ -240,6 +241,7 @@ def _user_row(
     }
     if private:
         data['phone'] = row['phone']
+        data['email'] = row.get('email')
         data['contact'] = row['contact']
         data['token'] = row['token']
         data['isAdmin'] = bool(row.get('is_admin'))
@@ -256,6 +258,21 @@ def _is_pro(until) -> bool:
 def _int_safe(v) -> int:
     digits = re.sub(r'\D', '', str(v or ''))
     return int(digits) if digits else 0
+
+
+def _clean_email(v) -> str:
+    email = str(v or '').strip().lower()[:160]
+    return email if re.match(r'^[^@\s]+@[^@\s.]+\.[a-z]{2,}$', email) else ''
+
+
+def _clean_phone(v) -> str:
+    # Банк принимает телефон в формате +7XXXXXXXXXX.
+    digits = re.sub(r'\D', '', str(v or ''))
+    if len(digits) == 11 and digits[0] in '78':
+        return '+7' + digits[1:]
+    if len(digits) == 10:
+        return '+7' + digits
+    return ''
 
 
 def _online(seen) -> bool:
@@ -819,9 +836,23 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             return _resp(401, {'error': 'no_token'})
         months = max(1, min(12, _int_safe(body.get('months')) or 1))
         amount = PRO_PRICE * months
+        # Чек по 54-ФЗ уходит на почту покупателя. Телефон берём из профиля
+        # как запасной канал — банк требует хотя бы один контакт.
+        r_email = _clean_email(body.get('email') or me.get('email') or '')
+        r_phone = _clean_phone(me.get('phone') or '')
+        if not r_email and not r_phone:
+            return _resp(400, {'error': 'receipt_contact_required'})
+        if r_email and r_email != (me.get('email') or ''):
+            cur.execute(
+                f"UPDATE {SCHEMA}.users SET email = '{_esc(r_email)}' WHERE id = {me['id']}"
+            )
         cur.execute(
-            f"""INSERT INTO {SCHEMA}.payments (user_id, amount, months, status)
-                VALUES ({me['id']}, {amount}, {months}, 'created') RETURNING id"""
+            f"""INSERT INTO {SCHEMA}.payments
+                    (user_id, amount, months, status, receipt_email, receipt_phone, receipt_status)
+                VALUES ({me['id']}, {amount}, {months}, 'created',
+                        {f"'{_esc(r_email)}'" if r_email else 'NULL'},
+                        {f"'{_esc(r_phone)}'" if r_phone else 'NULL'},
+                        'pending') RETURNING id"""
         )
         payment_id = cur.fetchone()['id']
 
@@ -833,31 +864,64 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 'months': months,
             })
 
-        payload = json.dumps({
-            'Data': {
-                'customerCode': TOCHKA_CUSTOMER_CODE,
-                'amount': f'{amount}.00',
-                'purpose': f'Подписка Доделай PRO на {months} мес. Платёж №{payment_id}',
-                # Отдельные страницы вместо возврата сразу в кабинет: после
-                # оплаты человеку нужно показать понятный итог, а банк
-                # присылает его раньше, чем подтверждаются деньги.
-                'redirectUrl': f'{SITE_URL}/payment/success?pid={payment_id}',
-                'failRedirectUrl': f'{SITE_URL}/payment/fail?pid={payment_id}',
-                'paymentMode': ['card', 'sbp'],
-                'merchantId': TOCHKA_TERMINAL_ID or TOCHKA_CUSTOMER_CODE,
-                'preAuthorization': False,
-                'ttl': 60,
-            }
-        }).encode()
+        purpose = f'Подписка Доделай PRO на {months} мес. Платёж №{payment_id}'
+        data_block: Dict[str, Any] = {
+            'customerCode': TOCHKA_CUSTOMER_CODE,
+            'amount': f'{amount}.00',
+            'purpose': purpose,
+            # Отдельные страницы вместо возврата сразу в кабинет: после
+            # оплаты человеку нужно показать понятный итог, а банк
+            # присылает его раньше, чем подтверждаются деньги.
+            'redirectUrl': f'{SITE_URL}/payment/success?pid={payment_id}',
+            'failRedirectUrl': f'{SITE_URL}/payment/fail?pid={payment_id}',
+            'paymentMode': ['card', 'sbp'],
+            'merchantId': TOCHKA_TERMINAL_ID or TOCHKA_CUSTOMER_CODE,
+            'preAuthorization': False,
+            'ttl': 60,
+        }
+        # Чек банк принимает тем же запросом, но по отдельному адресу.
+        # Услуга без НДС (ИП на УСН), поэтому vatType = none.
+        client: Dict[str, Any] = {}
+        if r_email:
+            client['email'] = r_email
+        if r_phone:
+            client['phone'] = r_phone
+        data_block['Client'] = client
+        data_block['Items'] = [{
+            'name': f'Подписка «Доделай PRO», {months} мес.',
+            'amount': f'{amount}.00',
+            'price': f'{PRO_PRICE}.00',
+            'quantity': months,
+            'paymentMethod': 'full_payment',
+            'paymentObject': 'service',
+            'vatType': 'none',
+            'measure': 'pc',
+        }]
+        payload = json.dumps({'Data': data_block}).encode()
         try:
-            data = _tochka_call('POST', TOCHKA_API, payload)
+            receipt_sent = True
+            try:
+                data = _tochka_call('POST', TOCHKA_RECEIPT_API, payload)
+            except urllib.error.HTTPError as receipt_exc:
+                # Фискализация может быть ещё не подключена у банка. Тогда
+                # берём деньги без чека, а не рушим оплату целиком.
+                if receipt_exc.code not in (400, 403, 404, 424):
+                    raise
+                print(f'TOCHKA_RECEIPT_FALLBACK {receipt_exc.code}')
+                receipt_sent = False
+                data_block.pop('Client', None)
+                data_block.pop('Items', None)
+                data = _tochka_call(
+                    'POST', TOCHKA_API, json.dumps({'Data': data_block}).encode()
+                )
             info = (data.get('Data') or {})
             url = info.get('paymentLink') or info.get('paymentUrl') or ''
             operation = info.get('operationId') or ''
             cur.execute(
                 f"""UPDATE {SCHEMA}.payments
                     SET payment_url = '{_esc(url)}', operation_id = '{_esc(operation)}',
-                        provider = 'tochka', status = 'pending'
+                        provider = 'tochka', status = 'pending',
+                        receipt_status = '{'pending' if receipt_sent else 'unavailable'}'
                     WHERE id = {payment_id}"""
             )
             return _resp(200, {

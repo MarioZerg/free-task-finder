@@ -54,6 +54,8 @@ export interface User {
   /** Описание себя как заказчика: какие задачи поручает, что важно. */
   aboutCustomer?: string | null;
   avatar?: string | null;
+  /** Почта для чеков по оплате подписки. */
+  email?: string | null;
   /** Два независимых режима: можно включить оба или оставить один. */
   asExecutor?: boolean;
   asCustomer?: boolean;
@@ -123,13 +125,14 @@ export const updateMyProfessions = (ids: number[]): Promise<{ user: User }> =>
 
 export const payStart = (
   months: number,
+  email?: string,
 ): Promise<{
   paymentsEnabled: boolean;
   paymentId?: number;
   paymentUrl?: string;
   amount: number;
 }> =>
-  api.auth('pay_start', { method: 'POST', body: { months } }) as Promise<{
+  api.auth('pay_start', { method: 'POST', body: { months, email } }) as Promise<{
     paymentsEnabled: boolean;
     paymentId?: number;
     paymentUrl?: string;

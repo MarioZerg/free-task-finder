@@ -62,7 +62,7 @@ interface AppState {
   updateProfile: (payload: ProfilePayload) => Promise<void>;
   setUserData: (user: User) => void;
   subscribe: (months: number) => Promise<void>;
-  startPayment: (months: number) => Promise<{
+  startPayment: (months: number, email?: string) => Promise<{
     paymentsEnabled: boolean;
     paymentUrl?: string;
     paymentId?: number;
@@ -246,8 +246,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     [refresh],
   );
 
-  const startPayment = useCallback<AppState['startPayment']>(async (months) => {
-    const r = await payStart(months);
+  const startPayment = useCallback<AppState['startPayment']>(async (months, email) => {
+    const r = await payStart(months, email);
     reachGoal('pay_start', { months, amount: r.amount ?? 0 });
     return {
       paymentsEnabled: !!r.paymentsEnabled,
