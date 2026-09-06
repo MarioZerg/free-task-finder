@@ -10,6 +10,7 @@ import {
   PROFESSION_CREATIVE,
   DEFAULT_CREATIVE,
   CREATIVE_FORMATS,
+  VIDEO_FORMATS,
 } from '@/data/adKeywords';
 
 /** Сборка кампаний для Яндекс Директа в формате Директ Коммандера.
@@ -53,6 +54,8 @@ export interface AdRow {
   region: string;
   /** Ссылки на картинки для РСЯ — по одной на каждую пропорцию */
   images: string[];
+  /** Ссылки на видеоролики — по одной на каждую пропорцию */
+  videos?: string[];
 }
 
 /** Регион показа для каждого города — Директ понимает их по названию.
@@ -169,6 +172,17 @@ export const creativeUrls = (professionSlug: string | null, base = SITE): string
   return CREATIVE_FORMATS.map((f) => `${base}/ads/${theme}-${f}.jpg`);
 };
 
+/** Ссылки на видеоролики профессии во всех пропорциях.
+ *  По данным Директа, объявления с видео дают в среднем 7% дополнительного
+ *  охвата: на части площадок вместо картинки крутится ролик. Если видео
+ *  не вписывается в блок, Директ сам покажет картинку — поэтому оставляем
+ *  и то, и другое. */
+export const videoUrls = (professionSlug: string | null, base = SITE): string[] => {
+  const theme =
+    (professionSlug && PROFESSION_CREATIVE[professionSlug]) || DEFAULT_CREATIVE;
+  return VIDEO_FORMATS.map((f) => `${base}/ads/${theme}-${f}.mp4`);
+};
+
 /** Ключевые фразы группы: базовая фраза плюс коммерческие добавки и город. */
 export const buildPhrases = (professionSlug: string, cityNominative: string): string[] => {
   const base = PROFESSION_KEYWORDS[professionSlug] || [];
@@ -215,6 +229,7 @@ export const buildRows = (opts: ExportOptions): AdRow[] => {
           url,
           region: CITY_REGION[city.slug] || 'Ярославская область',
           images: creativeUrls(p.slug, opts.siteUrl || SITE),
+          videos: videoUrls(p.slug, opts.siteUrl || SITE),
         });
       });
     }
@@ -241,6 +256,7 @@ const HEADERS = [
   'Заголовок 1', 'Заголовок 2', 'Заголовок 3', 'Заголовок 4', 'Заголовок 5',
   'Заголовок 6', 'Заголовок 7', 'Текст 1', 'Текст 2', 'Текст 3',
   'Изображение 1', 'Изображение 2', 'Изображение 3', 'Изображение 4',
+  'Видео 1', 'Видео 2', 'Видео 3',
   'Ссылка', 'Отображаемая ссылка', 'Регион', 'Организация Яндекс Бизнеса',
   'Ставка', 'Ставка в сетях', 'Минус-фразы на группу',
 ];
@@ -253,7 +269,8 @@ const COL = {
   title: 8, title2: 9, title3: 10, title4: 11, title5: 12, title6: 13, title7: 14,
   text: 15, text2: 16, text3: 17,
   img1: 18, img2: 19, img3: 20, img4: 21,
-  url: 22, region: 24, bid: 26, bidNet: 27, negatives: 28,
+  vid1: 22, vid2: 23, vid3: 24,
+  url: 25, region: 27, bid: 29, bidNet: 30, negatives: 31,
 } as const;
 
 /** Разделитель — табуляция: этого требует формат Коммандера.
@@ -384,6 +401,9 @@ export const toCsv = (rows: AdRow[], opts: CsvOptions = {}): string => {
         img2: main.images[1] || '',
         img3: main.images[2] || '',
         img4: main.images[3] || '',
+        vid1: main.videos?.[0] || '',
+        vid2: main.videos?.[1] || '',
+        vid3: main.videos?.[2] || '',
         url: main.url,
       });
     });
@@ -500,6 +520,7 @@ export const buildWorkerRows = (opts: ExportOptions): AdRow[] => {
         region,
         // Общая группа не про специальность — берём картинку с человеком
         images: creativeUrls(null, opts.siteUrl || SITE),
+        videos: videoUrls(null, opts.siteUrl || SITE),
       });
     });
 
@@ -532,6 +553,7 @@ export const buildWorkerRows = (opts: ExportOptions): AdRow[] => {
             url,
             region,
             images: creativeUrls(p.slug, opts.siteUrl || SITE),
+            videos: videoUrls(p.slug, opts.siteUrl || SITE),
           });
         }
       });
