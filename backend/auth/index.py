@@ -15,6 +15,12 @@ import psycopg2
 import psycopg2.extras
 
 try:
+    from profanity import clean as _clean
+except ImportError:  # pragma: no cover
+    def _clean(text: str) -> str:
+        return text
+
+try:
     from push import VAPID_PUBLIC_KEY, push_enabled, send_push
 except ImportError:  # pragma: no cover
     VAPID_PUBLIC_KEY = ''
@@ -807,14 +813,14 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
 
         if not body.get('acceptedTerms'):
             return _resp(400, {'error': 'terms_required'})
-        name = str(body.get('name', '')).strip()[:160]
+        name = _clean(str(body.get('name', '')).strip()[:160])
         if len(name) < 2:
             return _resp(400, {'error': 'bad_name'})
         city = str(body.get('city', 'Ярославль')).strip()[:160] or 'Ярославль'
         phone = str(body.get('phone', '')).strip()[:60]
         contact = str(body.get('contact', '')).strip()[:200] or f'MAX: @{max_id}'
-        skill = str(body.get('skill', '')).strip()[:200]
-        about = str(body.get('about', '')).strip()[:1000]
+        skill = _clean(str(body.get('skill', '')).strip()[:200])
+        about = _clean(str(body.get('about', '')).strip()[:1000])
         new_token = secrets.token_urlsafe(32)
         gender = str(body.get('gender', '')).strip().lower()
         if gender not in ('male', 'female'):
@@ -1181,15 +1187,15 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         row = _me(cur, token)
         if not row:
             return _resp(401, {'error': 'no_token'})
-        name = str(body.get('name', row['name'])).strip()[:160] or row['name']
+        name = _clean(str(body.get('name', row['name'])).strip()[:160]) or row['name']
         city = str(body.get('city', row['city'])).strip()[:160] or row['city']
         phone = str(body.get('phone', row['phone'] or '')).strip()[:60]
         contact = str(body.get('contact', row['contact'] or '')).strip()[:200]
-        skill = str(body.get('skill', row['skill'] or '')).strip()[:200]
-        about = str(body.get('about', row['about'] or '')).strip()[:1000]
-        about_customer = str(
+        skill = _clean(str(body.get('skill', row['skill'] or '')).strip()[:200])
+        about = _clean(str(body.get('about', row['about'] or '')).strip()[:1000])
+        about_customer = _clean(str(
             body.get('aboutCustomer', row.get('about_customer') or '')
-        ).strip()[:1000]
+        ).strip()[:1000])
 
         # Режимы профиля. Совсем выключить оба нельзя — иначе человек
         # пропал бы из вкладки «Люди» и не смог бы ни заказывать, ни работать.

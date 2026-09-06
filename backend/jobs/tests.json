@@ -23,6 +23,20 @@
       "method": "GET",
       "path": "/?action=mine",
       "expectedStatus": 401
+    },
+    {
+      "name": "Переписки закрыты без токена",
+      "method": "POST",
+      "path": "/?action=admin_chats",
+      "body": { "kind": "jobs" },
+      "expectedStatus": 401
+    },
+    {
+      "name": "Просмотр переписки закрыт без токена",
+      "method": "POST",
+      "path": "/?action=admin_chat",
+      "body": { "kind": "job", "jobId": 1 },
+      "expectedStatus": 401
     }
   ]
 }

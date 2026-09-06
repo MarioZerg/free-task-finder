@@ -6,6 +6,7 @@ export type SectionId =
   | 'support'
   | 'jobs'
   | 'reviews'
+  | 'chats'
   | 'users'
   | 'broadcast'
   | 'preview'
@@ -61,6 +62,12 @@ export const navGroups: { title: string; items: NavItem[] }[] = [
         label: 'Отзывы',
         icon: 'Star',
         hint: 'Оценки участников друг другу',
+      },
+      {
+        id: 'chats',
+        label: 'Переписки',
+        icon: 'MessagesSquare',
+        hint: 'Общение по сделкам и личные сообщения',
       },
       {
         id: 'users',

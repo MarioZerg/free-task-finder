@@ -9,6 +9,12 @@ import psycopg2
 import psycopg2.extras
 
 try:
+    from profanity import clean as _clean
+except ImportError:  # pragma: no cover
+    def _clean(text: str) -> str:
+        return text
+
+try:
     from push import send_push
 except ImportError:  # pragma: no cover
     def send_push(*args, **kwargs) -> int:
@@ -778,6 +784,150 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             )
             return _resp(200, {'reviews': [dict(r) for r in cur.fetchall()]})
 
+        if method == 'POST' and action == 'admin_chats':
+            # Единый список переписок: и обсуждения сделок, и личные.
+            # Админу важно видеть их вместе — спор чаще всего начинается
+            # в заказе, а продолжается в личных сообщениях.
+            kind = str(body.get('kind', 'jobs'))
+            search = _esc(str(body.get('search', '')).strip()[:80])
+            if kind == 'direct':
+                like = f" AND (LOWER(a.name) LIKE LOWER('%{search}%') OR LOWER(b.name) LIKE LOWER('%{search}%'))" if search else ''
+                cur.execute(
+                    f"""SELECT LEAST(m.from_id, m.to_id) AS u1,
+                               GREATEST(m.from_id, m.to_id) AS u2,
+                               COUNT(*) AS total,
+                               MAX(m.created_at) AS last_at,
+                               a.name AS u1_name, a.avatar AS u1_avatar,
+                               b.name AS u2_name, b.avatar AS u2_avatar
+                        FROM {SCHEMA}.direct_messages m
+                        JOIN {SCHEMA}.users a ON a.id = LEAST(m.from_id, m.to_id)
+                        JOIN {SCHEMA}.users b ON b.id = GREATEST(m.from_id, m.to_id)
+                        WHERE TRUE{like}
+                        GROUP BY 1, 2, a.name, a.avatar, b.name, b.avatar
+                        ORDER BY last_at DESC LIMIT 200"""
+                )
+                rows = []
+                for r in cur.fetchall():
+                    rows.append({
+                        'kind': 'direct',
+                        'id': f"{r['u1']}-{r['u2']}",
+                        'total': r['total'],
+                        'lastAt': _json_default(r['last_at']),
+                        'title': f"{r['u1_name']} и {r['u2_name']}",
+                        'sideA': {'id': r['u1'], 'name': r['u1_name'], 'avatar': r['u1_avatar']},
+                        'sideB': {'id': r['u2'], 'name': r['u2_name'], 'avatar': r['u2_avatar']},
+                    })
+                return _resp(200, {'chats': rows})
+
+            like = f" AND (LOWER(j.title) LIKE LOWER('%{search}%') OR LOWER(o.name) LIKE LOWER('%{search}%') OR LOWER(COALESCE(e.name, '')) LIKE LOWER('%{search}%'))" if search else ''
+            cur.execute(
+                f"""SELECT j.id, j.title, j.status, j.final_price, j.price,
+                           COUNT(m.id) AS total, MAX(m.created_at) AS last_at,
+                           o.id AS owner_id, o.name AS owner_name, o.avatar AS owner_avatar,
+                           e.id AS exec_id, e.name AS exec_name, e.avatar AS exec_avatar
+                    FROM {SCHEMA}.jobs j
+                    JOIN {SCHEMA}.users o ON o.id = j.owner_id
+                    LEFT JOIN {SCHEMA}.users e ON e.id = j.assigned_executor_id
+                    JOIN {SCHEMA}.job_messages m ON m.job_id = j.id
+                    WHERE TRUE{like}
+                    GROUP BY j.id, j.title, j.status, j.final_price, j.price,
+                             o.id, o.name, o.avatar, e.id, e.name, e.avatar
+                    ORDER BY last_at DESC LIMIT 200"""
+            )
+            rows = []
+            for r in cur.fetchall():
+                rows.append({
+                    'kind': 'job',
+                    'id': str(r['id']),
+                    'jobId': r['id'],
+                    'title': r['title'],
+                    'status': r['status'],
+                    'price': r['final_price'] or r['price'],
+                    'total': r['total'],
+                    'lastAt': _json_default(r['last_at']),
+                    'sideA': {'id': r['owner_id'], 'name': r['owner_name'], 'avatar': r['owner_avatar']},
+                    'sideB': ({'id': r['exec_id'], 'name': r['exec_name'], 'avatar': r['exec_avatar']}
+                              if r['exec_id'] else None),
+                })
+            return _resp(200, {'chats': rows})
+
+        if method == 'POST' and action == 'admin_chat':
+            # Сама переписка целиком. Ключ приходит от списка выше:
+            # для сделки это номер заказа, для личной — пара участников.
+            kind = str(body.get('kind', 'job'))
+            if kind == 'direct':
+                pair = str(body.get('id', ''))
+                parts = pair.split('-')
+                if len(parts) != 2:
+                    return _resp(400, {'error': 'bad_pair'})
+                u1, u2 = _int(parts[0]), _int(parts[1])
+                if not u1 or not u2:
+                    return _resp(400, {'error': 'bad_pair'})
+                cur.execute(
+                    f"""SELECT m.id, m.text, m.created_at, m.read_at, m.from_id,
+                               u.name AS author_name, u.avatar AS author_avatar
+                        FROM {SCHEMA}.direct_messages m
+                        JOIN {SCHEMA}.users u ON u.id = m.from_id
+                        WHERE (m.from_id = {u1} AND m.to_id = {u2})
+                           OR (m.from_id = {u2} AND m.to_id = {u1})
+                        ORDER BY m.created_at LIMIT 500"""
+                )
+                msgs = [{
+                    'id': r['id'],
+                    'text': r['text'],
+                    'createdAt': _json_default(r['created_at']),
+                    'authorId': r['from_id'],
+                    'authorName': r['author_name'],
+                    'authorAvatar': r['author_avatar'],
+                    'read': bool(r['read_at']),
+                } for r in cur.fetchall()]
+                return _resp(200, {'messages': msgs, 'job': None})
+
+            jid = _int(body.get('jobId') or body.get('id'))
+            if not jid:
+                return _resp(400, {'error': 'bad_job'})
+            cur.execute(
+                f"""SELECT m.id, m.text, m.created_at, m.author_id,
+                           u.name AS author_name, u.avatar AS author_avatar
+                    FROM {SCHEMA}.job_messages m
+                    JOIN {SCHEMA}.users u ON u.id = m.author_id
+                    WHERE m.job_id = {jid}
+                    ORDER BY m.created_at LIMIT 500"""
+            )
+            msgs = [{
+                'id': r['id'],
+                'text': r['text'],
+                'createdAt': _json_default(r['created_at']),
+                'authorId': r['author_id'],
+                'authorName': r['author_name'],
+                'authorAvatar': r['author_avatar'],
+                'read': True,
+            } for r in cur.fetchall()]
+            cur.execute(
+                f"""SELECT j.id, j.title, j.description, j.status, j.price, j.final_price,
+                           j.created_at, j.completed_at,
+                           o.name AS owner_name, e.name AS exec_name
+                    FROM {SCHEMA}.jobs j
+                    JOIN {SCHEMA}.users o ON o.id = j.owner_id
+                    LEFT JOIN {SCHEMA}.users e ON e.id = j.assigned_executor_id
+                    WHERE j.id = {jid}"""
+            )
+            jr = cur.fetchone()
+            job_info = None
+            if jr:
+                job_info = {
+                    'id': jr['id'],
+                    'title': jr['title'],
+                    'description': jr['description'],
+                    'status': jr['status'],
+                    'price': jr['final_price'] or jr['price'],
+                    'createdAt': _json_default(jr['created_at']),
+                    'completedAt': _json_default(jr['completed_at']),
+                    'ownerName': jr['owner_name'],
+                    'execName': jr['exec_name'],
+                }
+            return _resp(200, {'messages': msgs, 'job': job_info})
+
         if method == 'POST' and action == 'admin_review_action':
             rid = _int(body.get('reviewId'))
             act_type = str(body.get('act', ''))
@@ -838,8 +988,8 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     'expiresAt': _json_default(active['expires_at']) if active['expires_at'] else None,
                 },
             })
-        title = str(body.get('title', '')).strip()[:200]
-        description = str(body.get('description', '')).strip()[:2000]
+        title = _clean(str(body.get('title', '')).strip()[:200])
+        description = _clean(str(body.get('description', '')).strip()[:2000])
         parsed = _parse_price(body)
         if isinstance(parsed, str):
             return _resp(400, {'error': parsed})
@@ -898,8 +1048,8 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             return _resp(403, {'error': 'not_owner'})
         if target['status'] not in ('open', 'cancelled'):
             return _resp(400, {'error': 'job_in_work'})
-        title = str(body.get('title', '')).strip()[:200]
-        description = str(body.get('description', '')).strip()[:2000]
+        title = _clean(str(body.get('title', '')).strip()[:200])
+        description = _clean(str(body.get('description', '')).strip()[:2000])
         parsed = _parse_price(body)
         if isinstance(parsed, str):
             return _resp(400, {'error': parsed})
@@ -951,7 +1101,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
 
     if method == 'POST' and action == 'dm_send':
         to_id = _int(body.get('toId'))
-        text = str(body.get('text', '')).strip()[:1000]
+        text = _clean(str(body.get('text', '')).strip()[:1000])
         if not to_id or not text:
             return _resp(400, {'error': 'bad_message'})
         cur.execute(f"SELECT role, max_user_id, name FROM {SCHEMA}.users WHERE id = {to_id}")
@@ -1013,7 +1163,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             return _resp(404, {'error': 'executor_not_found'})
         if _busy_executor(cur, executor_id, _is_pro(ex)):
             return _resp(400, {'error': 'executor_busy'})
-        note = str(body.get('note', '')).strip()[:500] or 'Заказчик приглашает вас на заказ.'
+        note = _clean(str(body.get('note', '')).strip()[:500]) or 'Заказчик приглашает вас на заказ.'
         cur.execute(
             f"""INSERT INTO {SCHEMA}.job_invites (job_id, executor_id, customer_id, note)
                 VALUES ({jid}, {executor_id}, {me['id']}, '{_esc(note)}')
@@ -1196,7 +1346,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             return _resp(400, {'error': 'job_closed'})
         if _busy_executor(cur, me['id'], _is_pro(me)):
             return _resp(400, {'error': 'executor_busy'})
-        note = str(body.get('note', '')).strip()[:500] or 'Готов взяться.'
+        note = _clean(str(body.get('note', '')).strip()[:500]) or 'Готов взяться.'
         cur.execute(
             f"""INSERT INTO {SCHEMA}.job_responses (job_id, executor_id, note)
                 VALUES ({job_id}, {me['id']}, '{_esc(note)}')
@@ -1385,7 +1535,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
     if method == 'POST' and action == 'message':
         if me['id'] not in (job['owner_id'], job['assigned_executor_id']):
             return _resp(403, {'error': 'not_participant'})
-        text = str(body.get('text', '')).strip()[:1000]
+        text = _clean(str(body.get('text', '')).strip()[:1000])
         if not text:
             return _resp(400, {'error': 'empty_message'})
         cur.execute(
@@ -1433,7 +1583,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         else:
             return _resp(403, {'error': 'not_participant'})
         rating = max(1, min(5, _int(body.get('rating'), 5)))
-        text = str(body.get('text', '')).strip()[:1000]
+        text = _clean(str(body.get('text', '')).strip()[:1000])
         cur.execute(
             f"""INSERT INTO {SCHEMA}.reviews
                   (job_id, author_id, target_id, rating, text, target_side)
