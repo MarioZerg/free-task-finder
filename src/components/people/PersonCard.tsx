@@ -78,6 +78,22 @@ const PersonCard = memo(
                   Заказчик
                 </span>
               )}
+              {/* Даём понять, что человек рассказал о себе. Без подписки
+                  текста не видно, поэтому метка сразу объясняет, что откроет
+                  PRO — иначе клик по профилю выглядел бы обманом ожиданий. */}
+              {user.aboutLocked ? (
+                <span className="flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600">
+                  <Icon name="Lock" size={11} />
+                  О себе — в PRO
+                </span>
+              ) : (
+                (user.about || user.aboutCustomer) && (
+                  <span className="flex items-center gap-1 rounded-full bg-tile px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                    <Icon name="FileText" size={11} />
+                    Есть описание
+                  </span>
+                )
+              )}
             </p>
           </div>
           <Icon name="ChevronRight" size={18} className="shrink-0 text-chip" />
