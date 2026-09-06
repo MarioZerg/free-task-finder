@@ -148,29 +148,35 @@ const LoginDialog = () => {
     return false;
   };
 
-  /* Вкладку открываем ДО запроса к серверу: браузер разрешает открывать
-     окна только прямо в ответ на клик. Если ждать ответа, всплывающее окно
-     заблокируется. Поэтому сначала пустая вкладка, потом в неё адрес. */
-  const requestCode = async (openMax = true) => {
+  /* Код запрашиваем заранее, как только открылось окно входа. Тогда кнопка
+     «Войти через MAX» — обычная ссылка с готовым адресом, и браузер её не
+     блокирует. Раньше мы открывали пустую вкладку и дописывали адрес после
+     ответа сервера: часть браузеров считала это всплывающим окном и рубила
+     переход. */
+  const requestCode = useCallback(async () => {
     setBusy(true);
     setError('');
-    const tab = openMax ? window.open('', '_blank') : null;
     try {
       const r = await startMaxLogin();
       setCode(r.code);
       setBotLink(r.botLink);
       setLeft(CODE_TTL);
       doneRef.current = false;
-      setStep('code');
-      if (tab) tab.location.href = r.botLink;
-      else if (openMax) window.location.href = r.botLink;
+      return r.botLink;
     } catch {
-      tab?.close();
       setError(errorText.request_failed);
+      return '';
     } finally {
       setBusy(false);
     }
-  };
+  }, [startMaxLogin]);
+
+  /* Готовим код сразу при открытии окна — к моменту клика ссылка уже есть. */
+  useEffect(() => {
+    if (!loginOpen || step !== 'start' || code || busy) return;
+    requestCode();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loginOpen, step]);
 
   useEffect(() => {
     if (step !== 'code' || !code) return;
@@ -311,14 +317,27 @@ const LoginDialog = () => {
                 {busy ? 'Создаём…' : 'Создать аккаунт'}
               </button>
             ) : step === 'start' ? (
-              <button
-                onClick={() => requestCode()}
-                disabled={busy}
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-60"
+              /* Настоящая ссылка, а не кнопка: браузеры и мессенджеры
+                 пропускают такой переход без блокировок. */
+              <a
+                href={botLink || undefined}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => {
+                  if (!botLink) {
+                    e.preventDefault();
+                    return;
+                  }
+                  setStep('code');
+                }}
+                aria-disabled={!botLink}
+                className={`flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02] ${
+                  botLink ? '' : 'pointer-events-none opacity-60'
+                }`}
               >
                 <Icon name="MessageCircle" size={18} />
-                {busy ? 'Открываем MAX…' : 'Войти через MAX'}
-              </button>
+                {botLink ? 'Войти через MAX' : 'Готовим вход…'}
+              </a>
             ) : null}
 
             <p className="text-center text-xs text-chip">

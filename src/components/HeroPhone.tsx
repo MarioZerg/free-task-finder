@@ -100,6 +100,7 @@ const TapHand = () => (
 const HeroPhone = () => {
   const [i, setI] = useState(0);
   const [live, setLive] = useState(true);
+  const [held, setHeld] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
   const scene = SCENES[i];
 
@@ -121,11 +122,13 @@ const HeroPhone = () => {
     };
   }, []);
 
+  /* Пока на телефон навели мышь или держат палец — история стоит на месте.
+     Человек захотел рассмотреть экран, и уводить его силой было бы грубо. */
   useEffect(() => {
-    if (!live) return;
+    if (!live || held) return;
     const t = window.setTimeout(() => setI((v) => (v + 1) % SCENES.length), HOLD[scene]);
     return () => window.clearTimeout(t);
-  }, [i, scene, live]);
+  }, [i, scene, live, held]);
 
   useEffect(() => {
     if (scene !== 'chat1') return;
@@ -155,14 +158,31 @@ const HeroPhone = () => {
             : 'Отзыв заказчика';
 
   return (
-    <div ref={boxRef} className="relative mx-auto h-[600px] w-full max-w-[340px] animate-rise rounded-[38px] bg-[linear-gradient(155deg,hsl(var(--screen))_0%,hsl(100_10%_22%)_100%)] p-3 shadow-[0_40px_70px_-38px_rgba(30,40,25,.45)] sm:h-[660px] sm:max-w-[372px]">
+    <div
+      ref={boxRef}
+      onMouseEnter={() => setHeld(true)}
+      onMouseLeave={() => setHeld(false)}
+      onTouchStart={() => setHeld(true)}
+      onTouchEnd={() => setHeld(false)}
+      onTouchCancel={() => setHeld(false)}
+      className="relative mx-auto h-[600px] w-full max-w-[340px] animate-rise rounded-[38px] bg-[linear-gradient(155deg,hsl(var(--screen))_0%,hsl(100_10%_22%)_100%)] p-3 shadow-[0_40px_70px_-38px_rgba(30,40,25,.45)] sm:h-[660px] sm:max-w-[372px]"
+    >
       <div className="flex h-full flex-col overflow-hidden rounded-[30px] bg-screen px-4 py-5 text-[hsl(var(--primary-foreground))]">
         <div className="mb-3.5 flex items-center justify-between">
           <div className="text-base font-medium">{header}</div>
-          <div className="flex items-center gap-1.5 text-xs opacity-70">
-            <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            онлайн
-          </div>
+          {/* Показываем, что остановка — это реакция на человека,
+              а не зависшая анимация. */}
+          {held ? (
+            <div className="flex items-center gap-1.5 text-xs text-emerald-300">
+              <Icon name="Pause" size={12} />
+              пауза
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 text-xs opacity-70">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              онлайн
+            </div>
+          )}
         </div>
 
         {showFeed && (

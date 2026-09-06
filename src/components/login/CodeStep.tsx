@@ -9,7 +9,7 @@ interface Props {
   mmss: string;
   botLink: string;
   copied: boolean;
-  requestCode: (openMax?: boolean) => void;
+  requestCode: () => void;
   busy: boolean;
 }
 
@@ -64,7 +64,7 @@ const CodeStep = ({ code, codeRef, copyCode, left, mmss, botLink, copied, reques
           {copied ? 'Код скопирован' : 'Скопировать код'}
         </button>
         <button
-          onClick={() => requestCode(false)}
+          onClick={() => requestCode()}
           disabled={busy}
           className="min-h-[44px] flex-1 rounded-full border border-line px-3 py-3 text-sm transition-colors hover:border-primary/50 disabled:opacity-60"
         >
