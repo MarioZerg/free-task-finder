@@ -229,41 +229,54 @@
     --role-accent: 24 42% 42%;
   }
 
-  /* Живой блик на главных кнопках: светлая полоса раз в несколько секунд
-     проходит по заливке. Тянем градиент шире кнопки и двигаем фон — это
-     работает на видеокарте и не дёргает раскладку страницы. */
+  /* Живой блик на главных кнопках: светлая полоса проходит по заливке
+     раз в несколько секунд.
+
+     Двигаем сам слой через transform — браузер считает это на видеокарте,
+     кадры не пропускаются. Раньше анимировался background-position с
+     ease-in-out: полоса замедлялась у краёв, и казалось, будто она замирает
+     и пропадает. Теперь ход строго равномерный (linear), а пауза между
+     проходами честная — блик просто ждёт за краем кнопки. */
   .btn-shine {
     position: relative;
     overflow: hidden;
+    /* Своя область наложения: блик остаётся под текстом кнопки,
+       а не засвечивает надпись. */
     isolation: isolate;
   }
 
   .btn-shine::after {
     content: "";
     position: absolute;
-    inset: 0;
+    top: 0;
+    bottom: 0;
+    left: 0;
     z-index: -1;
+    width: 60%;
     background: linear-gradient(
-      110deg,
-      transparent 25%,
-      hsl(var(--primary-foreground) / 0.28) 45%,
-      hsl(var(--primary-foreground) / 0.4) 50%,
-      hsl(var(--primary-foreground) / 0.28) 55%,
-      transparent 75%
+      100deg,
+      transparent 0%,
+      hsl(var(--primary-foreground) / 0.22) 35%,
+      hsl(var(--primary-foreground) / 0.42) 50%,
+      hsl(var(--primary-foreground) / 0.22) 65%,
+      transparent 100%
     );
-    background-size: 220% 100%;
-    background-position: 180% 0;
-    animation: btn-shine 4.5s ease-in-out infinite;
+    transform: translate3d(-180%, 0, 0);
+    animation: btn-shine 5s linear infinite;
+    will-change: transform;
     pointer-events: none;
   }
 
+  /* Проход длится ~1,8 с из пяти: достаточно медленно, чтобы глаз успел
+     заметить движение, и достаточно редко, чтобы не мельтешить. Остальное
+     время полоса ждёт за правым краем кнопки. */
   @keyframes btn-shine {
-    0%,
-    55% {
-      background-position: 180% 0;
+    0% {
+      transform: translate3d(-180%, 0, 0);
     }
+    36%,
     100% {
-      background-position: -80% 0;
+      transform: translate3d(340%, 0, 0);
     }
   }
 

@@ -104,7 +104,7 @@ const RecentJobs = ({
                 {job.title}
               </h3>
               {(job.price > 0 || job.priceType === 'negotiable') && (
-                <span className="btn-shine whitespace-nowrap rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                <span className="whitespace-nowrap rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
                   {priceText(job)}
                 </span>
               )}

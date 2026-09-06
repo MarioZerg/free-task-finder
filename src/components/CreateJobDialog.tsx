@@ -137,7 +137,7 @@ const CreateJobDialog = ({ open, onOpenChange, job }: Props) => {
     setStep((v) => Math.min(2, v + 1));
   };
 
-  const usePreset = (p: (typeof PRESETS)[number]) => {
+  const applyPreset = (p: (typeof PRESETS)[number]) => {
     setTitle(p.title);
     setCategory(p.category);
     if (p.profession) setProfession(p.profession);
@@ -275,7 +275,7 @@ const CreateJobDialog = ({ open, onOpenChange, job }: Props) => {
               profession={profession}
               setProfession={setProfession}
               errors={errors}
-              usePreset={usePreset}
+              applyPreset={applyPreset}
               activePreset={PRESETS.find((p) => p.title === title)?.title}
             />
           )}

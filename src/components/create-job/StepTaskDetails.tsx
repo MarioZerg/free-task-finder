@@ -16,7 +16,7 @@ interface Props {
   profession: string;
   setProfession: (v: string) => void;
   errors: Record<string, string>;
-  usePreset: (p: (typeof PRESETS)[number]) => void;
+  applyPreset: (p: (typeof PRESETS)[number]) => void;
   activePreset?: string;
 }
 
@@ -30,7 +30,7 @@ const StepTaskDetails = ({
   profession,
   setProfession,
   errors,
-  usePreset,
+  applyPreset,
   activePreset,
 }: Props) => {
   const err = (k: string) =>
@@ -50,7 +50,7 @@ const StepTaskDetails = ({
             return (
               <button
                 key={p.title}
-                onClick={() => usePreset(p)}
+                onClick={() => applyPreset(p)}
                 className={`flex min-h-[44px] items-center gap-3 rounded-2xl border p-3 text-left transition-colors ${
                   active
                     ? 'border-primary bg-primary/5 ring-2 ring-primary/30'
