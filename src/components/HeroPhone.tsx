@@ -24,6 +24,7 @@ const jobs = [
 const chat = [
   { from: 'executor', text: 'Сантехник, возьмусь. Буду через 40 минут' },
   { from: 'customer', text: 'Спасите! Свободы, 42, кв. 15' },
+  { from: 'executor', text: 'Выезжаю, буду через 15 минут' },
 ];
 
 /* Сцены истории. Каждая — один экран телефона.
@@ -36,6 +37,7 @@ type Scene =
   | 'taken'
   | 'chat1'
   | 'chat2'
+  | 'chat3'
   | 'photo'
   | 'closing'
   | 'review';
@@ -48,6 +50,7 @@ const SCENES: Scene[] = [
   'taken',
   'chat1',
   'chat2',
+  'chat3',
   'photo',
   'closing',
   'review',
@@ -56,13 +59,14 @@ const SCENES: Scene[] = [
 /* Каждой сцене — своё время. Там, где есть что прочитать или разглядеть,
    держим дольше: анимация должна успевать за глазами, а не наоборот. */
 const HOLD: Record<Scene, number> = {
-  feed1: 2200,
-  feed2: 2200,
+  feed1: 2000,
+  feed2: 2000,
   hero: 4200,
   taking: 2800,
   taken: 3200,
-  chat1: 2800,
-  chat2: 2800,
+  chat1: 2600,
+  chat2: 2600,
+  chat3: 2800,
   photo: 4500,
   closing: 3400,
   review: 5500,
@@ -79,9 +83,12 @@ const HeroPhone = () => {
 
   const at = SCENES.indexOf(scene);
   const showFeed = at <= SCENES.indexOf('taken');
-  const showChat = scene === 'chat1' || scene === 'chat2';
+  const showChat = scene === 'chat1' || scene === 'chat2' || scene === 'chat3';
   const bubbles = showChat ? at - SCENES.indexOf('chat1') + 1 : 0;
   const heroVisible = at >= SCENES.indexOf('hero');
+  /* Первые заказы появляются по одному, а не все разом: лента наполняется
+     на глазах, и понятно, что это живой поток задач. */
+  const visibleJobs = Math.min(at + 1, jobs.length);
 
   const header = showFeed
     ? 'Лента заказов'
@@ -106,11 +113,10 @@ const HeroPhone = () => {
 
         {showFeed && (
           <div className="flex flex-col gap-2.5">
-            {jobs.map((job, n) => (
+            {jobs.slice(0, visibleJobs).map((job) => (
               <div
                 key={job.id}
                 className="animate-slide-up-in overflow-hidden rounded-2xl border border-white/10 bg-white/[0.07]"
-                style={{ animationDelay: `${n * 80}ms` }}
               >
                 <div className="px-4 py-3.5">
                   <div className="flex items-start justify-between gap-3">
