@@ -108,7 +108,7 @@ const MemberDashboard = () => {
         </div>
         <button
           onClick={startCreate}
-          className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-primary px-7 py-4 text-base font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-transform hover:scale-[1.03] disabled:opacity-60 sm:w-auto sm:px-8 sm:text-lg"
+          className="btn-shine flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-primary px-7 py-4 text-base font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-transform hover:scale-[1.03] disabled:opacity-60 sm:w-auto sm:px-8 sm:text-lg"
         >
           <Icon name="Plus" size={20} />
           Разместить задачу
@@ -173,7 +173,7 @@ const MemberDashboard = () => {
               </p>
               <button
                 onClick={() => setTab('feed')}
-                className="mx-auto mt-5 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02] sm:w-auto"
+                className="btn-shine mx-auto mt-5 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02] sm:w-auto"
               >
                 <Icon name="Radio" size={18} />
                 Открыть ленту заказов
@@ -220,7 +220,7 @@ const MemberDashboard = () => {
               {tab === 'jobs' && (
                 <button
                   onClick={startCreate}
-                  className="mx-auto mt-5 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02] sm:w-auto"
+                  className="btn-shine mx-auto mt-5 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02] sm:w-auto"
                 >
                   <Icon name="Plus" size={18} />
                   Разместить задачу

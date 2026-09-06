@@ -237,7 +237,7 @@ const SubscriptionDialog = ({ open, onOpenChange, hint }: Props) => {
             <button
               onClick={buy}
               disabled={busy}
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-60"
+              className="btn-shine flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-60"
             >
               <Icon name={isPro ? 'RefreshCw' : 'Crown'} size={18} />
               {busy
@@ -310,7 +310,7 @@ const SubscriptionDialog = ({ open, onOpenChange, hint }: Props) => {
                 e.preventDefault();
                 cancel(false);
               }}
-              className="rounded-full bg-primary text-primary-foreground"
+              className="btn-shine rounded-full bg-primary text-primary-foreground"
             >
               Отменить продление
             </AlertDialogAction>

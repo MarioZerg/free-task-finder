@@ -229,6 +229,52 @@
     --role-accent: 24 42% 42%;
   }
 
+  /* Живой блик на главных кнопках: светлая полоса раз в несколько секунд
+     проходит по заливке. Тянем градиент шире кнопки и двигаем фон — это
+     работает на видеокарте и не дёргает раскладку страницы. */
+  .btn-shine {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .btn-shine::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(
+      110deg,
+      transparent 25%,
+      hsl(var(--primary-foreground) / 0.28) 45%,
+      hsl(var(--primary-foreground) / 0.4) 50%,
+      hsl(var(--primary-foreground) / 0.28) 55%,
+      transparent 75%
+    );
+    background-size: 220% 100%;
+    background-position: 180% 0;
+    animation: btn-shine 4.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes btn-shine {
+    0%,
+    55% {
+      background-position: 180% 0;
+    }
+    100% {
+      background-position: -80% 0;
+    }
+  }
+
+  /* Тем, кому анимация мешает, блик не показываем. */
+  @media (prefers-reduced-motion: reduce) {
+    .btn-shine::after {
+      animation: none;
+      opacity: 0;
+    }
+  }
+
   .role-accent-text {
     color: hsl(var(--role-accent));
   }

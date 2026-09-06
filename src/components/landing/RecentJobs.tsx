@@ -103,7 +103,7 @@ const RecentJobs = ({
                 {job.title}
               </h3>
               {job.price > 0 && (
-                <span className="whitespace-nowrap rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                <span className="btn-shine whitespace-nowrap rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
                   {job.price.toLocaleString('ru-RU')} ₽
                 </span>
               )}
@@ -132,7 +132,7 @@ const RecentJobs = ({
       <div className="mt-6 flex flex-wrap gap-3">
         <Link
           to="/dashboard"
-          className="flex min-h-[44px] items-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03]"
+          className="btn-shine flex min-h-[44px] items-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03]"
         >
           Смотреть все заказы
           <Icon name="ArrowRight" size={15} />

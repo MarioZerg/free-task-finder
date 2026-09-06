@@ -4,6 +4,7 @@ import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
 import Avatar from '@/components/Avatar';
 import InstallPwa from '@/components/InstallPwa';
+import MaxLogo from '@/components/ui/max-logo';
 
 const anchors = [
   { id: 'roles', label: 'Роли' },
@@ -63,8 +64,9 @@ const Header = () => {
           ) : (
             <button
               onClick={() => openLogin()}
-              className="rounded-full bg-primary px-9 py-4 text-base font-medium leading-none text-primary-foreground transition-transform hover:scale-[1.03]"
+              className="btn-shine flex items-center gap-2.5 rounded-full bg-primary px-9 py-4 text-base font-medium leading-none text-primary-foreground transition-transform hover:scale-[1.03]"
             >
+              <MaxLogo size={20} />
               Войти через MAX
             </button>
           )}
@@ -132,8 +134,9 @@ const Header = () => {
                   setOpen(false);
                   openLogin();
                 }}
-                className="w-full rounded-full bg-primary py-4 text-base font-medium text-primary-foreground"
+                className="btn-shine flex w-full items-center justify-center gap-2.5 rounded-full bg-primary py-4 text-base font-medium text-primary-foreground"
               >
+                <MaxLogo size={20} />
                 Войти через MAX
               </button>
             )}

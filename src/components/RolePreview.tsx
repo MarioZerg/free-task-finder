@@ -1,4 +1,5 @@
 import Icon from '@/components/ui/icon';
+import MaxLogo from '@/components/ui/max-logo';
 import { useAppState } from '@/hooks/use-app-state';
 
 /** Раньше здесь выбирали роль — заказчика или исполнителя — и заводили под
@@ -80,9 +81,12 @@ const RolePreview = () => {
 
         <button
           onClick={() => openLogin()}
-          className="mt-9 flex w-full items-center justify-between gap-4 rounded-full bg-primary px-7 py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02] sm:w-auto"
+          className="btn-shine mt-9 flex w-full items-center justify-between gap-4 rounded-full bg-primary px-7 py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02] sm:w-auto"
         >
-          <span>Войти через MAX</span>
+          <span className="flex items-center gap-2.5">
+            <MaxLogo size={20} />
+            Войти через MAX
+          </span>
           <Icon name="ArrowRight" size={18} />
         </button>
       </div>

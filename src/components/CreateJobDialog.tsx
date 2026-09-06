@@ -311,7 +311,7 @@ const CreateJobDialog = ({ open, onOpenChange, job }: Props) => {
             {step < 2 ? (
               <button
                 onClick={goNext}
-                className="flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02]"
+                className="btn-shine flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02]"
               >
                 Далее
                 <Icon name="ArrowRight" size={18} />
@@ -320,7 +320,7 @@ const CreateJobDialog = ({ open, onOpenChange, job }: Props) => {
               <button
                 onClick={submit}
                 disabled={busy}
-                className="flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-60"
+                className="btn-shine flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-60"
               >
                 <Icon name={editing ? 'Check' : 'Send'} size={18} />
                 {busy

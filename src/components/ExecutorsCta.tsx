@@ -54,7 +54,7 @@ const ExecutorsCta = () => {
 
             <button
               onClick={() => openLogin()}
-              className="mt-10 flex items-center gap-2 rounded-full bg-primary px-8 py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.03]"
+              className="btn-shine mt-10 flex items-center gap-2 rounded-full bg-primary px-8 py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.03]"
             >
               Смотреть заказы
               <Icon name="ArrowRight" size={18} />

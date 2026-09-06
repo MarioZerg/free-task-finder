@@ -76,7 +76,7 @@ const InviteCard = ({ invite }: { invite: JobInvite }) => {
         <button
           onClick={accept}
           disabled={busy}
-          className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03] disabled:opacity-60 sm:w-auto"
+          className="btn-shine flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03] disabled:opacity-60 sm:w-auto"
         >
           <Icon name="Check" size={16} />
           Принять
