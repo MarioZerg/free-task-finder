@@ -13,6 +13,7 @@ import type { DirectMessage } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
 import Loader from '@/components/Loader';
 import { timeMsk } from '@/lib/time';
+import { useKeyboardInset } from '@/hooks/use-keyboard-inset';
 
 const time = (iso: string) =>
   timeMsk(iso);
@@ -28,6 +29,7 @@ const DirectMessageDialog = ({ peer, onOpenChange }: Props) => {
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
+  const keyboard = useKeyboardInset();
 
   const load = async () => {
     if (!peer) return;
@@ -71,7 +73,20 @@ const DirectMessageDialog = ({ peer, onOpenChange }: Props) => {
 
   return (
     <Dialog open={!!peer} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[80vh] flex-col border-line bg-surface text-foreground sm:max-w-[460px]">
+      {/* Когда открыта клавиатура, поджимаем окно на её высоту и поднимаем
+          выше: поле ввода обязано остаться на виду, иначе человек печатает
+          вслепую. Окно центрируется по всему экрану, а клавиатура закрывает
+          его нижнюю часть — поэтому сдвигаем на половину её высоты. */}
+      <DialogContent
+        style={
+          keyboard
+            ? {
+                maxHeight: `calc(100dvh - ${keyboard + 24}px)`,
+                transform: `translate(-50%, calc(-50% - ${keyboard / 2}px))`,
+              }
+            : undefined
+        }
+        className="flex max-h-[80dvh] flex-col border-line bg-surface text-foreground sm:max-w-[460px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2.5 font-head text-xl font-medium tracking-tight">
             <Avatar src={peer?.avatar} name={peer?.name || ''} size={30} />
@@ -120,6 +135,13 @@ const DirectMessageDialog = ({ peer, onOpenChange }: Props) => {
             onChange={(e) => setText(e.target.value)}
             placeholder="Написать сообщение"
             rows={1}
+            onFocus={(e) => {
+              const el = e.currentTarget;
+              window.setTimeout(
+                () => el.scrollIntoView({ block: 'center', behavior: 'smooth' }),
+                320,
+              );
+            }}
             className="min-h-[44px] w-full resize-none rounded-2xl border border-line bg-tile px-4 py-3 text-base outline-none placeholder:text-chip focus:border-primary/60"
           />
           <button

@@ -56,7 +56,7 @@ const JobChat = ({ jobId }: { jobId: number; partner?: string }) => {
 
   return (
     <div className="border-t border-line bg-tile p-4">
-      <div ref={boxRef} className="max-h-[50vh] space-y-3 overflow-y-auto pr-1 sm:max-h-[280px]">
+      <div ref={boxRef} className="max-h-[42dvh] space-y-3 overflow-y-auto pr-1 sm:max-h-[280px]">
         {messages.length === 0 ? (
           <p className="py-6 text-center text-sm text-chip">
             Сообщений пока нет. Напишите, чтобы договориться о деталях.
@@ -89,6 +89,16 @@ const JobChat = ({ jobId }: { jobId: number; partner?: string }) => {
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
+          /* На телефоне клавиатура накрывает нижнюю часть страницы. Как
+             только поле получило фокус, подтягиваем его в видимую область —
+             иначе человек печатает вслепую. Ждём, пока клавиатура выедет. */
+          onFocus={(e) => {
+            const el = e.currentTarget;
+            window.setTimeout(
+              () => el.scrollIntoView({ block: 'center', behavior: 'smooth' }),
+              320,
+            );
+          }}
           onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && send()}
           placeholder="Написать сообщение"
           maxLength={1000}
