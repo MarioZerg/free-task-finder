@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Icon from '@/components/ui/icon';
 import { money } from '@/data/mock';
 
-const CUSTOMER = { name: 'Ольга', avatar: '/img/demo-customer.jpg' };
-const EXECUTOR = { name: 'Игорь', avatar: '/img/demo-executor.jpg' };
+const CUSTOMER = { name: 'Ольга', avatar: '/img/demo-customer.webp' };
+const EXECUTOR = { name: 'Игорь', avatar: '/img/demo-executor.webp' };
 
 /* Заказ-герой встаёт в конец ленты, как обычная новая задача.
    Раньше он выпрыгивал наверх и это читалось как сбой: список
@@ -12,7 +12,7 @@ const HERO_JOB = {
   title: 'Засорился унитаз',
   price: 1800,
   when: 'Сегодня, срочно',
-  photo: '/img/demo-toilet-dirty.jpg',
+  photo: '/img/demo-toilet-dirty.webp',
   text: 'Вода не уходит и уже на полу. Нужен сантехник срочно!',
 };
 
@@ -40,6 +40,7 @@ type Scene =
   | 'chat3'
   | 'photo'
   | 'closing'
+  | 'rating'
   | 'review';
 
 const SCENES: Scene[] = [
@@ -53,6 +54,7 @@ const SCENES: Scene[] = [
   'chat3',
   'photo',
   'closing',
+  'rating',
   'review',
 ];
 
@@ -69,17 +71,67 @@ const HOLD: Record<Scene, number> = {
   chat3: 2800,
   photo: 4500,
   closing: 3400,
+  rating: 3000,
   review: 5500,
 };
 
+/* Картинку финала подгружаем заранее, пока идёт переписка: иначе на сцене
+   результата она мигает белым прямоугольником и портит впечатление. */
+const CLEAN_PHOTO = '/img/demo-toilet-clean.webp';
+
+/**
+ * Палец, нажимающий на кнопку.
+ *
+ * Показывает, что действие делает человек, а не система сама: подъезжает
+ * снизу, нажимает, от места касания расходится круг. Без этого кнопка
+ * просто появлялась и исчезала — было непонятно, кто на неё нажал.
+ */
+const TapHand = () => (
+  /* Смещаем чуть ниже центра: палец касается нижней части кнопки
+     и не закрывает надпись, которую в этот момент читают. */
+  <span className="pointer-events-none absolute left-1/2 top-[62%] z-10">
+    <span className="animate-tap-ring absolute -left-5 -top-4 block h-10 w-10 rounded-full border-2 border-white/70" />
+    <span className="animate-tap-hand absolute -left-1 top-0 block text-2xl drop-shadow-lg">
+      👆
+    </span>
+  </span>
+);
+
 const HeroPhone = () => {
   const [i, setI] = useState(0);
+  const [live, setLive] = useState(true);
+  const boxRef = useRef<HTMLDivElement>(null);
   const scene = SCENES[i];
 
+  /* Анимация крутится, только когда телефон реально виден: если человек
+     пролистал ниже или ушёл на другую вкладку, таймеры молчат и не тратят
+     заряд батареи. */
   useEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => setLive(e.isIntersecting), {
+      threshold: 0.15,
+    });
+    io.observe(el);
+    const onVis = () => setLive(document.visibilityState === 'visible');
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      io.disconnect();
+      document.removeEventListener('visibilitychange', onVis);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!live) return;
     const t = window.setTimeout(() => setI((v) => (v + 1) % SCENES.length), HOLD[scene]);
     return () => window.clearTimeout(t);
-  }, [i, scene]);
+  }, [i, scene, live]);
+
+  useEffect(() => {
+    if (scene !== 'chat1') return;
+    const img = new Image();
+    img.src = CLEAN_PHOTO;
+  }, [scene]);
 
   const at = SCENES.indexOf(scene);
   const showFeed = at <= SCENES.indexOf('taken');
@@ -98,10 +150,12 @@ const HeroPhone = () => {
         ? 'Работа выполнена'
         : scene === 'closing'
           ? 'Заказчик принимает'
-          : 'Отзыв заказчика';
+          : scene === 'rating'
+            ? 'Оцените исполнителя'
+            : 'Отзыв заказчика';
 
   return (
-    <div className="relative mx-auto h-[600px] w-full max-w-[340px] animate-rise rounded-[38px] bg-[linear-gradient(155deg,hsl(var(--screen))_0%,hsl(100_10%_22%)_100%)] p-3 shadow-[0_40px_70px_-38px_rgba(30,40,25,.45)] sm:h-[660px] sm:max-w-[372px]">
+    <div ref={boxRef} className="relative mx-auto h-[600px] w-full max-w-[340px] animate-rise rounded-[38px] bg-[linear-gradient(155deg,hsl(var(--screen))_0%,hsl(100_10%_22%)_100%)] p-3 shadow-[0_40px_70px_-38px_rgba(30,40,25,.45)] sm:h-[660px] sm:max-w-[372px]">
       <div className="flex h-full flex-col overflow-hidden rounded-[30px] bg-screen px-4 py-5 text-[hsl(var(--primary-foreground))]">
         <div className="mb-3.5 flex items-center justify-between">
           <div className="text-base font-medium">{header}</div>
@@ -166,11 +220,11 @@ const HeroPhone = () => {
                     <span className="ml-auto text-[11px] opacity-60">{HERO_JOB.when}</span>
                   </div>
 
-                  {/* Показываем сам момент отклика: сначала кнопка, потом нажатие. */}
+                  {/* Показываем сам момент отклика: кнопка и палец на ней. */}
                   {scene === 'taking' && (
-                    <div className="animate-bubble-in mt-3 flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-4 py-2.5 text-[13px] font-medium text-white">
-                      <Icon name="Hand" size={15} />
+                    <div className="animate-bubble-in relative mt-3 flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-4 py-2.5 text-[13px] font-medium text-white">
                       Откликнуться
+                      <TapHand />
                     </div>
                   )}
                 </div>
@@ -255,7 +309,7 @@ const HeroPhone = () => {
               <div>
                 <p className="mb-2 text-[11px] uppercase tracking-wider text-emerald-300">Стало</p>
                 <img
-                  src="/img/demo-toilet-clean.jpg"
+                  src={CLEAN_PHOTO}
                   alt="Чистый унитаз после работы"
                   className="h-36 w-full rounded-xl border border-emerald-400/40 object-cover"
                 />
@@ -287,9 +341,10 @@ const HeroPhone = () => {
                 </span>
               </div>
 
-              <div className="mt-3.5 flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-4 py-3 text-[14px] font-medium text-white">
+              <div className="relative mt-3.5 flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-4 py-3 text-[14px] font-medium text-white">
                 <Icon name="Check" size={16} />
-                Работа принята
+                Принять работу
+                <TapHand />
               </div>
             </div>
 
@@ -298,6 +353,39 @@ const HeroPhone = () => {
               <span className="text-xs leading-snug opacity-85">
                 Ольга закрыла заказ и рассчиталась напрямую
               </span>
+            </div>
+          </div>
+        )}
+
+        {/* Заказчик ставит оценку: звёзды загораются одна за другой,
+            палец нажимает на последнюю — видно, что оценку ставит человек. */}
+        {scene === 'rating' && (
+          <div className="animate-bubble-in flex flex-1 flex-col">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.07] p-4 text-center">
+              <img
+                src={EXECUTOR.avatar}
+                alt=""
+                className="mx-auto h-14 w-14 rounded-full object-cover"
+              />
+              <p className="mt-3 text-[15px] font-medium">Как справился Игорь?</p>
+              <p className="mt-1 text-xs opacity-65">Оценка видна другим заказчикам</p>
+
+              <div className="relative mt-4 flex items-center justify-center gap-2">
+                {[0, 1, 2, 3, 4].map((n) => (
+                  <span
+                    key={n}
+                    className="animate-pop-in text-3xl text-amber-300"
+                    style={{ animationDelay: `${n * 260}ms` }}
+                  >
+                    ★
+                  </span>
+                ))}
+                <span className="absolute right-1 top-1/2 -translate-y-1/2">
+                  <TapHand />
+                </span>
+              </div>
+
+              <p className="mt-4 text-[13px] opacity-75">Отлично — рекомендую</p>
             </div>
           </div>
         )}
@@ -315,8 +403,8 @@ const HeroPhone = () => {
               </div>
 
               <p className="mt-3.5 text-[13px] leading-relaxed opacity-90">
-                «Приехал через полчаса, всё пробил и вымыл так, что стало чище, чем было.
-                Спасибо, буду обращаться!»
+                «Приехал через 15 минут, как и обещал. Всё пробил и вымыл так, что стало
+                чище, чем было. Спасибо, буду обращаться!»
               </p>
 
               <div className="mt-3.5 flex items-center gap-2 border-t border-white/10 pt-3">

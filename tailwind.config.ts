@@ -129,6 +129,18 @@ export default {
 				'logo-pulse': {
 					'0%, 100%': { opacity: '.35', transform: 'scale(.98)' },
 					'50%': { opacity: '1', transform: 'scale(1)' }
+				},
+				'tap-hand': {
+					'0%': { opacity: '0', transform: 'translate(6px, 26px) scale(.9)' },
+					'25%': { opacity: '1', transform: 'translate(0, 4px) scale(1)' },
+					'40%, 55%': { opacity: '1', transform: 'translate(0, -2px) scale(.88)' },
+					'75%': { opacity: '1', transform: 'translate(0, 4px) scale(1)' },
+					'100%': { opacity: '0', transform: 'translate(6px, 22px) scale(.95)' }
+				},
+				'tap-ring': {
+					'0%, 38%': { opacity: '0', transform: 'scale(.3)' },
+					'45%': { opacity: '.9', transform: 'scale(.5)' },
+					'85%, 100%': { opacity: '0', transform: 'scale(1.5)' }
 				}
 			},
 			animation: {
@@ -142,7 +154,9 @@ export default {
 				'bubble-in': 'bubble-in .35s cubic-bezier(.22,.7,.2,1) both',
 				'pop-in': 'pop-in .4s cubic-bezier(.34,1.56,.64,1) both',
 				'typing': 'typing 1.2s ease-in-out infinite',
-				'logo-pulse': 'logo-pulse 1.3s ease-in-out infinite'
+				'logo-pulse': 'logo-pulse 1.3s ease-in-out infinite',
+				'tap-hand': 'tap-hand 2.2s cubic-bezier(.22,.7,.2,1) infinite',
+				'tap-ring': 'tap-ring 2.2s ease-out infinite'
 			}
 		}
 	},
