@@ -22,7 +22,7 @@ const jobs = [
 ];
 
 const chat = [
-  { from: 'executor', text: 'Сантехник, возьмусь. Буду через 40 минут' },
+  { from: 'executor', text: 'Возьмусь, сделаю всё качественно!' },
   { from: 'customer', text: 'Спасите! Свободы, 42, кв. 15' },
   { from: 'executor', text: 'Выезжаю, буду через 15 минут' },
 ];
