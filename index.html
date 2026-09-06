@@ -29,14 +29,20 @@
     </script>
     <title>Доделай.ру — шабашка и подработка в Ярославле</title>
     <meta name="description" content="Бесплатные объявления о разовой подработке в Ярославле и области: заказчики публикуют задачи, исполнители откликаются. Вход через MAX."/>
-    <link rel="canonical" href="https://dodelay.ru/" />
     <script>
+      // Канонический адрес не прописан в разметке намеренно: статичная
+      // строка вида «https://dodelay.ru/» попадала на все страницы сразу,
+      // и каждая страница услуги объявляла каноническим — главную. Робот,
+      // не дождавшись отрисовки, склеивал её с главной и выбрасывал из
+      // индекса. Поэтому тег создаётся здесь и сразу с верным адресом.
       (function () {
         try {
           var p = location.pathname.replace(/\/+$/, '') || '/';
           if (p === '/dashboard' || p === '/admin') return;
-          var el = document.querySelector('link[rel="canonical"]');
-          if (el) el.setAttribute('href', 'https://dodelay.ru' + (p === '/' ? '/' : p));
+          var el = document.createElement('link');
+          el.setAttribute('rel', 'canonical');
+          el.setAttribute('href', 'https://dodelay.ru' + (p === '/' ? '/' : p));
+          document.head.appendChild(el);
         } catch (e) {}
       })();
     </script>
