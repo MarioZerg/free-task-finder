@@ -7,6 +7,9 @@ import {
   WORKER_KEYWORDS,
   WORKER_PROFESSION_KEYWORDS,
   WORKER_NEGATIVES,
+  PROFESSION_CREATIVE,
+  DEFAULT_CREATIVE,
+  CREATIVE_FORMATS,
 } from '@/data/adKeywords';
 
 /** Сборка кампаний для Яндекс Директа в формате Директ Коммандера.
@@ -42,6 +45,8 @@ export interface AdRow {
   text: string;
   url: string;
   region: string;
+  /** Ссылки на картинки для РСЯ — по одной на каждую пропорцию */
+  images: string[];
 }
 
 /** Регион показа для каждого города — Директ понимает их по названию.
@@ -121,6 +126,15 @@ export const landingUrl = (
   return `${url}?utm_source=yandex&utm_medium=cpc&utm_campaign=${citySlug}_${professionSlug}`;
 };
 
+/** Ссылки на креативы профессии во всех пропорциях.
+ *  Директ забирает картинки по ссылке, поэтому файлы должны быть открыты
+ *  на сайте — они лежат в /public/ads и отдаются вместе с ним. */
+export const creativeUrls = (professionSlug: string | null, base = SITE): string[] => {
+  const theme =
+    (professionSlug && PROFESSION_CREATIVE[professionSlug]) || DEFAULT_CREATIVE;
+  return CREATIVE_FORMATS.map((f) => `${base}/ads/${theme}-${f}.jpg`);
+};
+
 /** Ключевые фразы группы: базовая фраза плюс коммерческие добавки и город. */
 export const buildPhrases = (professionSlug: string, cityNominative: string): string[] => {
   const base = PROFESSION_KEYWORDS[professionSlug] || [];
@@ -162,6 +176,7 @@ export const buildRows = (opts: ExportOptions): AdRow[] => {
           text: texts[i % texts.length],
           url,
           region: CITY_REGION[city.slug] || 'Ярославская область',
+          images: creativeUrls(p.slug, opts.siteUrl || SITE),
         });
       });
     }
@@ -186,6 +201,7 @@ const HEADERS = [
   'Доп. объявление группы', 'Тип объявления', 'ID группы', 'Название группы',
   'Номер группы', 'ID фразы', 'Фраза (с минус-словами)', 'ID объявления',
   'Заголовок 1', 'Заголовок 2', 'Заголовок 3', 'Текст 1', 'Текст 2',
+  'Изображение 1', 'Изображение 2', 'Изображение 3', 'Изображение 4',
   'Ссылка', 'Отображаемая ссылка', 'Регион', 'Организация Яндекс Бизнеса',
   'Ставка', 'Ставка в сетях', 'Минус-фразы на группу',
 ];
@@ -195,7 +211,8 @@ const HEADERS = [
 const COL = {
   extra: 0, adType: 1, groupName: 3, groupNo: 4,
   phrase: 6, title: 8, title2: 9, title3: 10, text: 11, text2: 12,
-  url: 13, region: 15, bid: 17, bidNet: 18, negatives: 19,
+  img1: 13, img2: 14, img3: 15, img4: 16,
+  url: 17, region: 19, bid: 21, bidNet: 22, negatives: 23,
 } as const;
 
 /** Разделитель — табуляция: этого требует формат Коммандера.
@@ -270,6 +287,13 @@ export const toCsv = (rows: AdRow[], opts: CsvOptions = {}): string => {
         title3: alt?.title2 || '',
         text: main.text,
         text2: alt && alt.text !== main.text ? alt.text : '',
+        // Четыре пропорции одной картинки: Директ подберёт ту, что
+        // подходит площадке. С одним форматом объявление попадёт
+        // на заметно меньшее число мест показа.
+        img1: main.images[0] || '',
+        img2: main.images[1] || '',
+        img3: main.images[2] || '',
+        img4: main.images[3] || '',
         url: main.url,
         // Регион и ставка заполняются только у главного объявления —
         // так требует формат, в остальных строках они игнорируются.
@@ -375,6 +399,8 @@ export const buildWorkerRows = (opts: ExportOptions): AdRow[] => {
         text: texts[i % texts.length],
         url: cityUrl,
         region,
+        // Общая группа не про специальность — берём картинку с человеком
+        images: creativeUrls(null, opts.siteUrl || SITE),
       });
     });
 
@@ -396,6 +422,7 @@ export const buildWorkerRows = (opts: ExportOptions): AdRow[] => {
             text: texts[i % texts.length],
             url,
             region,
+            images: creativeUrls(p.slug, opts.siteUrl || SITE),
           });
         }
       });

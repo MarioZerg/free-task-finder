@@ -347,6 +347,15 @@ const AdminAds = () => {
           Регионы показа, ставки и минус-слова уже проставлены в файле —
           вручную заполнять не нужно.
         </p>
+        <p className="mt-3 flex items-start gap-2.5 rounded-2xl border border-primary/40 bg-primary/5 p-4 text-sm text-muted-foreground">
+          <Icon name="Image" size={16} className="mt-0.5 shrink-0 text-primary" />
+          <span>
+            К объявлениям приложены тематические картинки для РСЯ — по четыре
+            пропорции на каждую специальность. Директ забирает их по ссылке
+            с сайта, поэтому загружайте файл после публикации проекта: иначе
+            картинки ещё не будут доступны и объявления уйдут без них.
+          </span>
+        </p>
         <p className="mt-3 rounded-2xl border border-line bg-tile p-4 text-sm text-muted-foreground">
           Объявления создаются комбинаторными: Директ с июля не заводит
           текстово-графические и сам собирает связку из заголовков и текстов,

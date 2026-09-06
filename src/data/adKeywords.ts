@@ -230,3 +230,41 @@ export const WORKER_NEGATIVE_GROUPS: { title: string; words: string[] }[] = [
 ];
 
 export const WORKER_NEGATIVES = WORKER_NEGATIVE_GROUPS.flatMap((g) => g.words);
+
+/* ========================= КРЕАТИВЫ ДЛЯ РСЯ ========================= */
+
+/** Тема картинки для каждой профессии.
+ *
+ *  Своё фото на каждую из 48 специальностей не нужно: в РСЯ важнее, чтобы
+ *  картинка отвечала смыслу («сантехник» — человек с ключом под раковиной),
+ *  чем буквально изображала редкую профессию. Поэтому 10 тем закрывают весь
+ *  каталог, а близкие направления делят одну.
+ *
+ *  Файлы лежат в /public/ads в четырёх пропорциях, которых требует Директ:
+ *  1:1, 4:3, 3:4 и 16:9 — под разные рекламные блоки.
+ */
+export const PROFESSION_CREATIVE: Record<string, string> = {
+  plumber: 'plumb', heating: 'plumb', wells: 'plumb', ventilation: 'aircon',
+  aircon: 'aircon', electrician: 'electric', lowvoltage: 'electric',
+  computerhelp: 'electric', appliance: 'electric', appliancerepair: 'electric',
+  automaster: 'electric',
+  tiler: 'tile', flooring: 'tile', paving: 'tile', mason: 'tile',
+  plasterer: 'tile', painter: 'tile', wallpaper: 'tile', finisher: 'tile',
+  drywall: 'tile', ceilings: 'tile', doors: 'tile', windows: 'tile',
+  roofer: 'tile', carpenter: 'tile', welder: 'tile', fencing: 'tile',
+  bathhouse: 'tile', demolition: 'waste',
+  wasteremoval: 'waste', mover: 'move', cargo: 'move', driver: 'move',
+  courier: 'move', furniture: 'furniture', handyman: 'furniture',
+  household: 'furniture', other: 'worker',
+  cleaner: 'clean', windowwash: 'clean', drycleaning: 'clean',
+  pestcontrol: 'clean', snow: 'clean',
+  gardener: 'dacha', treecut: 'dacha', digger: 'dacha', tractor: 'dacha',
+  petcare: 'worker',
+};
+
+/** Тема по умолчанию — если профессии нет в списке выше */
+export const DEFAULT_CREATIVE = 'worker';
+
+/** Пропорции, которые ждёт Директ. Рекомендует грузить и стандартное,
+ *  и широкоформатное: так объявление попадает на большее число площадок. */
+export const CREATIVE_FORMATS = ['4x3', '1x1', '16x9', '3x4'] as const;
