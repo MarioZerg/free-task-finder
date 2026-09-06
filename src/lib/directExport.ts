@@ -273,39 +273,41 @@ export const toCsv = (rows: AdRow[], opts: CsvOptions = {}): string => {
     // Второй вариант текста для той же группы — материал для комбинаций
     const alt = list.slice(1).find((v) => v.text !== main.text);
 
-    // Все фразы группы — с одним и тем же главным объявлением
+    /* Поля объявления заполняем ТОЛЬКО в первой строке группы.
+       Раньше они дублировались в каждой строке с фразой, и Коммандер
+       считал каждую строку отдельным объявлением: при 49 фразах выходило
+       49 объявлений в группе при разрешённых 3 (10 с архивными) — отсюда
+       «в группе уже максимальное количество комбинаторных объявлений».
+       Остальные строки несут только свою ключевую фразу. */
     list.forEach((r, i) => {
-      row({
-        extra: '-',
-        adType: 'Комбинаторное',
-        groupName: r.group,
-        groupNo: no,
-        phrase: r.phrase,
-        // Комбинаторное объявление само собирает связку из нескольких
-        // заголовков и текстов — отдаём все варианты сразу, Директ
-        // покажет ту комбинацию, что откликается лучше.
-        title: main.title,
-        title2: main.title2,
-        title3: alt?.title2 || '',
-        text: main.text,
-        text2: alt && alt.text !== main.text ? alt.text : '',
-        // Четыре пропорции одной картинки: Директ подберёт ту, что
-        // подходит площадке. С одним форматом объявление попадёт
-        // на заметно меньшее число мест показа.
-        img1: main.images[0] || '',
-        img2: main.images[1] || '',
-        img3: main.images[2] || '',
-        img4: main.images[3] || '',
-        url: main.url,
-        // Регион и ставка заполняются только у главного объявления —
-        // так требует формат, в остальных строках они игнорируются.
-        region: i === 0 ? r.region : '',
-        bid: i === 0 ? bid : '',
-        bidNet: i === 0 ? bidNet : '',
-        negatives: i === 0 ? negatives : '',
-      });
+      if (i === 0) {
+        row({
+          extra: '-',
+          adType: 'Комбинаторное',
+          groupName: r.group,
+          groupNo: no,
+          phrase: r.phrase,
+          // Комбинаторное объявление само перебирает варианты — отдаём
+          // все заголовки и тексты сразу, одним объявлением на группу.
+          title: main.title,
+          title2: main.title2,
+          title3: alt?.title2 || '',
+          text: main.text,
+          text2: alt && alt.text !== main.text ? alt.text : '',
+          img1: main.images[0] || '',
+          img2: main.images[1] || '',
+          img3: main.images[2] || '',
+          img4: main.images[3] || '',
+          url: main.url,
+          region: r.region,
+          bid,
+          bidNet,
+          negatives,
+        });
+      } else {
+        row({ extra: '-', groupNo: no, phrase: r.phrase });
+      }
     });
-
   }
   return lines.join('\r\n');
 };
