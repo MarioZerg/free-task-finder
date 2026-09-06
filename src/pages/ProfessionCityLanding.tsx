@@ -17,6 +17,7 @@ import {
   ProfessionCityPage,
 } from '@/data/professionCityPages';
 import { people } from '@/lib/api';
+import LiveSignals from '@/components/landing/LiveSignals';
 import type { User } from '@/lib/api';
 import NotFound from '@/pages/PageNotFound';
 import Loader from '@/components/Loader';
@@ -36,6 +37,7 @@ const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
   const city = getCityPage(page.citySlug)!;
   const openFeed = useOpenFeed();
   const [executors, setExecutors] = useState<User[]>([]);
+  const [counts, setCounts] = useState({ executors: 0, online: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,6 +47,12 @@ const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
         if (!alive) return;
         const inCity = (r.members || []).filter((u) => cityMatch(u.city, city.nameNominative));
         setExecutors(inCity.slice(0, 6));
+        // Считаем по этому же городу: «12 мастеров по области» на странице
+        // Углича выглядит как приписка, которой не веришь.
+        setCounts({
+          executors: inCity.length,
+          online: inCity.filter((u) => u.online).length,
+        });
       })
       .catch(() => undefined)
       .finally(() => alive && setLoading(false));
@@ -354,6 +362,14 @@ const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
             </div>
           </section>
         )}
+
+        <LiveSignals
+          total={counts.executors}
+          online={counts.online}
+          professionLabel={page.professionLabel}
+          cityPrepositional={city.name}
+          cityNominative={city.nameNominative}
+        />
 
         <section className="mt-16">
           <p className="text-sm uppercase tracking-[0.2em] text-chip">Рядом</p>
