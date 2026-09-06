@@ -144,28 +144,72 @@ export const buildRows = (opts: ExportOptions): AdRow[] => {
   return rows;
 };
 
+/** Столбцы — строго как в шаблоне Директ Коммандера. Названия полей он
+ *  распознаёт дословно: любое своё («Кампания», «Заголовок») он молча
+ *  игнорирует, и кампания импортируется пустой. */
 const HEADERS = [
-  'Кампания',
-  'Группа',
+  'Доп. объявление группы',
+  'Тип объявления',
+  'Название группы',
+  'Номер группы',
+  'Тип кампании',
   'Фраза (с минус-словами)',
-  'Заголовок',
+  'Заголовок 1',
   'Заголовок 2',
   'Текст',
   'Ссылка',
+  'Минус-фразы на группу',
 ];
 
-/** Разделитель — точка с запятой: Excel в русской локали иначе
- *  сваливает всю строку в одну ячейку. */
-const cell = (v: string) => `"${String(v).replace(/"/g, '""')}"`;
+/** Разделитель — табуляция: этого требует формат Коммандера.
+ *  Поэтому же внутри значений табуляций быть не должно. */
+const cell = (v: string | number) => String(v).replace(/[\t\r\n]+/g, ' ').trim();
 
 export const toCsv = (rows: AdRow[]): string => {
-  const lines = [HEADERS.map(cell).join(';')];
+  const lines = [HEADERS.join('\t')];
+  const negatives = ALL_NEGATIVES.join(', ');
+
+  /** Строки с ключевыми фразами помечаются «-», дополнительные объявления
+   *  группы — «+». Знак «+» не значит «не первый»: у таких строк поля
+   *  группы и фразы должны быть пустыми, иначе Коммандер их отбрасывает. */
+  const byGroup = new Map<string, AdRow[]>();
   for (const r of rows) {
-    lines.push(
-      [r.campaign, r.group, r.phrase, r.title, r.title2, r.text, r.url]
-        .map(cell)
-        .join(';'),
-    );
+    const key = `${r.campaign}||${r.group}`;
+    if (!byGroup.has(key)) byGroup.set(key, []);
+    byGroup.get(key)!.push(r);
+  }
+
+  const row = (v: (string | number)[]) => lines.push(v.map(cell).join('\t'));
+  let no = 0;
+
+  for (const list of byGroup.values()) {
+    no += 1;
+    const main = list[0];
+
+    // Все фразы группы — с одним и тем же главным объявлением
+    list.forEach((r, i) => {
+      row([
+        '-',
+        'Текстово-графическое',
+        r.group,
+        no,
+        'Текстово-графическая кампания',
+        r.phrase,
+        main.title,
+        main.title2,
+        main.text,
+        main.url,
+        i === 0 ? negatives : '',
+      ]);
+    });
+
+    /** Ещё два варианта объявления на группу: Директ сам покажет тот,
+     *  что откликается лучше. Одно объявление на группу лишает его
+     *  выбора и заодно лишает вас данных, какой текст работает. */
+    const variants = list.slice(1, 3).filter((v) => v.text !== main.text);
+    for (const v of variants) {
+      row(['+', 'Текстово-графическое', '', no, '', '', v.title, v.title2, v.text, v.url, '']);
+    }
   }
   return lines.join('\r\n');
 };
@@ -173,7 +217,7 @@ export const toCsv = (rows: AdRow[]): string => {
 /** Файл скачивается с меткой BOM — без неё Excel открывает кириллицу
  *  кракозябрами, и человек решает, что выгрузка сломана. */
 export const downloadCsv = (rows: AdRow[], name: string) => {
-  const blob = new Blob(['\uFEFF' + toCsv(rows)], { type: 'text/csv;charset=utf-8;' });
+  const blob = new Blob(['\uFEFF' + toCsv(rows)], { type: 'text/plain;charset=utf-8;' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
   link.download = name;

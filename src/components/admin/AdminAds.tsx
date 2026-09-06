@@ -37,7 +37,7 @@ const AdminAds = () => {
       toast({ title: 'Выберите хотя бы одну профессию и город' });
       return;
     }
-    const name = `direct-${cities.join('-')}-${profs.length}prof.csv`;
+    const name = `direct-${cities.join('-')}-${profs.length}prof.txt`;
     downloadCsv(rows, name);
     toast({ title: `Файл готов: ${rows.length} строк` });
   };
@@ -185,7 +185,7 @@ const AdminAds = () => {
           <div>
             <h3 className="font-head text-lg font-medium tracking-tight">Минус-слова</h3>
             <p className="mt-1 text-sm text-chip">
-              Вставьте их на уровне кампании — это главная защита от пустых кликов
+              Уже включены в файл — это главная защита от пустых кликов
             </p>
           </div>
           <div className="flex gap-2">
@@ -225,14 +225,21 @@ const AdminAds = () => {
           <li>1. Скачайте файл кнопкой выше.</li>
           <li>2. Откройте Директ Коммандер, войдите под своим логином.</li>
           <li>
-            3. Кампании → Импорт → Из файла. Выберите скачанный файл.
+            3. Создайте пустую кампанию и выберите её в списке — файл добавит
+            в неё группы и объявления.
           </li>
-          <li>4. Проверьте кампании и отправьте их на сервер кнопкой отправки.</li>
           <li>
-            5. В каждой кампании вставьте минус-слова из блока выше и задайте
-            дневной бюджет.
+            4. Вкладка «Объявления» → кнопка «Импорт» → «Импортировать из
+            файла». Выберите скачанный файл.
           </li>
+          <li>5. Проверьте результат и отправьте кампанию на сервер.</li>
+          <li>6. Задайте регион показа, дневной бюджет и ставки.</li>
         </ol>
+        <p className="mt-4 rounded-2xl border border-line bg-tile p-4 text-sm text-muted-foreground">
+          Минус-слова уже внутри файла — отдельно вставлять их не нужно. Кнопка
+          «Копировать» выше пригодится, если захотите добавить их в другую
+          кампанию.
+        </p>
         <p className="mt-4 rounded-2xl border border-line bg-tile p-4 text-sm text-muted-foreground">
           Каждое объявление ведёт на свою страницу услуги, например{' '}
           <span className="break-all text-primary">
