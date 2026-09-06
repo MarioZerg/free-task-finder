@@ -370,22 +370,26 @@ const HeroPhone = () => {
               <p className="mt-3 text-[15px] font-medium">Как справился Игорь?</p>
               <p className="mt-1 text-xs opacity-65">Оценка видна другим заказчикам</p>
 
-              <div className="relative mt-4 flex items-center justify-center gap-2">
+              {/* Палец живёт внутри пятой звезды, а не сбоку от строки:
+                  нажатие должно попадать точно в неё. */}
+              <div className="mt-4 flex items-center justify-center gap-2">
                 {[0, 1, 2, 3, 4].map((n) => (
                   <span
                     key={n}
-                    className="animate-pop-in text-3xl text-amber-300"
+                    className="animate-pop-in relative text-3xl leading-none text-amber-300"
                     style={{ animationDelay: `${n * 260}ms` }}
                   >
                     ★
+                    {n === 4 && (
+                      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                        <TapHand />
+                      </span>
+                    )}
                   </span>
                 ))}
-                <span className="absolute right-1 top-1/2 -translate-y-1/2">
-                  <TapHand />
-                </span>
               </div>
 
-              <p className="mt-4 text-[13px] opacity-75">Отлично — рекомендую</p>
+              <p className="mt-7 text-[13px] opacity-75">Отлично — рекомендую</p>
             </div>
           </div>
         )}
