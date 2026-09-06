@@ -27,6 +27,14 @@ import Loader from '@/components/Loader';
 const field =
   'w-full rounded-2xl border border-line bg-tile px-4 py-3 text-base outline-none transition-colors placeholder:text-chip focus:border-primary/60';
 
+const proUntilText = (u: User | null) => {
+  if (!u?.subscriptionUntil) return '';
+  const d = new Date(u.subscriptionUntil);
+  // Бессрочную подписку держим датой далеко в будущем — показываем словом.
+  if (d.getFullYear() >= 2099) return 'бессрочно';
+  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+};
+
 const filters = [
   { id: 'all', label: 'Все' },
   { id: 'real', label: 'Реальные' },
@@ -41,6 +49,7 @@ const AdminUsers = ({ onProfile }: { onProfile: (id: number) => void }) => {
   const [form, setForm] = useState({ name: '', city: '', skill: '' });
   const [busy, setBusy] = useState(false);
   const [toDelete, setToDelete] = useState<User | null>(null);
+  const [proUser, setProUser] = useState<User | null>(null);
 
   const load = async (r = role) => {
     setLoading(true);
@@ -75,6 +84,20 @@ const AdminUsers = ({ onProfile }: { onProfile: (id: number) => void }) => {
       await load(role);
     } catch {
       toast({ title: 'Не получилось', description: 'Действие не выполнено.' });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const grantPro = async (body: Record<string, unknown>, ok: string) => {
+    setBusy(true);
+    try {
+      await api.auth('admin_grant_pro', { method: 'POST', body });
+      toast({ title: ok });
+      setProUser(null);
+      await load(role);
+    } catch {
+      toast({ title: 'Не получилось', description: 'Подписка не изменена.' });
     } finally {
       setBusy(false);
     }
@@ -153,6 +176,12 @@ const AdminUsers = ({ onProfile }: { onProfile: (id: number) => void }) => {
                       демо
                     </span>
                   )}
+                  {u.isPro && (
+                    <span className="flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-600">
+                      <Icon name="Crown" size={11} />
+                      PRO
+                    </span>
+                  )}
                 </p>
                 <p className="mt-0.5 break-words text-sm text-chip">
                   @{u.maxId} · {u.city}
@@ -164,6 +193,11 @@ const AdminUsers = ({ onProfile }: { onProfile: (id: number) => void }) => {
                 <p className="mt-0.5 break-words text-xs text-chip">
                   {u.phone || 'телефон не указан'} · {u.contact || 'контакт не указан'}
                 </p>
+                {u.isPro && (
+                  <p className="mt-0.5 break-words text-xs font-medium text-amber-600">
+                    PRO {proUntilText(u) === 'бессрочно' ? 'бессрочно' : `до ${proUntilText(u)}`}
+                  </p>
+                )}
                 {u.about && (
                   <p className="mt-1 line-clamp-2 break-words text-xs text-muted-foreground">
                     {u.about}
@@ -202,6 +236,13 @@ const AdminUsers = ({ onProfile }: { onProfile: (id: number) => void }) => {
                   className="min-h-[44px] rounded-full border border-line px-4 py-2 text-sm transition-colors hover:border-primary/50 disabled:opacity-60"
                 >
                   {u.blocked ? 'Разблокировать' : 'Заблокировать'}
+                </button>
+                <button
+                  onClick={() => setProUser(u)}
+                  className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-amber-500/50 px-4 py-2 text-sm text-amber-600 transition-colors hover:bg-amber-500/10"
+                >
+                  <Icon name="Crown" size={15} />
+                  PRO
                 </button>
                 <button
                   onClick={() => {
@@ -309,6 +350,61 @@ const AdminUsers = ({ onProfile }: { onProfile: (id: number) => void }) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!proUser} onOpenChange={(v) => !v && setProUser(null)}>
+        <DialogContent className="border-line bg-surface text-foreground sm:max-w-[440px]">
+          <DialogHeader>
+            <DialogTitle className="font-head text-xl font-medium">
+              Доделай PRO для {proUser?.name}
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              {proUser?.isPro
+                ? `Подписка активна до ${proUntilText(proUser)}. Новый срок добавится к текущему.`
+                : 'Подписка включится сразу. Человек получит уведомление в MAX.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-3 gap-2">
+            {[1, 3, 6, 12].map((m) => (
+              <button
+                key={m}
+                disabled={busy}
+                onClick={() =>
+                  grantPro(
+                    { userId: proUser?.id, months: m },
+                    `PRO выдан на ${m} мес.`,
+                  )
+                }
+                className="min-h-[48px] rounded-2xl border border-line bg-tile px-3 text-sm font-medium transition-colors hover:border-primary/60 disabled:opacity-60"
+              >
+                {m} мес
+              </button>
+            ))}
+            <button
+              disabled={busy}
+              onClick={() =>
+                grantPro({ userId: proUser?.id, forever: true }, 'PRO выдан бессрочно')
+              }
+              className="col-span-2 flex min-h-[48px] items-center justify-center gap-2 rounded-2xl border border-amber-500/50 bg-amber-500/10 px-3 text-sm font-medium text-amber-600 transition-colors hover:bg-amber-500/20 disabled:opacity-60"
+            >
+              <Icon name="Infinity" size={16} />
+              Бессрочно
+            </button>
+          </div>
+
+          {proUser?.isPro && (
+            <button
+              disabled={busy}
+              onClick={() =>
+                grantPro({ userId: proUser?.id, revoke: true }, 'PRO отключён')
+              }
+              className="min-h-[44px] rounded-full border border-destructive/40 px-5 text-sm text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-60"
+            >
+              Отключить подписку
+            </button>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

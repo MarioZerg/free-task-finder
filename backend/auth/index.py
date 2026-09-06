@@ -593,6 +593,17 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         rows = [dict(r) for r in cur.fetchall()]
         profs = _professions_map(cur, [r['id'] for r in rows])
         members = [_user_row(r, profs_map=profs) for r in rows]
+        # В списке людей описание тоже под PRO — иначе его можно было бы
+        # прочитать здесь, минуя карточку профиля.
+        viewer = _me(cur, token)
+        if not (viewer and (viewer.get('is_admin') or _is_pro(viewer.get('subscription_until')))):
+            me_id = int(viewer['id']) if viewer else 0
+            for m in members:
+                if int(m['id']) == me_id:
+                    continue
+                m['aboutLocked'] = bool(m.get('about') or m.get('aboutCustomer'))
+                m['about'] = ''
+                m['aboutCustomer'] = ''
         cur.execute(
             f"""SELECT
                  (SELECT COUNT(*) FROM {SCHEMA}.users WHERE {base}) AS members,
@@ -629,8 +640,26 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 ORDER BY r.created_at DESC LIMIT 60"""
         )
         all_reviews = [dict(r) for r in cur.fetchall()]
+        # Описание профиля — привилегия PRO. Прячем текст на сервере, а не
+        # только в вёрстке: иначе его видно в ответе запроса.
+        viewer = _me(cur, token)
+        can_read_about = bool(
+            viewer
+            and (
+                viewer.get('is_admin')
+                or int(viewer['id']) == int(row['id'])
+                or _is_pro(viewer.get('subscription_until'))
+            )
+        )
+        profile_row = _user_row(row, cur=cur)
+        if not can_read_about:
+            profile_row['aboutLocked'] = bool(
+                profile_row.get('about') or profile_row.get('aboutCustomer')
+            )
+            profile_row['about'] = ''
+            profile_row['aboutCustomer'] = ''
         return _resp(200, {
-            'user': _user_row(row, cur=cur),
+            'user': profile_row,
             'reviews': all_reviews,
             'reviewsExecutor': [
                 r for r in all_reviews if r.get('target_side') != 'customer'

@@ -56,6 +56,8 @@ export interface User {
   avatar?: string | null;
   /** Почта для чеков по оплате подписки. */
   email?: string | null;
+  /** Описание скрыто: доступно только владельцам PRO. */
+  aboutLocked?: boolean;
   /** Два независимых режима: можно включить оба или оставить один. */
   asExecutor?: boolean;
   asCustomer?: boolean;

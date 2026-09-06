@@ -12,6 +12,7 @@ import type { ReviewItem, User } from '@/lib/api';
 import ProfileStats from '@/components/profile/ProfileStats';
 import ProfileReviews from '@/components/profile/ProfileReviews';
 import Avatar from '@/components/Avatar';
+import SubscriptionDialog from '@/components/SubscriptionDialog';
 
 interface Props {
   userId: number | null;
@@ -36,6 +37,7 @@ const ProfileDialog = ({ userId, onOpenChange, showDetails = false }: Props) => 
   const [exReviews, setExReviews] = useState<ReviewItem[]>([]);
   const [cuReviews, setCuReviews] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [proOpen, setProOpen] = useState(false);
 
   useEffect(() => {
     if (!userId) {
@@ -123,6 +125,28 @@ const ProfileDialog = ({ userId, onOpenChange, showDetails = false }: Props) => 
 
             <ProfileStats user={profile} />
 
+            {showDetails && profile.aboutLocked && (
+              <div className="rounded-3xl border border-amber-500/40 bg-amber-500/5 p-5 text-center">
+                <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-600">
+                  <Icon name="Lock" size={18} />
+                </span>
+                <p className="mt-3 font-head text-base font-medium">
+                  Человек рассказал о себе
+                </p>
+                <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
+                  Описание профиля — опыт, инструмент и условия работы — открыто
+                  для подписчиков Доделай PRO.
+                </p>
+                <button
+                  onClick={() => setProOpen(true)}
+                  className="btn-shine mx-auto mt-4 flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.02]"
+                >
+                  <Icon name="Crown" size={16} />
+                  Открыть с PRO
+                </button>
+              </div>
+            )}
+
             {showDetails &&
               (profile.about || profile.aboutCustomer || profile.city || profile.skill) && (
                 <div className="rounded-3xl border border-line bg-tile p-5">
@@ -178,6 +202,11 @@ const ProfileDialog = ({ userId, onOpenChange, showDetails = false }: Props) => 
           </>
         )}
       </DialogContent>
+      <SubscriptionDialog
+        open={proOpen}
+        onOpenChange={setProOpen}
+        hint="С PRO видно, что человек рассказал о себе: опыт, инструмент и условия работы."
+      />
     </Dialog>
   );
 };
