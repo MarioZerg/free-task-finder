@@ -1271,21 +1271,46 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
 
         if method == 'POST' and action == 'admin_grant_pro':
             uid = _int_safe(body.get('userId'))
-            months = _int_safe(body.get('months')) or 1
             if not uid:
                 return _resp(400, {'error': 'no_user'})
             if body.get('revoke'):
                 cur.execute(
-                    f'UPDATE {SCHEMA}.users SET subscription_until = NULL WHERE id = {uid}'
+                    f"""UPDATE {SCHEMA}.users
+                        SET subscription_until = NULL, subscription_auto_renew = FALSE
+                        WHERE id = {uid}"""
                 )
+                note = 'Подписка Доделай PRO отключена администратором.'
+            elif body.get('forever'):
+                # «Бессрочно» держим как дату далеко в будущем: вся проверка PRO
+                # в проекте построена на сравнении с датой, отдельный флаг
+                # пришлось бы учитывать в десятке мест.
+                cur.execute(
+                    f"""UPDATE {SCHEMA}.users
+                        SET subscription_until = TIMESTAMP '2099-12-31 23:59:59',
+                            subscription_auto_renew = FALSE
+                        WHERE id = {uid}"""
+                )
+                note = 'Вам открыт Доделай PRO без ограничения по сроку.'
             else:
+                months = max(1, min(24, _int_safe(body.get('months')) or 1))
                 cur.execute(
                     f"""UPDATE {SCHEMA}.users
                         SET subscription_until = GREATEST(COALESCE(subscription_until, NOW()), NOW())
-                                                 + INTERVAL '{min(12, months)} months'
+                                                 + INTERVAL '{months} months',
+                            subscription_auto_renew = FALSE
                         WHERE id = {uid}"""
                 )
-            return _resp(200, {'ok': True})
+                note = f'Вам открыт Доделай PRO на {months} мес.'
+            cur.execute(
+                f'SELECT max_user_id, subscription_until FROM {SCHEMA}.users WHERE id = {uid}'
+            )
+            target = cur.fetchone()
+            if target:
+                _notify(target['max_user_id'], note)
+            return _resp(200, {
+                'ok': True,
+                'subscriptionUntil': target['subscription_until'] if target else None,
+            })
 
         if method == 'POST' and action == 'admin_broadcast':
             mode = str(body.get('mode', 'preview'))

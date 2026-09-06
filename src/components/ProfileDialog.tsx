@@ -92,6 +92,12 @@ const ProfileDialog = ({ userId, onOpenChange, showDetails = false }: Props) => 
                   {profile.verified && (
                     <Icon name="BadgeCheck" size={16} className="shrink-0 text-primary" />
                   )}
+                  {profile.isPro && (
+                    <span className="flex shrink-0 items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-600">
+                      <Icon name="Crown" size={11} />
+                      PRO
+                    </span>
+                  )}
                 </p>
                 <p
                   className={`truncate text-sm ${profile.online ? 'text-emerald-600' : 'text-chip'}`}
