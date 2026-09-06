@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import Icon from '@/components/ui/icon';
 import { toast } from '@/hooks/use-toast';
+import AdVideoList from '@/components/admin/AdVideoList';
 import { PROFESSIONS, PROFESSION_GROUPS } from '@/data/professionsCatalog';
 import { CITY_PAGES } from '@/data/cityPages';
 import { NEGATIVE_GROUPS, WORKER_NEGATIVE_GROUPS } from '@/data/adKeywords';
@@ -354,6 +355,7 @@ const AdminAds = () => {
             пропорции на каждую специальность. Директ забирает их по ссылке
             с сайта, поэтому загружайте файл после публикации проекта: иначе
             картинки ещё не будут доступны и объявления уйдут без них.
+            Видеоролики к ним — в списке ниже, их загружают отдельно.
           </span>
         </p>
         <p className="mt-3 rounded-2xl border border-line bg-tile p-4 text-sm text-muted-foreground">
@@ -376,6 +378,8 @@ const AdminAds = () => {
           . Совпадение запроса, объявления и страницы — то, что вытягивает отклик.
         </p>
       </div>
+
+      <AdVideoList />
     </div>
   );
 };
