@@ -228,8 +228,15 @@ const CustomerJobCard = ({
                         ★ {r.rating.toFixed(1)} · {r.doneCount} работ · {r.reviewsCount} отзывов
                       </p>
                       {r.skill && <p className="mt-0.5 text-xs text-chip">{r.skill}</p>}
-                      {r.about && (
+                      {r.about ? (
                         <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{r.about}</p>
+                      ) : (
+                        r.aboutLocked && (
+                          <p className="mt-1 flex items-center gap-1 text-xs text-amber-600">
+                            <Icon name="Lock" size={11} />
+                            Рассказал о себе — видно с PRO
+                          </p>
+                        )
                       )}
                       <p className="mt-1.5 text-sm text-muted-foreground">{r.note}</p>
                     </div>

@@ -270,7 +270,11 @@ def _viewer(cur, token: str) -> Optional[Dict[str, Any]]:
     return dict(row) if row else None
 
 
-def _responses(cur, job_id: int) -> list:
+def _responses(cur, job_id: int, viewer: Optional[Dict[str, Any]] = None) -> list:
+    """Отклики на заказ. Описание исполнителя показываем только владельцу PRO."""
+    can_read_about = bool(
+        viewer and (viewer.get('is_admin') or _is_pro(viewer))
+    )
     cur.execute(
         f"""SELECT r.executor_id, r.note, r.created_at,
                    u.name, u.city, u.skill, u.about, u.rating, u.done_count, u.reviews_count, u.avatar,
@@ -288,7 +292,8 @@ def _responses(cur, job_id: int) -> list:
             'name': r['name'],
             'city': r['city'],
             'skill': r['skill'],
-            'about': r['about'],
+            'about': r['about'] if can_read_about else '',
+            'aboutLocked': bool(r['about']) and not can_read_about,
             'rating': float(r['rating'] or 0),
             'doneCount': r['done_count'],
             'reviewsCount': r['reviews_count'],
@@ -456,7 +461,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         jobs = []
         for row in cur.fetchall():
             item = _job(row, me)
-            item['responses'] = _responses(cur, row['id'])
+            item['responses'] = _responses(cur, row['id'], me)
             jobs.append(item)
         return _resp(200, {'jobs': jobs})
 
@@ -482,7 +487,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         jobs = []
         for row in cur.fetchall():
             item = _job(row, me)
-            item['responses'] = _responses(cur, row['id'])
+            item['responses'] = _responses(cur, row['id'], me)
             cur.execute(
                 f"SELECT COUNT(*) AS c FROM {SCHEMA}.reviews WHERE job_id = {row['id']} AND author_id = {me['id']}"
             )
@@ -613,7 +618,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             jobs = []
             for row in cur.fetchall():
                 item = _job(row, me)
-                item['responses'] = _responses(cur, row['id'])
+                item['responses'] = _responses(cur, row['id'], me)
                 jobs.append(item)
             return _resp(200, {'jobs': jobs})
 

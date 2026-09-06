@@ -302,6 +302,8 @@ export interface JobResponseItem {
   city: string;
   skill?: string | null;
   about?: string | null;
+  /** У исполнителя есть описание, но читать его можно только с PRO. */
+  aboutLocked?: boolean;
   rating: number;
   doneCount: number;
   reviewsCount: number;
