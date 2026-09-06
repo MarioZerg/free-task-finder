@@ -833,8 +833,11 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 'customerCode': TOCHKA_CUSTOMER_CODE,
                 'amount': f'{amount}.00',
                 'purpose': f'Подписка Доделай PRO на {months} мес. Платёж №{payment_id}',
-                'redirectUrl': f'{SITE_URL}/dashboard?payment=success&pid={payment_id}',
-                'failRedirectUrl': f'{SITE_URL}/dashboard?payment=fail&pid={payment_id}',
+                # Отдельные страницы вместо возврата сразу в кабинет: после
+                # оплаты человеку нужно показать понятный итог, а банк
+                # присылает его раньше, чем подтверждаются деньги.
+                'redirectUrl': f'{SITE_URL}/payment/success?pid={payment_id}',
+                'failRedirectUrl': f'{SITE_URL}/payment/fail?pid={payment_id}',
                 'paymentMode': ['card', 'sbp'],
                 'merchantId': TOCHKA_TERMINAL_ID or TOCHKA_CUSTOMER_CODE,
                 'preAuthorization': False,

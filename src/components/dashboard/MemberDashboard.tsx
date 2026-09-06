@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Icon from '@/components/ui/icon';
 import { useAppState } from '@/hooks/use-app-state';
 import type { JobItem } from '@/lib/api';
@@ -11,6 +11,7 @@ import InviteCard from '@/components/InviteCard';
 import { toast } from '@/hooks/use-toast';
 import DashTabs, { hoursLeft } from '@/components/dashboard/DashTabs';
 import CustomerJobCard from '@/components/dashboard/CustomerJobCard';
+import SubscriptionDialog from '@/components/SubscriptionDialog';
 
 const feedWord = (n: number) => {
   const d = n % 10;
@@ -33,6 +34,22 @@ const MemberDashboard = () => {
   const [tab, setTab] = useState('feed');
   const [profileId, setProfileId] = useState<number | null>(null);
   const [editJob, setEditJob] = useState<JobItem | null>(null);
+  const [proOpen, setProOpen] = useState(false);
+
+  // Со страницы «оплата не прошла» человек возвращается с ?pro=1 —
+  // сразу открываем окно подписки, чтобы он не искал кнопку заново.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('pro') !== '1') return;
+    setProOpen(true);
+    params.delete('pro');
+    const rest = params.toString();
+    window.history.replaceState(
+      {},
+      '',
+      `${window.location.pathname}${rest ? `?${rest}` : ''}`,
+    );
+  }, []);
 
   const myId = user?.id;
 
@@ -238,6 +255,7 @@ const MemberDashboard = () => {
         }}
       />
       <ProfileDialog userId={profileId} showDetails onOpenChange={() => setProfileId(null)} />
+      <SubscriptionDialog open={proOpen} onOpenChange={setProOpen} />
     </div>
   );
 };

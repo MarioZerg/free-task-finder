@@ -21,6 +21,8 @@ const Contacts = lazy(() => import("./pages/Contacts"));
 const CityLanding = lazy(() => import("./pages/CityLanding"));
 const ProfessionCityLanding = lazy(() => import("./pages/ProfessionCityLanding"));
 const DistrictLanding = lazy(() => import("./pages/DistrictLanding"));
+const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
+const PaymentFail = lazy(() => import("./pages/PaymentFail"));
 
 const RouteFallback = () => <PageLoader />;
 
@@ -48,6 +50,8 @@ const App = () => (
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/contacts" element={<Contacts />} />
+            <Route path="/payment/success" element={<PaymentSuccess />} />
+            <Route path="/payment/fail" element={<PaymentFail />} />
             <Route path="/podrabotka/:citySlug/rayon/:districtSlug" element={<DistrictLanding />} />
             <Route path="/podrabotka/:citySlug/:professionSlug" element={<ProfessionCityLanding />} />
             <Route path="/podrabotka/:slug" element={<CityLanding />} />
