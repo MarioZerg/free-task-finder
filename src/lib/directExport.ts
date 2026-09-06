@@ -56,6 +56,10 @@ export interface AdRow {
   images: string[];
   /** Ссылки на видеоролики — по одной на каждую пропорцию */
   videos?: string[];
+  /** Быстрые ссылки: заголовок, описание и адрес */
+  sitelinks?: { title: string; desc: string; url: string }[];
+  /** Уточнения — короткие преимущества под объявлением */
+  callouts?: string[];
 }
 
 /** Регион показа для каждого города — Директ понимает их по названию.
@@ -183,6 +187,61 @@ export const videoUrls = (professionSlug: string | null, base = SITE): string[] 
   return VIDEO_FORMATS.map((f) => `${base}/ads/${theme}-${f}.mp4`);
 };
 
+/** Быстрые ссылки. Директ разрешает до восьми, но с жёстким условием:
+ *  суммарная длина ВСЕХ заголовков — не больше 66 знаков, каждый до 30.
+ *  Поэтому берём короткие слова и набираем столько, сколько влезает.
+ *  Расширенное объявление занимает больше места в выдаче и даёт человеку
+ *  выбор, куда пойти. */
+const SITELINK_LIMITS = { title: 30, desc: 60, total: 66 };
+
+export const sitelinksFor = (
+  citySlug: string,
+  withUtm: boolean,
+  base = SITE,
+  audience: 'customer' | 'worker' = 'customer',
+): { title: string; desc: string; url: string }[] => {
+  /* Якорь ставим ПОСЛЕ метки: в «/#how?utm_source=…» браузер считает
+     якорем всю строку и метка до Метрики не доходит. */
+  const link = (path: string, tag: string, hash = '') =>
+    `${base}${path}` +
+    (withUtm ? `?utm_source=yandex&utm_medium=cpc&utm_campaign=${citySlug}_${tag}` : '') +
+    hash;
+
+  const city = `/podrabotka/${citySlug}`;
+  const all =
+    audience === 'worker'
+      ? [
+          { title: 'Заказы рядом', desc: 'Свежие заявки в вашем городе', url: link(city, 'orders') },
+          { title: 'Как начать', desc: 'Регистрация за минуту, без резюме', url: link('/', 'how', '#how') },
+          { title: 'Оплата', desc: 'Деньги напрямую от заказчика, без комиссий', url: link('/', 'pay', '#practice') },
+          { title: 'Вопросы', desc: 'Ответы на частые вопросы исполнителей', url: link('/contacts', 'contacts') },
+        ]
+      : [
+          { title: 'Как это работает', desc: 'Заявка за минуту, отклики в тот же день', url: link('/', 'how', '#how') },
+          { title: 'Мастера', desc: 'Профили, отзывы и рейтинг исполнителей', url: link('/', 'exec', '#executors') },
+          { title: 'Цены', desc: 'Стоимость обсуждаете напрямую с мастером', url: link(city, 'city') },
+          { title: 'Отзывы', desc: 'Оценки после выполненных заказов', url: link('/', 'rev', '#practice') },
+          { title: 'Контакты', desc: 'Связаться с нами и задать вопрос', url: link('/contacts', 'contacts') },
+        ];
+
+  const out: typeof all = [];
+  let total = 0;
+  for (const l of all) {
+    if (l.title.length > SITELINK_LIMITS.title) continue;
+    if (total + l.title.length > SITELINK_LIMITS.total) continue;
+    total += l.title.length;
+    out.push({ ...l, desc: fit(l.desc, SITELINK_LIMITS.desc) });
+  }
+  return out;
+};
+
+/** Уточнения — короткие преимущества, до 25 знаков каждое. Идут строкой
+ *  под объявлением и добавляют доверия, не занимая заголовок. */
+export const CALLOUTS: Record<'customer' | 'worker', string[]> = {
+  customer: ['Без комиссий', 'Отклики в день заявки', 'Оплата напрямую', 'Мастера рядом'],
+  worker: ['Оплата в день работы', 'Без резюме', 'Свободный график', 'Заказы рядом'],
+};
+
 /** Ключевые фразы группы: базовая фраза плюс коммерческие добавки и город. */
 export const buildPhrases = (professionSlug: string, cityNominative: string): string[] => {
   const base = PROFESSION_KEYWORDS[professionSlug] || [];
@@ -211,6 +270,7 @@ export const buildRows = (opts: ExportOptions): AdRow[] => {
       const group = `${p.label} — ${city.nameNominative}`;
       const url = landingUrl(p.slug, city.slug, opts.utm, opts.siteUrl || SITE);
       const phrases = buildPhrases(p.slug, city.nameNominative);
+      const links = sitelinksFor(city.slug, opts.utm, opts.siteUrl || SITE);
       const titles = titlesFor(p.label, p.genitive, city.name);
       const titles2 = title2For();
       const texts = textFor(p.genitive, city.name);
@@ -230,6 +290,8 @@ export const buildRows = (opts: ExportOptions): AdRow[] => {
           region: CITY_REGION[city.slug] || 'Ярославская область',
           images: creativeUrls(p.slug, opts.siteUrl || SITE),
           videos: videoUrls(p.slug, opts.siteUrl || SITE),
+          sitelinks: links,
+          callouts: CALLOUTS.customer,
         });
       });
     }
@@ -257,6 +319,8 @@ const HEADERS = [
   'Заголовок 6', 'Заголовок 7', 'Текст 1', 'Текст 2', 'Текст 3',
   'Изображение 1', 'Изображение 2', 'Изображение 3', 'Изображение 4',
   'Видео 1', 'Видео 2', 'Видео 3',
+  'Заголовки быстрых ссылок', 'Описания быстрых ссылок', 'Адреса быстрых ссылок',
+  'Уточнения',
   'Ссылка', 'Отображаемая ссылка', 'Регион', 'Организация Яндекс Бизнеса',
   'Ставка', 'Ставка в сетях', 'Минус-фразы на группу',
 ];
@@ -270,7 +334,8 @@ const COL = {
   text: 15, text2: 16, text3: 17,
   img1: 18, img2: 19, img3: 20, img4: 21,
   vid1: 22, vid2: 23, vid3: 24,
-  url: 25, region: 27, bid: 29, bidNet: 30, negatives: 31,
+  slTitles: 25, slDescs: 26, slUrls: 27, callouts: 28,
+  url: 29, region: 31, bid: 33, bidNet: 34, negatives: 35,
 } as const;
 
 /** Разделитель — табуляция: этого требует формат Коммандера.
@@ -404,6 +469,11 @@ export const toCsv = (rows: AdRow[], opts: CsvOptions = {}): string => {
         vid1: main.videos?.[0] || '',
         vid2: main.videos?.[1] || '',
         vid3: main.videos?.[2] || '',
+        /* Несколько значений в одной ячейке Директ ждёт через «||» */
+        slTitles: (main.sitelinks || []).map((l) => l.title).join('||'),
+        slDescs: (main.sitelinks || []).map((l) => l.desc).join('||'),
+        slUrls: (main.sitelinks || []).map((l) => l.url).join('||'),
+        callouts: (main.callouts || []).join('||'),
         url: main.url,
       });
     });
@@ -496,6 +566,7 @@ export const buildWorkerRows = (opts: ExportOptions): AdRow[] => {
 
     const campaign = `Доделай, исполнители — ${city.nameNominative}`;
     const region = CITY_REGION[city.slug] || 'Ярославская область';
+    const links = sitelinksFor(city.slug, opts.utm, opts.siteUrl || SITE, 'worker');
     const titles = workerTitle(city.name).map((t) => fit(t, LIMITS.title));
     const titles2 = workerTitle2();
     const texts = workerText(city.name);
@@ -521,6 +592,8 @@ export const buildWorkerRows = (opts: ExportOptions): AdRow[] => {
         // Общая группа не про специальность — берём картинку с человеком
         images: creativeUrls(null, opts.siteUrl || SITE),
         videos: videoUrls(null, opts.siteUrl || SITE),
+        sitelinks: links,
+        callouts: CALLOUTS.worker,
       });
     });
 
@@ -554,6 +627,8 @@ export const buildWorkerRows = (opts: ExportOptions): AdRow[] => {
             region,
             images: creativeUrls(p.slug, opts.siteUrl || SITE),
             videos: videoUrls(p.slug, opts.siteUrl || SITE),
+            sitelinks: links,
+            callouts: CALLOUTS.worker,
           });
         }
       });
