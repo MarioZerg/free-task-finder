@@ -200,9 +200,21 @@ const cell = (v: string | number) => String(v).replace(/[\t\r\n]+/g, ' ').trim()
 /** Ставка по умолчанию. Без неё Коммандер подставляет свою и группы
  *  уходят на модерацию с нулём — показов не будет. Ставим скромную:
  *  поднять в кабинете проще, чем внезапно потратить бюджет. */
-const DEFAULT_BID = '30';
+export const DEFAULT_BID = 30;
 
-export const toCsv = (rows: AdRow[]): string => {
+/** Директ ждёт дробную часть через запятую: «12.5» он читает как 125. */
+const bidValue = (v: number) => String(Math.max(1, Math.round(v * 100) / 100)).replace('.', ',');
+
+export interface CsvOptions {
+  /** Ставка на поиске, рублей */
+  bid?: number;
+  /** Ставка в сетях. Не задана — берём ставку поиска */
+  bidNet?: number;
+}
+
+export const toCsv = (rows: AdRow[], opts: CsvOptions = {}): string => {
+  const bid = bidValue(opts.bid ?? DEFAULT_BID);
+  const bidNet = bidValue(opts.bidNet ?? opts.bid ?? DEFAULT_BID);
   const lines = [HEADERS.join('\t')];
   const negatives = ALL_NEGATIVES.join(', ');
 
@@ -245,8 +257,8 @@ export const toCsv = (rows: AdRow[]): string => {
         // Регион и ставка заполняются только у главного объявления —
         // так требует формат, в остальных строках они игнорируются.
         region: i === 0 ? r.region : '',
-        bid: i === 0 ? DEFAULT_BID : '',
-        bidNet: i === 0 ? DEFAULT_BID : '',
+        bid: i === 0 ? bid : '',
+        bidNet: i === 0 ? bidNet : '',
         negatives: i === 0 ? negatives : '',
       });
     });
@@ -272,8 +284,8 @@ export const toCsv = (rows: AdRow[]): string => {
 
 /** Файл скачивается с меткой BOM — без неё Excel открывает кириллицу
  *  кракозябрами, и человек решает, что выгрузка сломана. */
-export const downloadCsv = (rows: AdRow[], name: string) => {
-  const blob = new Blob(['\uFEFF' + toCsv(rows)], { type: 'text/plain;charset=utf-8;' });
+export const downloadCsv = (rows: AdRow[], name: string, opts: CsvOptions = {}) => {
+  const blob = new Blob(['\uFEFF' + toCsv(rows, opts)], { type: 'text/plain;charset=utf-8;' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
   link.download = name;

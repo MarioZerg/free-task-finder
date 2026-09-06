@@ -7,6 +7,7 @@ import { NEGATIVE_GROUPS } from '@/data/adKeywords';
 import {
   buildRows,
   downloadCsv,
+  DEFAULT_BID,
   negativesLine,
   landingUrl,
 } from '@/lib/directExport';
@@ -20,6 +21,8 @@ const AdminAds = () => {
   const [profs, setProfs] = useState<string[]>(STARTER);
   const [cities, setCities] = useState<string[]>(['yaroslavl']);
   const [utm, setUtm] = useState(true);
+  const [bid, setBid] = useState(DEFAULT_BID);
+  const [bidNet, setBidNet] = useState(DEFAULT_BID);
   const [showNeg, setShowNeg] = useState(false);
 
   const rows = useMemo(
@@ -38,7 +41,7 @@ const AdminAds = () => {
       return;
     }
     const name = `direct-${cities.join('-')}-${profs.length}prof.txt`;
-    downloadCsv(rows, name);
+    downloadCsv(rows, name, { bid, bidNet });
     toast({ title: `Файл готов: ${rows.length} строк` });
   };
 
@@ -130,6 +133,56 @@ const AdminAds = () => {
       </div>
 
       <div className="rounded-3xl border border-line bg-surface p-5">
+        <h3 className="font-head text-lg font-medium tracking-tight">Ставки</h3>
+        <p className="mt-1 text-sm text-chip">
+          Сколько готовы платить за переход. Начните со скромной — поднять
+          в кабинете проще, чем внезапно потратить бюджет
+        </p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <label className="block">
+            <span className="text-sm text-muted-foreground">На поиске, ₽</span>
+            <input
+              type="number"
+              min={1}
+              max={5000}
+              value={bid}
+              onChange={(e) => setBid(Math.max(1, Number(e.target.value) || 1))}
+              className="mt-1.5 h-12 w-full rounded-2xl border border-line bg-tile px-4 text-base outline-none transition-colors focus:border-primary"
+            />
+          </label>
+          <label className="block">
+            <span className="text-sm text-muted-foreground">В сетях (РСЯ), ₽</span>
+            <input
+              type="number"
+              min={1}
+              max={5000}
+              value={bidNet}
+              onChange={(e) => setBidNet(Math.max(1, Number(e.target.value) || 1))}
+              className="mt-1.5 h-12 w-full rounded-2xl border border-line bg-tile px-4 text-base outline-none transition-colors focus:border-primary"
+            />
+          </label>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[15, 30, 50, 100].map((v) => (
+            <button
+              key={v}
+              onClick={() => {
+                setBid(v);
+                setBidNet(v);
+              }}
+              className={`min-h-[40px] rounded-full border px-4 py-2 text-sm transition-colors ${
+                bid === v && bidNet === v
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-line text-muted-foreground hover:border-primary/50'
+              }`}
+            >
+              {v} ₽
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-line bg-surface p-5">
         <label className="flex cursor-pointer items-center gap-3">
           <input
             type="checkbox"
@@ -153,7 +206,8 @@ const AdminAds = () => {
               {rows.length} объявлений · {groups} групп · {cities.length} кампаний
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              {profs.length} профессий в {cities.length} городах
+              {profs.length} профессий в {cities.length} городах · ставка {bid} ₽
+              {bidNet !== bid && ` / ${bidNet} ₽ в сетях`}
             </p>
           </div>
           <button
@@ -237,8 +291,7 @@ const AdminAds = () => {
         </ol>
         <p className="mt-4 rounded-2xl border border-line bg-tile p-4 text-sm text-muted-foreground">
           Регионы показа, ставки и минус-слова уже проставлены в файле —
-          вручную заполнять не нужно. Ставка стоит скромная, 30 ₽: поднять её
-          в кабинете проще, чем внезапно потратить бюджет.
+          вручную заполнять не нужно.
         </p>
         <p className="mt-3 rounded-2xl border border-line bg-tile p-4 text-sm text-muted-foreground">
           Тутаев, Углич и Ростов в справочнике Директа отдельными регионами не
