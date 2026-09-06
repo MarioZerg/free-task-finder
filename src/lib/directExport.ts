@@ -273,40 +273,48 @@ export const toCsv = (rows: AdRow[], opts: CsvOptions = {}): string => {
     // Второй вариант текста для той же группы — материал для комбинаций
     const alt = list.slice(1).find((v) => v.text !== main.text);
 
-    /* Поля объявления заполняем ТОЛЬКО в первой строке группы.
-       Раньше они дублировались в каждой строке с фразой, и Коммандер
-       считал каждую строку отдельным объявлением: при 49 фразах выходило
-       49 объявлений в группе при разрешённых 3 (10 с архивными) — отсюда
-       «в группе уже максимальное количество комбинаторных объявлений».
-       Остальные строки несут только свою ключевую фразу. */
+    /* Поля ГРУППЫ (название, номер, регион, ставка, минус-фразы) повторяем
+       в каждой строке, а поля ОБЪЯВЛЕНИЯ (заголовки, тексты, картинки,
+       ссылка) заполняем только в первой.
+
+       Обе крайности ломали импорт. Когда объявление дублировалось в каждой
+       строке, Коммандер считал каждую фразу отдельным объявлением: 49 штук
+       при разрешённых 3. Когда же строки остались с одной лишь фразой, он
+       не смог привязать их к группе и завёл пустые «Новые кампании» без
+       названия и региона. Верно — повторять группу, но не объявление. */
     list.forEach((r, i) => {
-      if (i === 0) {
-        row({
-          extra: '-',
-          adType: 'Комбинаторное',
-          groupName: r.group,
-          groupNo: no,
-          phrase: r.phrase,
-          // Комбинаторное объявление само перебирает варианты — отдаём
-          // все заголовки и тексты сразу, одним объявлением на группу.
-          title: main.title,
-          title2: main.title2,
-          title3: alt?.title2 || '',
-          text: main.text,
-          text2: alt && alt.text !== main.text ? alt.text : '',
-          img1: main.images[0] || '',
-          img2: main.images[1] || '',
-          img3: main.images[2] || '',
-          img4: main.images[3] || '',
-          url: main.url,
-          region: r.region,
-          bid,
-          bidNet,
-          negatives,
-        });
-      } else {
-        row({ extra: '-', groupNo: no, phrase: r.phrase });
+      const groupFields = {
+        extra: '-',
+        groupName: r.group,
+        groupNo: no,
+        phrase: r.phrase,
+        region: r.region,
+        bid,
+        bidNet,
+        negatives,
+      };
+
+      if (i > 0) {
+        row(groupFields);
+        return;
       }
+
+      row({
+        ...groupFields,
+        adType: 'Комбинаторное',
+        // Комбинаторное объявление само перебирает варианты — отдаём
+        // все заголовки и тексты сразу, одним объявлением на группу.
+        title: main.title,
+        title2: main.title2,
+        title3: alt?.title2 || '',
+        text: main.text,
+        text2: alt && alt.text !== main.text ? alt.text : '',
+        img1: main.images[0] || '',
+        img2: main.images[1] || '',
+        img3: main.images[2] || '',
+        img4: main.images[3] || '',
+        url: main.url,
+      });
     });
   }
   return lines.join('\r\n');
