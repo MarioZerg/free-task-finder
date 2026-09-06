@@ -171,7 +171,7 @@ const PeopleList = () => {
         onPage={setPage}
       />
 
-      <ProfileDialog userId={profileId} onOpenChange={() => setProfileId(null)} />
+      <ProfileDialog userId={profileId} showDetails onOpenChange={() => setProfileId(null)} />
       <InviteDialog executor={invite} onOpenChange={() => setInvite(null)} />
       <DirectMessageDialog
         peer={message}
