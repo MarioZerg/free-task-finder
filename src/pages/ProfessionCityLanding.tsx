@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { AppStateProvider } from '@/hooks/use-app-state';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import EarningsDisclaimer from '@/components/EarningsDisclaimer';
 import LoginDialog from '@/components/LoginDialog';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import Avatar from '@/components/Avatar';
@@ -444,6 +445,8 @@ const ProfessionCityLandingInner = ({ page }: { page: ProfessionCityPage }) => {
               </div>
             ))}
           </div>
+
+          <EarningsDisclaimer className="mt-8" />
         </section>
       </main>
 

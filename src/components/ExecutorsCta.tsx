@@ -1,4 +1,5 @@
 import Icon from '@/components/ui/icon';
+import EarningsDisclaimer from '@/components/EarningsDisclaimer';
 import { PHOTO_MOVERS } from '@/data/mock';
 import { useOpenFeed } from '@/hooks/use-open-feed';
 
@@ -52,9 +53,11 @@ const ExecutorsCta = () => {
               ))}
             </ul>
 
+            <EarningsDisclaimer className="mt-8" />
+
             <button
               onClick={openFeed}
-              className="btn-shine mt-10 flex items-center gap-2 rounded-full bg-primary px-8 py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.03]"
+              className="btn-shine mt-8 flex items-center gap-2 rounded-full bg-primary px-8 py-4 text-base font-medium text-primary-foreground transition-transform hover:scale-[1.03]"
             >
               Смотреть заказы
               <Icon name="ArrowRight" size={18} />
