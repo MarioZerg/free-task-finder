@@ -43,6 +43,12 @@ export interface AdRow {
   title: string;
   title2: string;
   text: string;
+  /** Все варианты заголовков группы — Директ берёт до 7 штук */
+  titles?: string[];
+  /** Все варианты вторых заголовков (до 30 знаков) */
+  titles2?: string[];
+  /** Все варианты текстов — Директ берёт до 3 штук */
+  texts?: string[];
   url: string;
   region: string;
   /** Ссылки на картинки для РСЯ — по одной на каждую пропорцию */
@@ -78,17 +84,40 @@ const fit = (s: string, limit: number): string => {
   return (space > limit * 0.6 ? cut.slice(0, space) : cut).replace(/[\s,.—-]+$/, '');
 };
 
-/** Заголовок объявления: услуга + город. Именно так человек и ищет.
- *  Город — в предложном падеже («в Ярославле»), иначе заголовок читается
- *  как ошибка и режет доверие с первой секунды. */
-const titleFor = (label: string, cityPrep: string): string =>
-  fit(`${label} в ${cityPrep}`, LIMITS.title);
+/** Семь заголовков на объявление — максимум, который разрешает Директ.
+ *  Каждый бьёт в свой мотив: цена, скорость, доверие, отсутствие
+ *  посредника. Директ сам покажет тот, что заходит конкретному человеку,
+ *  а в отчёте по группировке «Заголовок» видно, какой мотив сработал.
+ *
+ *  Падежи берём из каталога, а не склоняем сами. В каталоге вперемешку
+ *  люди («Сантехник») и услуги («Вывоз мусора»), поэтому шаблон
+ *  «Вызвать {label}» давал «Вызвать сантехник» и «Вызвать вывоз мусора».
+ *  Для таких фраз нужна форма genitive («сантехника», «вывоза мусора»),
+ *  она же совпадает с винительным. Остальные шаблоны оставляем в
+ *  именительном — там label подходит без изменений. */
+const titlesFor = (label: string, genitive: string, cityPrep: string): string[] => {
+  const short = (v: string, fallback: string) =>
+    v.length <= LIMITS.title ? v : fit(fallback, LIMITS.title);
+  return [
+    short(`${label} в ${cityPrep}`, label),
+    short(`${label} в ${cityPrep} — без посредников`, `${label} без посредников`),
+    short(`Вызвать ${genitive} в ${cityPrep}`, `Вызвать ${genitive}`),
+    short(`${label} в ${cityPrep}: отклики за час`, `${label}: отклики за час`),
+    short(`Найти ${genitive} в ${cityPrep}`, `Найти ${genitive}`),
+    short(`${label} недорого в ${cityPrep}`, `${label} недорого`),
+    short(`${label} в ${cityPrep} — цены и отзывы`, `${label}: цены и отзывы`),
+  ];
+};
 
+/** Второй заголовок — короткая приписка до 30 знаков. */
 const title2For = (): string[] => [
   'Бесплатно, без комиссий',
   'Мастера рядом с домом',
   'Отклики в день заявки',
   'Оплата напрямую мастеру',
+  'Цену обсуждаете сами',
+  'Проверенные исполнители',
+  'Заявка за минуту',
 ];
 
 /** Для каждого текста держим короткий запасной вариант.
@@ -98,6 +127,8 @@ const title2For = (): string[] => [
 const pick = (...variants: string[]): string =>
   variants.find((v) => v.length <= LIMITS.text) || fit(variants[variants.length - 1], LIMITS.text);
 
+/** Три текста — максимум Директа. Ставим разные акценты: выгода,
+ *  простота обращения, скорость отклика. */
 const textFor = (genitive: string, cityPrep: string): string[] => [
   pick(
     `Найдите ${genitive} в ${cityPrep} без посредников. Бесплатно, комиссию не берём.`,
@@ -112,6 +143,7 @@ const textFor = (genitive: string, cityPrep: string): string[] => [
   pick(
     `Частные мастера в ${cityPrep}. Отклики в день заявки, цену обсуждаете напрямую.`,
     `Частные мастера в ${cityPrep}. Отклики в день заявки.`,
+    `Частные мастера. Отклики в день заявки, цену обсуждаете сами.`,
   ),
 ];
 
@@ -165,6 +197,7 @@ export const buildRows = (opts: ExportOptions): AdRow[] => {
       const group = `${p.label} — ${city.nameNominative}`;
       const url = landingUrl(p.slug, city.slug, opts.utm, opts.siteUrl || SITE);
       const phrases = buildPhrases(p.slug, city.nameNominative);
+      const titles = titlesFor(p.label, p.genitive, city.name);
       const titles2 = title2For();
       const texts = textFor(p.genitive, city.name);
 
@@ -173,9 +206,12 @@ export const buildRows = (opts: ExportOptions): AdRow[] => {
           campaign,
           group,
           phrase,
-          title: titleFor(p.label, city.name),
+          title: titles[0],
           title2: titles2[i % titles2.length],
           text: texts[i % texts.length],
+          titles,
+          titles2,
+          texts,
           url,
           region: CITY_REGION[city.slug] || 'Ярославская область',
           images: creativeUrls(p.slug, opts.siteUrl || SITE),
@@ -202,7 +238,8 @@ export const buildRows = (opts: ExportOptions): AdRow[] => {
 const HEADERS = [
   'Доп. объявление группы', 'Тип объявления', 'ID группы', 'Название группы',
   'Номер группы', 'ID фразы', 'Фраза (с минус-словами)', 'ID объявления',
-  'Заголовок 1', 'Заголовок 2', 'Заголовок 3', 'Текст 1', 'Текст 2',
+  'Заголовок 1', 'Заголовок 2', 'Заголовок 3', 'Заголовок 4', 'Заголовок 5',
+  'Заголовок 6', 'Заголовок 7', 'Текст 1', 'Текст 2', 'Текст 3',
   'Изображение 1', 'Изображение 2', 'Изображение 3', 'Изображение 4',
   'Ссылка', 'Отображаемая ссылка', 'Регион', 'Организация Яндекс Бизнеса',
   'Ставка', 'Ставка в сетях', 'Минус-фразы на группу',
@@ -212,9 +249,11 @@ const HEADERS = [
  *  при сдвиге сетки ошибка вылезет здесь, а не в чужом кабинете. */
 const COL = {
   extra: 0, adType: 1, groupName: 3, groupNo: 4,
-  phrase: 6, title: 8, title2: 9, title3: 10, text: 11, text2: 12,
-  img1: 13, img2: 14, img3: 15, img4: 16,
-  url: 17, region: 19, bid: 21, bidNet: 22, negatives: 23,
+  phrase: 6,
+  title: 8, title2: 9, title3: 10, title4: 11, title5: 12, title6: 13, title7: 14,
+  text: 15, text2: 16, text3: 17,
+  img1: 18, img2: 19, img3: 20, img4: 21,
+  url: 22, region: 24, bid: 26, bidNet: 27, negatives: 28,
 } as const;
 
 /** Разделитель — табуляция: этого требует формат Коммандера.
@@ -237,6 +276,42 @@ export interface CsvOptions {
   /** Кампания на исполнителей — у неё свой набор минус-слов */
   audience?: 'customer' | 'worker';
 }
+
+/** Раскладываем варианты по колонкам «Заголовок 1..7» и «Текст 1..3».
+ *  Директ разрешает именно столько; чем больше непохожих вариантов, тем
+ *  точнее он подберёт связку под конкретного человека, а в отчёте по
+ *  группировкам «Заголовок» и «Текст» видно, какая из них сработала.
+ *  Пустые колонки не мешают — лишние варианты Директ просто не покажет. */
+const adVariants = (main: AdRow, alt?: AdRow) => {
+  const titles = (main.titles?.length ? main.titles : [main.title]).slice(0, 7);
+  const titles2 = main.titles2?.length ? main.titles2 : [main.title2];
+  const texts = (main.texts?.length
+    ? main.texts
+    : [main.text, alt?.text].filter((t): t is string => Boolean(t))
+  ).slice(0, 3);
+
+  /* Второй заголовок не имеет отдельных колонок: в комбинаторике он
+     занимает свободные места среди «Заголовок 1..7». Добираем ими хвост,
+     чтобы отдать Директу все семь. */
+  const filled = [...titles];
+  for (const t of titles2) {
+    if (filled.length >= 7) break;
+    if (!filled.includes(t)) filled.push(t);
+  }
+
+  return {
+    title: filled[0] || '',
+    title2: filled[1] || '',
+    title3: filled[2] || '',
+    title4: filled[3] || '',
+    title5: filled[4] || '',
+    title6: filled[5] || '',
+    title7: filled[6] || '',
+    text: texts[0] || '',
+    text2: texts[1] || '',
+    text3: texts[2] || '',
+  };
+};
 
 export const toCsv = (rows: AdRow[], opts: CsvOptions = {}): string => {
   const bid = bidValue(opts.bid ?? DEFAULT_BID);
@@ -304,11 +379,7 @@ export const toCsv = (rows: AdRow[], opts: CsvOptions = {}): string => {
         adType: 'Комбинаторное',
         // Комбинаторное объявление само перебирает варианты — отдаём
         // все заголовки и тексты сразу, одним объявлением на группу.
-        title: main.title,
-        title2: main.title2,
-        title3: alt?.title2 || '',
-        text: main.text,
-        text2: alt && alt.text !== main.text ? alt.text : '',
+        ...adVariants(main, alt),
         img1: main.images[0] || '',
         img2: main.images[1] || '',
         img3: main.images[2] || '',
@@ -355,17 +426,30 @@ export default buildRows;
 const pickText2 = (full: string, short: string) =>
   full.length <= LIMITS.text ? full : fit(short, LIMITS.text);
 
-const workerTitle = (cityPrep: string): string[] => [
-  `Подработка в ${cityPrep}`,
-  `Работа на день в ${cityPrep}`,
-  `Шабашка в ${cityPrep}`,
-];
+/** Семь заголовков для исполнителей: подработка, деньги в день,
+ *  отсутствие резюме, работа рядом. Разные поводы — разные люди. */
+const workerTitle = (cityPrep: string): string[] => {
+  const short = (v: string, fallback: string) =>
+    v.length <= LIMITS.title ? v : fit(fallback, LIMITS.title);
+  return [
+    short(`Подработка в ${cityPrep}`, 'Подработка рядом'),
+    short(`Работа на день в ${cityPrep}`, 'Работа на один день'),
+    short(`Шабашка в ${cityPrep}`, 'Шабашка рядом с домом'),
+    short(`Подработка в ${cityPrep} с оплатой в день`, 'Оплата в день работы'),
+    short(`Разовые заказы в ${cityPrep}`, 'Разовые заказы рядом'),
+    short(`Работа без резюме в ${cityPrep}`, 'Работа без резюме'),
+    short(`Халтура в ${cityPrep} — заказы рядом`, 'Заказы рядом с домом'),
+  ];
+};
 
 const workerTitle2 = (): string[] => [
   'Оплата в день работы',
   'Без резюме и опыта',
   'Заказы рядом с домом',
   'Бесплатно, без комиссий',
+  'Свободный график',
+  'Заказы каждый день',
+  'Регистрация за минуту',
 ];
 
 const workerText = (cityPrep: string): string[] => [
@@ -409,6 +493,9 @@ export const buildWorkerRows = (opts: ExportOptions): AdRow[] => {
         title: titles[i % titles.length],
         title2: titles2[i % titles2.length],
         text: texts[i % texts.length],
+        titles,
+        titles2,
+        texts,
         url: cityUrl,
         region,
         // Общая группа не про специальность — берём картинку с человеком
@@ -432,6 +519,16 @@ export const buildWorkerRows = (opts: ExportOptions): AdRow[] => {
             title: fit(`${p.label}: работа в ${city.name}`, LIMITS.title),
             title2: titles2[i % titles2.length],
             text: texts[i % texts.length],
+            /* Для профессии первый заголовок свой («Сантехник: работа
+               в Ярославле»), остальные — общие про подработку. */
+            titles: [
+              fit(`${p.label}: работа в ${city.name}`, LIMITS.title),
+              fit(`Работа ${p.genitive} в ${city.name}`, LIMITS.title),
+              fit(`${p.label} — подработка в ${city.name}`, LIMITS.title),
+              ...titles,
+            ].slice(0, 7),
+            titles2,
+            texts,
             url,
             region,
             images: creativeUrls(p.slug, opts.siteUrl || SITE),
