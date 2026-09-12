@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { AppStateProvider, useAppState } from '@/hooks/use-app-state';
+import { useAppState } from '@/hooks/use-app-state';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import EarningsDisclaimer from '@/components/EarningsDisclaimer';
@@ -477,9 +477,7 @@ const CityLanding = () => {
   if (!city) return <NotFound />;
 
   return (
-    <AppStateProvider>
-      <CityLandingInner slug={city.slug} />
-    </AppStateProvider>
+    <CityLandingInner slug={city.slug} />
   );
 };
 

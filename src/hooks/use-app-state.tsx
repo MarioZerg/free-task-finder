@@ -228,7 +228,10 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       reachGoal(r.created ? 'signup' : 'login');
       setUser(r.user);
       setLoginOpen(false);
-      await refresh();
+      /* Ленту дозагружаем в фоне. Раньше здесь стояло ожидание, и человек
+         после подтверждения в MAX ещё пару секунд смотрел на главную в
+         гостевом виде, прежде чем его переносило в кабинет. */
+      refresh();
       return r.user as User;
     },
     [refresh],

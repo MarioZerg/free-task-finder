@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { AppStateProvider, useAppState } from '@/hooks/use-app-state';
+import { useAppState } from '@/hooks/use-app-state';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import LoginDialog from '@/components/LoginDialog';
@@ -336,9 +336,7 @@ const DistrictLanding = () => {
   if (!district) return <NotFound />;
 
   return (
-    <AppStateProvider>
-      <DistrictLandingInner district={district} />
-    </AppStateProvider>
+    <DistrictLandingInner district={district} />
   );
 };
 

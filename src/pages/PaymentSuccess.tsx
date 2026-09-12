@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { AppStateProvider, useAppState } from '@/hooks/use-app-state';
+import { useAppState } from '@/hooks/use-app-state';
 import Icon from '@/components/ui/icon';
 import { payCheck } from '@/lib/api';
 import useSeo from '@/hooks/use-seo';
@@ -174,9 +174,7 @@ const PaymentSuccess = () => {
   });
 
   return (
-    <AppStateProvider>
-      <PaymentSuccessInner />
-    </AppStateProvider>
+    <PaymentSuccessInner />
   );
 };
 

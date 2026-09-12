@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { AppStateProvider } from '@/hooks/use-app-state';
 import Icon from '@/components/ui/icon';
 import useSeo from '@/hooks/use-seo';
 
@@ -78,9 +77,7 @@ const PaymentFail = () => {
   });
 
   return (
-    <AppStateProvider>
-      <PaymentFailInner />
-    </AppStateProvider>
+    <PaymentFailInner />
   );
 };
 

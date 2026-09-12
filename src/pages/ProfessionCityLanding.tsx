@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { AppStateProvider } from '@/hooks/use-app-state';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import EarningsDisclaimer from '@/components/EarningsDisclaimer';
@@ -464,9 +463,7 @@ const ProfessionCityLanding = () => {
   if (!page || !city) return <NotFound />;
 
   return (
-    <AppStateProvider>
-      <ProfessionCityLandingInner page={page} />
-    </AppStateProvider>
+    <ProfessionCityLandingInner page={page} />
   );
 };
 

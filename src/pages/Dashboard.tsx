@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
-import { AppStateProvider, useAppState } from '@/hooks/use-app-state';
+import { useAppState } from '@/hooks/use-app-state';
 import DashHeader from '@/components/DashHeader';
 import { AdminReturnBanner } from '@/components/admin/AdminDemoAccess';
 import MemberDashboard from '@/components/dashboard/MemberDashboard';
@@ -52,9 +52,7 @@ const Dashboard = () => {
   });
 
   return (
-    <AppStateProvider>
-      <DashboardInner />
-    </AppStateProvider>
+    <DashboardInner />
   );
 };
 

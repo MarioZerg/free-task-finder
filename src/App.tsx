@@ -10,6 +10,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import TrailingSlashRedirect from "./components/TrailingSlashRedirect";
 import useMetrika from "./hooks/use-metrika";
 import { PageLoader } from "./components/Loader";
+import { AppStateProvider } from "./hooks/use-app-state";
 
 // Каждая страница — отдельный файл: браузер качает только то, что открыли.
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -39,6 +40,11 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        {/* Состояние поднято сюда намеренно: раньше провайдер висел внутри
+            каждой страницы и при переходе монтировался заново — сессия и
+            лента перезапрашивались, кабинет открывался с задержкой, а после
+            входа главная успевала мигнуть гостевым видом. */}
+        <AppStateProvider>
         <ScrollToTop />
         <TrailingSlashRedirect />
         <MetrikaTracker />
@@ -59,6 +65,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
+        </AppStateProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

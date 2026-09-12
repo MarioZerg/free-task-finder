@@ -3,7 +3,7 @@ import { Link, Navigate } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import Avatar from '@/components/Avatar';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { AppStateProvider, useAppState } from '@/hooks/use-app-state';
+import { useAppState } from '@/hooks/use-app-state';
 import { api } from '@/lib/api';
 import EditProfileDialog from '@/components/EditProfileDialog';
 import AdminUsers from '@/components/admin/AdminUsers';
@@ -214,9 +214,7 @@ const Admin = () => {
   });
 
   return (
-    <AppStateProvider>
-      <AdminInner />
-    </AppStateProvider>
+    <AdminInner />
   );
 };
 
