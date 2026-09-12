@@ -404,7 +404,22 @@ const main = async () => {
     written += 1;
   }
 
-  console.log(`prerender: ${written} страниц`);
+  // Страница для несуществующих адресов. Многие хостинги отдают файл
+  // 404.html с кодом 404 — без него сервер возвращает главную с кодом 200,
+  // и Яндекс ругается на «некорректный возврат 404 Not Found».
+  const notFound = tpl
+    .replace(/<title>[\s\S]*?<\/title>/, '<title>Страница не найдена — Доделай.ру</title>')
+    .replace(
+      /<meta name="description" content="[^"]*"\s*\/?>/,
+      '<meta name="description" content="Такой страницы нет. Возможно, адрес набран с ошибкой или объявление снято."/>',
+    )
+    .replace(
+      /<meta name="robots" content="[^"]*"\s*\/?>/,
+      '<meta name="robots" content="noindex, follow"/>',
+    );
+  writeFileSync(resolve(OUT, '404.html'), notFound, 'utf8');
+
+  console.log(`prerender: ${written} страниц + 404.html`);
 };
 
 // Пререндер — надстройка над готовой сборкой: dist к этому моменту уже
