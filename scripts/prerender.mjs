@@ -415,7 +415,7 @@ const main = async () => {
     )
     .replace(
       /<meta name="robots" content="[^"]*"\s*\/?>/,
-      '<meta name="robots" content="noindex, follow"/>',
+      '<meta name="robots" content="noindex, nofollow"/>',
     );
   writeFileSync(resolve(OUT, '404.html'), notFound, 'utf8');
 

@@ -9,8 +9,11 @@ const PageNotFound = () => {
   useSeo({
     title: 'Страница не найдена — Доделай.ру',
     description: 'Такой страницы нет. Вернитесь на главную или выберите свой город.',
-    canonical: 'https://dodelay.ru/',
-    robots: 'noindex, follow',
+    /* Канонический адрес — сам несуществующий путь, а не главная. Раньше
+       здесь стоял «/», и каждый битый адрес объявлял главную своим
+       оригиналом: робот склеивал их с ней вместо того, чтобы отбросить. */
+    canonical: `https://dodelay.ru${window.location.pathname}`,
+    robots: 'noindex, nofollow',
   });
 
   return (
